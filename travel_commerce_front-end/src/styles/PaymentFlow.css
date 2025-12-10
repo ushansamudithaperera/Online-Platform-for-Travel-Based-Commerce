@@ -1,0 +1,314 @@
+/* ========================================================
+   PaymentFlow.css: Styles for Plan Selection and Checkout
+   ======================================================== */
+
+.payment-flow-container {
+    padding-top: 80px; /* Space below Navbar */
+    padding-bottom: 50px;
+    min-height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background: #f8f8f8;
+}
+
+.payment-box {
+    width: 90%;
+    max-width: 900px; /* Wider container for plans */
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.payment-title {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.payment-subtitle {
+    text-align: center;
+    color: #777;
+    margin-bottom: 30px;
+    font-size: 1.1em;
+}
+
+/* --- Plan Selection Grid --- */
+.plan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.plan-card {
+    border: 1px solid #eee;
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: #fff;
+    position: relative;
+}
+
+.plan-card:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.plan-card h3 {
+    font-size: 1.5em;
+    color: #7B68EE; /* Primary Purple */
+    margin-bottom: 10px;
+}
+
+.plan-card.recommended {
+    border-color: #7B68EE;
+    box-shadow: 0 0 15px rgba(123, 104, 238, 0.2);
+}
+
+.badge {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    background: #6A5ACD; /* Darker Purple */
+    color: white;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.price-tag {
+    margin: 15px 0;
+    font-size: 1em;
+    color: #555;
+}
+.price {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: #333;
+    display: block;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 30px;
+    text-align: left;
+}
+
+.plan-features li {
+    padding: 5px 0;
+    color: #555;
+    border-bottom: 1px dashed #eee;
+    font-size: 0.95em;
+}
+
+.select-plan-btn {
+    width: 100%;
+    padding: 12px 20px;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.select-plan-btn:hover {
+    background-color: #6A5ACD !important;
+}
+
+/* --- Checkout Page Styles --- */
+
+.checkout-box {
+    max-width: 500px;
+}
+
+.checkout-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.checkout-form label {
+    font-weight: 600;
+    color: #444;
+}
+
+.checkout-form input {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+.expiry-group {
+    display: flex;
+    gap: 20px;
+}
+
+.expiry-group > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.post-btn {
+    /* Reusing post-btn from ProviderDashboard for consistency */
+    padding: 12px;
+    background: #7B68EE; /* Purple */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.post-btn:hover {
+    background: #6A5ACD;
+}
+
+.mock-note {
+    font-size: 0.85em;
+    color: #999;
+    text-align: center;
+}
+
+/* --- Success Page Styles --- */
+.success-box {
+    max-width: 600px;
+    text-align: center;
+    border-top: 5px solid #28c76f; /* Green line for success */
+}
+
+.success-message {
+    font-size: 1.2em;
+    color: #333;
+    margin: 30px 0;
+    line-height: 1.5;
+}
+
+.success-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.success-actions .close-btn {
+    /* Reusing close-btn from ProviderDashboard, adjust for link style */
+    text-decoration: none;
+    padding: 12px 25px;
+    background: #d9534f;
+    color: white;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.success-actions .post-btn {
+     /* Using post-btn as primary action button */
+    text-decoration: none;
+    padding: 12px 25px;
+}
+
+
+
+/* --- Back Button on Plan Page --- */
+.back-to-dashboard-btn {
+    display: block;
+    width: 250px;
+    margin: 30px auto 0; /* Centered, below the grid */
+    padding: 10px;
+    background: #f1f1f1;
+    color: #555;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+}
+
+.back-to-dashboard-btn:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+
+
+/* --- Photo Upload Styles --- */
+.upload-section {
+    padding: 20px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.custom-file-upload {
+    background-color: #f8f8f8;
+    color: #7B68EE;
+    padding: 10px 20px;
+    border: 1px solid #7B68EE;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-block;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.custom-file-upload:hover {
+    background-color: #f0f0ff;
+}
+
+/* Hide the default file input */
+.upload-section input[type="file"] {
+    display: none;
+}
+
+.upload-error-msg {
+    color: #d9534f;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.file-list {
+    margin-top: 15px;
+    text-align: left;
+    max-height: 200px; /* Limit height for long lists */
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dotted #eee;
+    font-size: 0.9em;
+}
+
+.remove-file-btn {
+    background: #ffeded;
+    color: #d9534f;
+    border: 1px solid #ffeded;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.remove-file-btn:hover {
+    background: #ffe3e3;
+}
+
+.upload-summary {
+    margin-top: 15px;
+    font-weight: 500;
+    color: #555;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}

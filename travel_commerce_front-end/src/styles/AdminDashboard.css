@@ -1,0 +1,262 @@
+/* =======================================
+   AdminDashboard.css
+   ======================================= */
+
+/* General Layout */
+.admin-page-container {
+    padding-top: 70px; /* Space below fixed navbar */
+    display: flex;
+    min-height: 90vh;
+    background-color: #f4f7fa; /* Light background */
+}
+
+/* Sidebar */
+.admin-sidebar {
+    width: 250px;
+    background-color: #12002b; /* Dark primary color from your navbar gradient */
+    color: white;
+    padding: 20px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.admin-sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #bed565; /* Green accent color */
+    font-size: 1.5rem;
+}
+
+.admin-sidebar nav {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-sidebar .nav-item {
+    background: none;
+    border: none;
+    color: #ccc;
+    text-align: left;
+    padding: 15px 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-sidebar .nav-item:hover {
+    background-color: rgba(123, 104, 238, 0.1); /* Light purple hover */
+    color: white;
+}
+
+.admin-sidebar .nav-item.active {
+    background-color: #7B68EE; /* Primary Purple highlight */
+    color: white;
+    border-left: 5px solid #bed565; /* Green active border */
+    font-weight: bold;
+}
+
+.admin-sidebar .nav-logout {
+    margin-top: 40px;
+    color: #ff4d4d; /* Red for logout/danger */
+}
+
+/* Main Content */
+.admin-content {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: #fff;
+    margin: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.admin-content h1 {
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+
+/* --- Overview Grid --- */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: #fdfdff;
+    padding: 25px;
+    border-radius: 10px;
+    border-left: 5px solid #7B68EE;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card h3 {
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.stat-card p {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #7B68EE;
+}
+
+.stat-card.total-users { border-color: #6A5ACD; }
+.stat-card.active-posts { border-color: #28a745; /* Green */ }
+.stat-card.pending-review { border-color: #ffc107; /* Yellow */ }
+.stat-card.total-providers { border-color: #17a2b8; /* Cyan */ }
+
+
+/* --- Table Styles --- */
+.table-container {
+    background: white;
+    padding: 10px 0;
+    border-radius: 8px;
+}
+
+.table-container h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.95rem;
+}
+
+thead th {
+    background-color: #f7f7f7;
+    color: #444;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 2px solid #ddd;
+}
+
+tbody tr {
+    border-bottom: 1px solid #eee;
+}
+
+tbody tr:hover {
+    background-color: #fafafa;
+}
+
+tbody td {
+    padding: 12px 15px;
+    color: #333;
+}
+
+/* Badges and Tags */
+.role-badge, .status-badge, .plan-tag {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+}
+
+/* User Role Badges */
+.role-badge.traveller { background-color: #e6f7ff; color: #007bff; }
+.role-badge.provider { background-color: #fffbe6; color: #faad14; }
+
+/* Status Badges */
+.status-badge.active { background-color: #d4edda; color: #155724; }
+.status-badge.banned { background-color: #f8d7da; color: #721c24; }
+.status-badge.pending { background-color: #ffe5cc; color: #856404; }
+
+.plan-tag {
+    background-color: #ebe4ff;
+    color: #7B68EE;
+}
+
+/* Action Buttons */
+.btn.small {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    margin-right: 8px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-ban { background-color: #ff4d4d; color: white; }
+.btn-ban:hover { background-color: #e60000; }
+
+.btn-activate { background-color: #28a745; color: white; }
+.btn-activate:hover { background-color: #1e7e34; }
+
+.btn-approve { background-color: #7B68EE; color: white; }
+.btn-approve:hover { background-color: #6A5ACD; }
+
+.btn-danger { background-color: #d9534f; color: white; }
+.btn-danger:hover { background-color: #c52f29; }
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+    .admin-page-container {
+        flex-direction: column;
+    }
+    .admin-sidebar {
+        width: 100%;
+        padding: 0;
+    }
+    .admin-sidebar nav {
+        flex-direction: row;
+        overflow-x: auto;
+        white-space: nowrap;
+        border-bottom: 1px solid #333;
+    }
+    .admin-sidebar .nav-item {
+        padding: 10px 15px;
+        border-left: none;
+    }
+    .admin-sidebar .nav-item.active {
+        border-bottom: 3px solid #bed565;
+        border-left: none;
+    }
+    .admin-content {
+        margin: 15px;
+        padding: 15px;
+    }
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead tr {
+        display: none;
+    }
+    tbody tr {
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+    }
+    tbody td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+    }
+    tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 50%;
+        padding-left: 15px;
+        font-weight: bold;
+        text-align: left;
+        color: #555;
+    }
+}

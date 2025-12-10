@@ -1,0 +1,487 @@
+/* Reset default browser spacing */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+/* Hero Section */
+
+.hero {
+  position: relative;
+  height: 80vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Hero Images for slideshow */
+.hero-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* full section fills hero */
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out; /* smooth fade */
+}
+
+.hero-img.active {
+  opacity: 1; /* show current image */
+}
+
+/* Overlay for dim effect */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1;
+}
+
+/* Hero content above overlay */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 20px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Hero text styling */
+.hero h1 {
+  font-size: 3rem;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
+}
+
+.hero p {
+  font-size: 1.2rem;
+  max-width: 600px;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+  margin: 15px auto;
+}
+
+
+
+/* Featured Services Section */
+.featured {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featured h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/*hero buttons*/
+
+/* Container spacing */
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* Base style */
+.btn1 {
+  padding: 14px 22px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  letter-spacing: 0.5px;
+  /**/ box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.37); 
+}
+
+/* 🔥 REGISTER Button – Gradient */
+.btn1 {
+  background: linear-gradient(135deg, #2a004f);
+  color: #ffffff;
+  /*box-shadow: 2px 2px 2px 2px rgba(140, 40, 200, 0.3);*/
+}
+
+.btn1:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #41126a);
+  /*box-shadow: 4px 4px 4px 4px rgba(140, 40, 200, 0.3);*/
+}
+
+/* 🔲 LOGIN Button – Clean outline, matches gradient */
+.btn1.outline {
+  background: transparent;
+  color: #cbc9ce;
+  border: 3.5px solid #cbc9ce;
+  box-shadow: none;
+}
+
+.btn1.outline:hover {
+  background: rgba(123, 47, 247, 0.15);
+  transform: translateY(-2px);
+  border-color: #f9f8fa;
+  color: #f9f8fa;
+}
+
+
+/* Hero dots */
+.hero-dots {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: 3;
+  gap: 10px;
+}
+
+.hero-dot {
+  width: 9px;
+  height: 9px;
+  background-color: rgba(255,255,255,0.6);
+  border-radius: 20%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero-dot.active {
+  background-color: #610688; /* highlight active dot */
+  transform: scale(1.2);
+}
+
+
+
+
+
+
+/* Modern subtle services description with smooth animation */
+
+/* ---------------- OUR SERVICES SECTION ---------------- */
+
+/*test start*/
+.our-services {
+  max-width: 1200px;
+  margin: 60px auto;
+  padding: 40px 30px;
+  text-align: left;
+  background: #f3e8ff; /* light purple background */
+  border-radius: 16px;
+  box-shadow: 0px 6px 20px rgba(0,0,0,0.08);
+}
+
+.our-services h2.section-title {
+  font-size: 36px;
+  font-weight: bold;
+  color: #6a0dad; /* bold purple heading */
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.our-services .service-description {
+  font-size: 18px;
+  line-height: 1.8;
+  color: #4b0082; /* deep purple text */
+  max-width: 900px;
+  margin: 0 auto;
+  white-space: pre-wrap;
+  /*border-left: 3px solid #9b59b6; /* purple accent line */
+  /*border-right: 3px solid #9b59b6; /* purple accent line */
+
+  padding-left: 15px;
+  overflow: hidden;
+}
+
+
+/*test end*/
+/* ------------------------------------------------------------------ */
+
+/* Animation keyframes */
+@keyframes fadeSlideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .services-description {
+    font-size: 1rem;
+    padding: 20px;
+    margin-bottom: 30px;
+  }
+}
+
+
+
+
+
+
+/* Both sliders side by side */
+.bothslides {
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  max-width: 1600px;
+  width: 100%;
+  margin:  auto;
+}
+
+/* Larger slider wrapper */
+.slider-box {
+  width: 100%;
+  max-width: 650px;   /* ⭐ wider */
+  margin: auto;
+}
+
+/* Slider titles */
+.slider-title {
+  text-align: center;
+  font-size: 26px;     /* bigger title */
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+
+/*
+.providers {
+  color: #1a73e8;
+}
+
+.travellers {
+  color: #0a7a32;
+}
+
+*/
+
+
+
+.providers {
+  color: #7a3eb0; /* rich purple */
+  font-weight: 700;
+}
+
+.travellers {
+  color: #9b59b6; /* lighter complementary purple */
+  font-weight: 700;
+}
+
+
+/* Slider container (bigger height + width) */
+.services-slider {
+  position: relative;
+  height: 500px;        /* ⭐ Increased height */
+  width: 100%;
+  /* 
+  border-radius: 12px;*/
+  overflow: hidden;
+  background: #eee;
+}
+
+/* Slide cards */
+.service-card {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 100%;
+  height: 100%;
+  /*border-radius: 12px;*/
+  background-size: cover;
+  background-position: center;
+  transition: left 0.6s ease, transform 0.4s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Active and inactive */
+.service-card.active {
+  left: 0;
+}
+.service-card.inactive {
+  left: -100%;
+}
+
+/* Overlay */
+.service-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.35);
+}
+
+/* Card content */
+.service-content {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  text-align: center;
+  padding: 25px;
+  font-size: 20px;
+  width: 80%;
+  margin: auto;
+}
+
+/* Hover scale effect */
+.service-card:hover {
+  transform: scale(1.05);
+}
+
+/* Bigger dots */
+.dots {
+  position: absolute;
+  bottom: 18px;
+  width: 100%;
+  text-align: center;
+  z-index: 3;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;    /* bigger */
+  height: 10px;   /* bigger */
+  margin: 0 6px;
+  background: #bbb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.dot.active {
+  background: #fff;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .bothslides {
+    grid-template-columns: 1fr;
+  }
+
+  .services-slider {
+    height: 420px;   /* slightly less on mobile */
+  }
+
+  .slider-box {
+    max-width: 100%;
+  }
+}
+
+
+
+
+/*Additional*/
+.scroll-appear {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease;
+}
+
+.scroll-appear.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+/*key features*/
+.key-features {
+  max-width: 1300px;
+  margin: 60px auto;
+  text-align: center;
+  padding: 20px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.feature-box {
+  background: linear-gradient(145deg, #4b0082, #7a3eb0); /* deep purple gradient */
+  color: #f4eaff; /* soft light text */
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.feature-box h3 {
+  color: #ffeaff; /* light accent heading */
+  margin-bottom: 10px;
+}
+
+.feature-box p {
+  color: #e0d4ff; /* slightly lighter text */
+}
+
+
+
+/*How its woorks*/
+
+.how-it-works {
+  max-width: 1300px;
+  margin: 60px auto;
+  text-align: center;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.step-box {
+  background: #f3e8ff; /* light purple background */
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0px 4px 15px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.step-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+.step-number {
+  font-size: 36px;
+  font-weight: bold;
+  color: #8eae12; /* bold purple */
+  display: block;
+  margin-bottom: 10px;
+}
+
+.step-box h3 {
+  color: #7a3eb0; /* purple headings */
+}
+
+.step-box p {
+  color: #4b0082; /* deep purple text */
+}

@@ -1,0 +1,206 @@
+/* =========================================================
+   ProviderDashboard.css - FULL UPDATED FILE
+   ========================================================= */
+
+/* MAIN LAYOUT */
+
+/* 🚨 HEADER FIX: Add margin-top to push content below the fixed/sticky Navbar. */
+.provider-container {
+    margin-top: 80px; /* Adjust this value to match your Navbar height */
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    padding: 30px;
+}
+
+/* LEFT SIDE */
+.provider-left {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.08);
+}
+
+.provider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Add button (Primary Purple color variant) */
+.add-btn {
+    padding: 8px 16px;
+    background: #7B68EE; /* Primary Purple */
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-btn:hover {
+    background: #6A5ACD; /* Darker Purple */
+}
+
+.large-post img {
+    width: 100%;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+/* ------------------------------------- */
+/* Edit & Delete Action Buttons */
+/* ------------------------------------- */
+
+/* Button Grouping for Edit/Delete */
+.large-post .action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+/* Style for the Edit Button (using the primary purple theme) */
+.edit-btn {
+    padding: 10px 20px;
+    background: #7B68EE; /* Primary Purple */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    flex-grow: 1;
+}
+
+.edit-btn:hover {
+    background: #6A5ACD; /* Darker Purple */
+}
+
+/* Style for the Delete Button (Standard Red for destructive action) */
+.delete-btn {
+    padding: 10px 20px;
+    background: #d9534f; /* Red */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    flex-grow: 1;
+}
+
+.delete-btn:hover {
+    background: #c52f29; /* Darker Red */
+}
+
+
+/* RIGHT SIDE */
+.provider-right {
+    background: #fafafa;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+.post-list {
+    margin-top: 10px;
+}
+
+.post-tile {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 0 6px rgba(0,0,0,0.08);
+}
+
+.post-tile:hover {
+    background: #f3f3f3;
+}
+
+.post-tile img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* MODAL */
+
+/* 🚨 MODAL FIX: High z-index to cover the Navbar */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; 
+}
+
+.modal-box {
+    background: white;
+    width: 450px;
+    padding: 25px;
+    border-radius: 12px;
+    animation: popup 0.3s ease;
+}
+
+@keyframes popup {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-form input,
+.modal-form select,
+.modal-form textarea {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+/* Post button (Green - used for 'Proceed to Plans & Payment') */
+.post-btn {
+    padding: 10px;
+    background: #28c76f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.post-btn:hover {
+    background: #1faa5d;
+}
+
+/* Close button (Red) */
+.close-btn {
+    padding: 8px;
+    background: #d9534f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    background: #c52f29;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .provider-container {
+        /* On mobile, use less top margin and single column */
+        margin-top: 20px; 
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
+}

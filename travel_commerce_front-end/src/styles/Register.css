@@ -1,0 +1,207 @@
+/* ===============================
+    Container and Page Layout
+================================= */
+
+/*test*/
+
+.page {
+  max-width: 500px;
+  /*margin: 30px auto;*/
+  padding: 30px 25px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Heading */
+.page h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 28px;
+  color: #333;
+}
+
+/* ===============================
+    Form
+================================= */
+.register-form,
+.form-login {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  position: relative;
+}
+
+/* Floating labels */
+.register-form input,
+.register-form select,
+.register-form textarea,
+.form-login input,
+.form-login select {
+  padding: 14px 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  transition: 0.2s;
+}
+
+/* Focus color changed to purple */
+.register-form input:focus,
+.register-form select:focus,
+.register-form textarea:focus,
+.form-login input:focus,
+.form-login select:focus {
+  border-color: #7B68EE; /* Changed from #4a90e2 to Medium Purple */
+  box-shadow: 0 0 6px rgba(123, 104, 238, 0.3); /* Custom shadow for purple */
+}
+
+/* Placeholder color */
+.register-form input::placeholder,
+.register-form textarea::placeholder,
+.form-login input::placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+/* ===============================
+    Provider Section
+================================= */
+.provider-section {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f4f7fb;
+  border: 1px solid #d0d9e6;
+  border-radius: 10px;
+  /* Left border color changed to purple */
+  border-left: 5px solid #7B68EE; /* Changed from #4a90e2 to Medium Purple */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.provider-section label {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Textarea in provider section */
+.provider-section textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ===============================
+    Buttons
+================================= */
+.btn {
+  padding: 14px;
+  margin-top: 10px;
+  /* Button background changed to purple */
+  background: #7B68EE; /* Changed from #4a90e2 to Medium Purple */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Button hover color changed to a darker purple */
+.btn:hover {
+  background: #6A5ACD; /* Changed from #3a7bc9 to Slate Blue */
+  transform: translateY(-2px);
+}
+
+/* ===============================
+    Error messages
+================================= */
+.error-msg,
+.error {
+  color: #e74c3c;
+  text-align: center;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* ===============================
+    Show/Hide Password Toggle
+================================= */
+.show-hide-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 14px;
+  /* Toggle color changed to purple */
+  color: #9370DB; /* Changed from #007bff to Medium Purple */
+  user-select: none;
+}
+
+/* ===============================
+    Sign-up / Login Link
+================================= */
+.signup-text {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #555;
+}
+
+/* Link color changed to purple */
+.signup-link {
+  color: #7B68EE; /* Changed from #4a90e2 to Medium Purple */
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+/* Link hover color changed to a darker purple */
+.signup-link:hover {
+  text-decoration: underline;
+  color: #6A5ACD; /* Changed from #3a7bc9 to Slate Blue */
+}
+
+/* ===============================
+    Responsive adjustments
+================================= */
+@media screen and (max-width: 550px) {
+  .page {
+    margin: 20px 15px;
+    padding: 20px;
+  }
+
+  .btn {
+    font-size: 15px;
+    padding: 12px;
+  }
+}
+
+
+/*fix number box*/
+/* ===============================
+    Contact Number Layout Fix
+================================= */
+
+/* Define the Flex container for the two contact fields */
+.contact-number-group {
+    display: flex;
+    gap: 10px;
+}
+
+/* 🚨 FIX: Explicitly set the country code selector to a fixed, smaller width */
+.contact-number-group select {
+    /* Sets the select box to occupy roughly 35% of the total available width */
+    width: 35%; 
+    min-width: 120px; /* Prevents it from getting too small */
+    flex-shrink: 0; /* Prevents it from shrinking */
+}
+
+/* 🚨 FIX: Make the phone number input grow and take the remaining space */
+.contact-number-group input[type="text"] {
+    flex-grow: 1; /* This makes the input field stretch */
+    width: auto; 
+}

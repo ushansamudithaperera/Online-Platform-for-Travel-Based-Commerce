@@ -1,0 +1,136 @@
+.footer {
+  background: linear-gradient(135deg, #2a004f, #12002b, #1b0036);
+  color: #ffffff;
+ padding: 25px 10px;}
+
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: auto;
+  gap: 150px;
+  max-width: 90%;   /* fills the width nicely */
+  margin: 0 auto;
+}
+
+/* Make all columns equal width */
+.footer-left,
+.footer-middle,
+.footer-right {
+  flex: 1;
+  min-width: 250px;
+}
+
+/* LEFT */
+.footer-title {
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.footer-tagline {
+  font-size: 14px;
+  color: #d7d7d7;
+  line-height: 1.6;
+  max-width: 90%;
+}
+
+/* MIDDLE */
+.contact-detail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #e7e7e7;
+}
+
+/*
+.footer-middle .contact-title h3{
+  color: #bfbfbf;
+}
+*/
+
+.detail-icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: auto;
+  margin-right:1px;
+  filter: brightness(0) invert(1);
+}
+
+/* RIGHT */
+.footer-right {
+  text-align: left;      /* Changed from right → left */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align items from the left */}
+
+.contact-title {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.contact-row {
+  display: flex;
+  justify-content: flex-start;  /* Changed from flex-end */
+  align-items: center;
+  gap: 20px;
+}
+
+.contact-item {
+  transition: transform 0.2s ease;
+
+}
+
+.contact-item:hover {
+  transform: scale(1.15);
+}
+
+.icon {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+
+
+/* SOCIAL MEDIA ICONS - WHITE AND HOVER BRIGHTNESS */
+.footer-right .contact-item .icon {
+  filter: brightness(0) invert(1); /* makes icon white */
+  transition: filter 0.3s ease, transform 0.3s ease; /* smooth hover effect */
+}
+
+.footer-right .contact-item:hover .icon {
+  filter: brightness(2) invert(1); /* increase brightness on hover */
+  transform: scale(1.05); /* slight zoom effect */
+  cursor: pointer; /* pointer on hover */
+}
+
+
+/* BOTTOM */
+.footer-bottom {
+  border-top: 1px solid #3a1b5c;
+  text-align: center;
+  padding-top: 15px;
+  margin-top: 25px;
+  color: #bfbfbf;
+  font-size: 14px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .footer-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer-right {
+    text-align: center;
+  }
+
+  .contact-row {
+    justify-content: center;
+  }
+}
