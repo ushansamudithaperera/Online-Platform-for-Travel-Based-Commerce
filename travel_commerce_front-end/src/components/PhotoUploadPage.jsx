@@ -1,146 +1,127 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import Navbar from '../components/Navbar'; 
-import Footer from '../components/Footer'; 
-import '../styles/PaymentFlow.css'; // Reusing payment styles
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import "../styles/PaymentFlow.css";
 
 export default function PhotoUploadPage() {
-    const nav = useNavigate();
-    const location = useLocation();
-    const { postData, selectedPlan } = location.state || {}; // Get post data AND plan
+  const nav = useNavigate();
+  const location = useLocation();
 
-    // State to store uploaded files (File objects)
-    const [uploadedFiles, setUploadedFiles] = useState([]);
-    const [error, setError] = useState('');
+  // ---- GET DATA FROM PREVIOUS STEP ----
+  const { postData, selectedPlan } = location.state || {};
 
-    if (!selectedPlan || !postData) {
-        return (
-            <>
-                <Navbar />
-                <div className="payment-flow-container">
-                    <div className="payment-error payment-box">
-                        <p>⚠️ Error: Missing plan or service details. Please start over.</p>
-                        <Link to="/provider/dashboard" className="post-btn">Go to Dashboard</Link>
-                    </div>
-                </div>
-                <Footer />
-            </>
-        );
+  // ---- SAFETY CHECK: IF PAGE RELOADED ----
+  useEffect(() => {
+    if (!postData || !selectedPlan) {
+      console.warn("Missing state. Redirecting...");
+
+      const timer = setTimeout(() => {
+        nav("/provider/dashboard");
+      }, 2000);
+
+      return () => clearTimeout(timer);
     }
-    
-    // The maximum photo limit for the selected plan
-    const MAX_PHOTOS = selectedPlan.photoLimit;
+  }, [postData, selectedPlan, nav]);
 
-    const handleFileChange = (e) => {
-        setError('');
-        const files = Array.from(e.target.files);
-        
-        // Combine existing files and new files
-        const newTotal = uploadedFiles.length + files.length;
-        
-        if (newTotal > MAX_PHOTOS) {
-            setError(`You can only upload a maximum of ${MAX_PHOTOS} photos for the ${selectedPlan.name} plan. Please select fewer files.`);
-            // Reset the input field value to allow selecting files again
-            e.target.value = null; 
-            return;
-        }
+  // ---- LOCAL STATE ----
+  const [photos, setPhotos] = useState([]);
+  const maxPhotos = selectedPlan?.photoLimit || 5;
 
-        setUploadedFiles(prev => [...prev, ...files]);
-        // Reset input value to allow the same file to be selected again after error
-        e.target.value = null; 
-    };
+  // ---- ADD PHOTOS ----
+  function handlePhotoChange(e) {
+    const files = Array.from(e.target.files);
+    const newList = [...photos, ...files].slice(0, maxPhotos);
+    setPhotos(newList);
+  }
 
-    const handleRemoveFile = (indexToRemove) => {
-        setUploadedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
-    };
+  // ---- REMOVE PHOTO ----
+  function removePhoto(index) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
 
-    const handleProceedToPayment = () => {
-        if (uploadedFiles.length === 0) {
-            setError('Please upload at least one photo for your service.');
-            return;
-        }
-        
-        // 🚨 IMPORTANT: In a real app, you would upload the files to a server 
-        // (e.g., AWS S3, Cloudinary) here, and the server would return image URLs.
-        // For this mock flow, we just pass the file *count* and proceed.
-        
-        const finalPostData = {
-            ...postData,
-            imageCount: uploadedFiles.length,
-            // In a real app: imageURLs: ['url1', 'url2', ...]
-        };
+  // ---- CONTINUE TO PAYMENT ----
+  function goToCheckout() {
+    if (photos.length === 0) {
+      alert("Please upload at least one photo.");
+      return;
+    }
 
-        // Navigate to the final Checkout Page
-        nav('/payment/checkout', { 
-            state: { 
-                postData: finalPostData, 
-                selectedPlan: selectedPlan 
-            } 
-        });
-    };
+    nav("/payment/checkout", {
+      state: {
+        postData,
+        selectedPlan,
+        photos,
+      },
+    });
+  }
 
+  // ---- IF STATE INVALID (but we let useEffect redirect) ----
+  if (!postData || !selectedPlan) {
     return (
-        <>
-            <Navbar />
-            <div className="payment-flow-container">
-                <div className="payment-box checkout-box">
-                    <h2 className="payment-title">Upload Service Photos</h2>
-                    <p className="payment-subtitle">
-                        Selected Plan: **{selectedPlan.name}** | Limit: **{MAX_PHOTOS}** photos
-                    </p>
-
-                    <div className="upload-section">
-                        <label className="custom-file-upload">
-                            Choose Photos (Max {MAX_PHOTOS})
-                            <input 
-                                type="file" 
-                                multiple 
-                                accept="image/*"
-                                onChange={handleFileChange}
-                            />
-                        </label>
-                        
-                        {error && <p className="error-msg upload-error-msg">⚠️ {error}</p>}
-
-                        <div className="file-list">
-                            {uploadedFiles.map((file, index) => (
-                                <div key={index} className="file-item">
-                                    <span>{file.name} ({Math.round(file.size / 1024)} KB)</span>
-                                    <button 
-                                        type="button" 
-                                        className="remove-file-btn"
-                                        onClick={() => handleRemoveFile(index)}
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                        <p className="upload-summary">
-                            **{uploadedFiles.length}** of {MAX_PHOTOS} photos uploaded.
-                        </p>
-                    </div>
-
-
-                    <button 
-                        type="button" 
-                        className="post-btn"
-                        onClick={handleProceedToPayment}
-                        style={{ marginTop: '20px' }}
-                    >
-                        Proceed to Payment (${selectedPlan.price})
-                    </button>
-
-                    {/* Back button to re-select plan */}
-                    <button 
-                        onClick={() => nav(-1)} // Go back to the previous page (SelectPlanPage)
-                        className="back-to-dashboard-btn"
-                    >
-                        ⬅️ Change Plan
-                    </button>
-                </div>
-            </div>
-            <Footer />
-        </>
+      <>
+        <Navbar />
+        <div className="payment-flow-container">
+          <div className="payment-error payment-box">
+            <p>⚠️ Error: Missing plan or service details. Redirecting…</p>
+            <Link to="/provider/dashboard" className="post-btn">
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </>
     );
+  }
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="payment-flow-container">
+        <div className="payment-box">
+
+          <h2 className="payment-title">Upload Photos</h2>
+          <p className="payment-subtitle">
+            Plan: <strong>{selectedPlan.name}</strong> — Max photos:{" "}
+            <strong>{maxPhotos}</strong>
+          </p>
+
+          {/* ---- PHOTO INPUT ---- */}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handlePhotoChange}
+          />
+
+          {/* ---- PREVIEW ---- */}
+          <div className="photo-grid">
+            {photos.map((file, index) => (
+              <div key={index} className="photo-preview">
+                <img src={URL.createObjectURL(file)} alt="preview" />
+                <button onClick={() => removePhoto(index)}>Remove</button>
+              </div>
+            ))}
+          </div>
+
+          {/* ---- ACTIONS ---- */}
+          <div className="success-actions">
+            <button className="post-btn" onClick={goToCheckout}>
+              Continue to Payment →
+            </button>
+
+            <button
+              className="close-btn"
+              onClick={() => nav("/provider/dashboard")}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </>
+  );
 }
