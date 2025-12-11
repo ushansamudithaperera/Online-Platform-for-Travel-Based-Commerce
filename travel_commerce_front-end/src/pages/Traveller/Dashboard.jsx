@@ -2,17 +2,18 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 import "../../styles/TravellerDashboard.css";
 import Footer from "../../components/Footer";
-import { getAllServices } from "../../api/serviceApi"; // 🚨 API Import
+import { getAllServices } from "../../api/serviceApi"; 
+
 
 export default function TravellerDashboard() {
     const [search, setSearch] = useState("");
     const [searchTerm, setSearchTerm] = useState(""); 
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [selectedDistrict, setSelectedDistrict] = useState("all");
-    const [selectedPost, setSelectedPost] = useState(null);
+    const [selectedPost, setSelectedPost] = useState(null); // State to hold the selected post object
     const [loading, setLoading] = useState(true); 
 
-    // 🚨 FIX 1: Posts state is initialized as empty, ready for API data
+    // FIX 1: Posts state is initialized as empty, ready for API data
     const [posts, setPosts] = useState([]); 
 
     const categories = [ 
@@ -22,7 +23,7 @@ export default function TravellerDashboard() {
         { id: "adventure", name: "Adventure", img: "/images/cat-adventure.jpg" },
     ];
     
-    // 🚨 FIX 2: Fetch data from backend on component mount
+    // Fetch data from backend on component mount
     useEffect(() => {
         async function fetchAllServices() {
             try {
@@ -38,16 +39,17 @@ export default function TravellerDashboard() {
         fetchAllServices();
     }, []); 
 
-    const handleSearch = () => { setSearch(searchTerm); };
+    // Function to handle search input
+    const handleSearch = () => { 
+        setSearch(searchTerm.toLowerCase()); 
+    };
 
-    // 🚨 FIX 3: Corrected Category Filtering Logic
+    // Filtering Logic (Case-Insensitive Search & Category Match)
     const filteredPosts = posts
-        .filter((p) => (search ? p.title.toLowerCase().includes(search.toLowerCase()) : true))
+        .filter((p) => (search ? p.title.toLowerCase().includes(search) : true))
         .filter((p) => (
             selectedCategory === "all" 
             ? true 
-            // CRITICAL FIX: Convert both sides to lowercase for comparison.
-            // Example: "tour_guide" (filter ID) vs "Tour Guide" (DB value)
             : p.category.toLowerCase().replace(/ /g, '_') === selectedCategory.toLowerCase() 
         ))
         .filter((p) => (selectedDistrict === "all" ? true : p.district === selectedDistrict));
@@ -116,8 +118,33 @@ export default function TravellerDashboard() {
                     </div>
                 </div>
 
-                {/* MAIN CONTENT: POSTS LIST (Displays real data) */}
-                <div className ={`main-content ${selectedPost ? "show-two-column" : "single-column"}`}>
+                {/* MAIN CONTENT: TWO COLUMN LAYOUT */}
+                <div className={`main-content ${selectedPost ? "show-two-column" : "single-column"}`}>
+
+                    {/* 🚨 CRITICAL FIX: RESTORED LEFT PANE DETAIL VIEW */}
+                    {selectedPost && (
+                        <div className="selected-post">
+                            <h2>{selectedPost.title}</h2>
+                            <img src={selectedPost.images?.[0] || "/placeholder.png"} alt={selectedPost.title} />
+                            <p>{selectedPost.description}</p>
+
+                            {/* 🚨 RESTORED: REVIEW/RATING BOX */}
+                            <div className="review-box">
+                                <h3>Leave a Review</h3>
+                                <select>
+                                    <option>⭐ 1 Star</option>
+                                    <option>⭐⭐ 2 Stars</option>
+                                    <option>⭐⭐⭐ 3 Stars</option>
+                                    <option>⭐⭐⭐⭐ 4 Stars</option>
+                                    <option>⭐⭐⭐⭐⭐ 5 Stars</option>
+                                </select>
+                                <textarea placeholder="Write feedback..."></textarea>
+                                <button className="btn">Submit Review</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* RIGHT: POSTS LIST */}
                     <div className={`posts-section ${selectedPost ? "shrunk" : ""}`}>
                         {loading ? (
                             <p style={{ padding: '20px' }}>Loading services from the database...</p>
@@ -125,7 +152,12 @@ export default function TravellerDashboard() {
                             <p className="no-results-error">😔 No services found.</p>
                         ) : (
                             filteredPosts.map((p) => (
-                                <div key={p.id} className="post-card" onClick={() => setSelectedPost(p)}>
+                                <div 
+                                    key={p.id} 
+                                    className="post-card" 
+                                    // 🚨 CRITICAL: Set the selected post state on click
+                                    onClick={() => setSelectedPost(p)} 
+                                >
                                     <img src={p.images?.[0] || "/placeholder.png"} alt={p.title} /> 
                                     <h4 className="post-title">{p.title}</h4>
                                     <p>{p.district}</p>
