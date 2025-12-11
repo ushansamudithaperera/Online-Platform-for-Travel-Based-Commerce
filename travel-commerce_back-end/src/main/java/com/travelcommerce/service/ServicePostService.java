@@ -1,3 +1,5 @@
+// src/main/java/com/travelcommerce/service/ServicePostService.java
+
 package com.travelcommerce.service;
 
 import com.travelcommerce.model.ServicePost;
@@ -11,7 +13,16 @@ import java.util.List;
 public class ServicePostService {
     @Autowired private ServiceRepository repo;
 
-    public List<ServicePost> findAll() { return repo.findAll(); }
+    public List<ServicePost> findAll() { 
+        // Assuming this fetches published/active posts for the Traveller Dashboard
+        return repo.findAll(); 
+    }
+    
+    // ⬅️ CRITICAL FIX: Add the missing method implementation
+    public List<ServicePost> findByProviderId(String providerId) {
+        return repo.findByProviderId(providerId); // Calls the method defined in the repository
+    }
+    
     public ServicePost findById(String id) { return repo.findById(id).orElse(null); }
     public ServicePost create(ServicePost p) { return repo.save(p); }
     public ServicePost update(ServicePost p) { return repo.save(p); }

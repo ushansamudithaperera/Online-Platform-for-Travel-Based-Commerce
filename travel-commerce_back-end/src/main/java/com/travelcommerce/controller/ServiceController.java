@@ -8,7 +8,7 @@ import com.travelcommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.Authentication; // Needed to get authenticated user details
 
 import java.util.List;
 
@@ -18,11 +18,14 @@ public class ServiceController {
     @Autowired private ServicePostService servicePostService;
     @Autowired private UserRepository userRepository;
 
+    // GET /api/services (Used by Traveller Dashboard - fetches ALL published posts)
     @GetMapping
     public ResponseEntity<List<ServicePost>> all() {
+        // Assuming servicePostService.findAll() only returns ACTIVE/Published posts.
         return ResponseEntity.ok(servicePostService.findAll());
     }
 
+    // GET /api/services/{id}
     @GetMapping("{id}")
     public ResponseEntity<?> get(@PathVariable String id) {
         ServicePost p = servicePostService.findById(id);
@@ -30,6 +33,28 @@ public class ServiceController {
         return ResponseEntity.ok(p);
     }
 
+    // 🚨 NEW ENDPOINT: GET /api/services/provider-posts 
+    // Purpose: Fetch all posts belonging to the authenticated provider.
+    // This is the method that caused the type mismatch error.
+    @GetMapping("/provider-posts")
+    public ResponseEntity<List<ServicePost>> getProviderPosts(Authentication auth) {
+        
+        // 🛑 CRITICAL FIX: If unauthorized (token invalid), return 401 without a specific List body.
+        // This resolves the Type mismatch error (cannot convert from ResponseEntity<String> to ResponseEntity<List<ServicePost>>)
+        if (auth == null) {
+            return ResponseEntity.status(401).build(); 
+        }
+        
+        String providerId = auth.getName(); 
+        
+        // Call the service layer to retrieve posts filtered by this ID.
+        // Assumes findByProviderId has been added to ServicePostService and ServiceRepository.
+        List<ServicePost> posts = servicePostService.findByProviderId(providerId);
+        
+        return ResponseEntity.ok(posts);
+    }
+    
+    // POST /api/services (Create)
     @PostMapping
     public ResponseEntity<?> create(@RequestBody ServicePost post, Authentication auth) {
         if (auth == null) return ResponseEntity.status(401).body("Unauthorized");
@@ -42,6 +67,7 @@ public class ServiceController {
         return ResponseEntity.ok(saved);
     }
 
+    // PUT /api/services/{id} (Update)
     @PutMapping("{id}")
     public ResponseEntity<?> update(@PathVariable String id, @RequestBody ServicePost body, Authentication auth) {
         ServicePost existing = servicePostService.findById(id);
@@ -66,6 +92,7 @@ public class ServiceController {
         return ResponseEntity.ok(saved);
     }
 
+    // DELETE /api/services/{id} (Delete)
     @DeleteMapping("{id}")
     public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
         ServicePost existing = servicePostService.findById(id);
