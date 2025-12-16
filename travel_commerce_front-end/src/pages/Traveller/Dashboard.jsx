@@ -15,14 +15,12 @@ export default function TravellerDashboard() {
 
     // FIX 1: Posts state is initialized as empty, ready for API data
     const [posts, setPosts] = useState([]); 
-
     const categories = [ 
-        { id: "tour_guide", name: "Tour Guides", img: "/images/cat-guide.jpg" },
-        { id: "driver", name: "Drivers", img: "/images/cat-driver.jpg" },
-        { id: "hotel", name: "Hotels", img: "/images/cat-hotel.jpg" },
-        { id: "adventure", name: "Adventure", img: "/images/cat-adventure.jpg" },
+        { id: "tour_guide", name: "Tour Guides", img: "/public/images/categories/tour-guide.png" },
+        { id: "driver", name: "Drivers", img: "/public/images/categories/driver.png" },
+        { id: "hotel", name: "Hotels", img: "/public/images/categories/hotel.png" },
+        { id: "adventure", name: "Adventure", img: "/public/images/categories/adventure.png" },
     ];
-    
     // Fetch data from backend on component mount
     useEffect(() => {
         async function fetchAllServices() {
@@ -112,7 +110,8 @@ export default function TravellerDashboard() {
                             className={`category-card ${selectedCategory === "all" ? "active" : ""}`}
                             onClick={() => setSelectedCategory("all")}
                         >
-                            <img src="/images/all.jpg" alt="All" />
+                             <img src="/public/images/categories/all.png" alt="All" />
+
                             <p className="category-name">All</p>
                         </div>
                     </div>
