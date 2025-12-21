@@ -1,5 +1,5 @@
 // src/pages/Admin/AdminLogin.jsx
-
+import { useAuth } from "../../context/AuthContext"; //manually injecting an admin user 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar"; 
@@ -13,6 +13,7 @@ export default function AdminLogin() {
     const [err, setErr] = useState("");
     const [loading, setLoading] = useState(false);
     
+    const { login } = useAuth(); // 2. Get the login function
     const nav = useNavigate();
 
     async function handleSubmit(e) {
@@ -27,6 +28,17 @@ export default function AdminLogin() {
             if (email === "admin@travel.lk" && password === "securepass") {
                 // In a real app, JWT token and user object are set here
                 // For now, redirect immediately
+                const mockAdminUser = {
+                    name: "System Admin",
+                    email: "admin@travel.lk",
+                    role: "admin" // This must match the check in ProtectedRoute
+                };
+                const mockToken = "mock-jwt-token-12345";
+                
+                // Save to global state/localStorage
+                login(mockAdminUser, mockToken); 
+                // --- THE MISSING PART END ---
+
                 setTimeout(() => {
                     nav("/admin/dashboard");
                 }, 1000);
@@ -80,3 +92,6 @@ export default function AdminLogin() {
         </>
     );
 }
+
+
+//http://localhost:5173/admin/login
