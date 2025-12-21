@@ -22,7 +22,8 @@ export default function AdminLogin() {
         setLoading(true);
 
         // 🚨 TO-DO: Call your Admin-specific login API endpoint: authApi.adminLogin({ email, password })
-        
+        //bypasses the pproper login for demo purposes
+        // --- THE MISSING PART START ---
         try {
             // Mocking a successful login for demonstration
             if (email === "admin@travel.lk" && password === "securepass") {

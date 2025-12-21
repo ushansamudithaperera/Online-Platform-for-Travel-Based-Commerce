@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-/* Pages (as per your existing structure) */
+/* Pages */
 import Home from "./pages/Home/Home";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
@@ -13,63 +13,184 @@ import AdminLogin from "./pages/Admin/AdminLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import Toast from "./components/Toast";
 
-// 🚨 CORRECTED IMPORTS: New components are imported from the 'components' folder
+// --- 1. ADD THIS IMPORT ---
+import AddService from "./pages/Provider/AddService"; 
+// --------------------------
+
 import SelectPlanPage from "./components/SelectPlanPage.jsx"; 
-import PhotoUploadPage from "./components/PhotoUploadPage.jsx"; // 🌟 NEW IMPORT ADDED HERE
-import CheckoutPage from "./components/CheckoutPage.jsx";     
+import PhotoUploadPage from "./components/PhotoUploadPage.jsx"; 
+import CheckoutPage from "./components/CheckoutPage.jsx";     
 import PaymentSuccessPage from "./components/PaymentSuccessPage.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 
-
 export default function App() {
-  const { user } = useAuth();
+  const { user } = useAuth();
 
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/services" element={<AllServices />} />
+      <Route path="/services/:id" element={<ServiceDetails />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      {/* Public service pages */}
-      <Route path="/services" element={<AllServices />} />
-      <Route path="/services/:id" element={<ServiceDetails />} />
+      {/* Payment Flow Routes */}
+      <Route path="/payment/select-plan" element={<SelectPlanPage />} />
+      <Route path="/post/add-photos" element={<PhotoUploadPage />} /> 
+      <Route path="/payment/checkout" element={<CheckoutPage />} />
+      <Route path="/payment/success" element={<PaymentSuccessPage />} />
 
-      {/* Unified Auth pages */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute allowedRoles={["traveller"]} />}>
+        <Route path="/traveller/dashboard" element={<TravellerDashboard />} />
+      </Route>
 
-      {/* 💥 FIX: Payment Flow Routes with the missing Photo Upload route 💥 */}
-      <Route path="/payment/select-plan" element={<SelectPlanPage />} />
-      
-      {/* 🌟 THE MISSING ROUTE IS ADDED HERE, resolving the 404 error */}
-      <Route path="/post/add-photos" element={<PhotoUploadPage />} /> 
-      
-      <Route path="/payment/checkout" element={<CheckoutPage />} />
-      <Route path="/payment/success" element={<PaymentSuccessPage />} />
+      <Route element={<ProtectedRoute allowedRoles={["provider"]} />}>
+        <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+        
+        {/* --- 2. ADD THIS ROUTE --- */}
+        {/* This connects the URL to your new page */}
+        <Route path="/add-service" element={<AddService />} />
+        {/* ------------------------- */}
+        
+      </Route>
 
-      {/* Protected routes */}
-      <Route element={<ProtectedRoute allowedRoles={["traveller"]} />}>
-        <Route path="/traveller/dashboard" element={<TravellerDashboard />} />
-      </Route>
+      {/* Admin */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      </Route>
 
-      <Route element={<ProtectedRoute allowedRoles={["provider"]} />}>
-        <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-      </Route>
+      <Route path="*" element={<div style={{ padding: 40 }}>404 - Not Found</div>} />
 
-      {/* Admin */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      </Route>
-
-      <Route path="*" element={<div style={{ padding: 40 }}>404 - Not Found</div>} />
-
-
-      {/*Temporory code part for testing */}
-      <Route path="/testp" element={<ProviderDashboard />} />
-      <Route path="/testt" element={<TravellerDashboard />} />
-
-
-    </Routes>
-  );
+      {/* Temporary Test Routes */}
+      <Route path="/testp" element={<ProviderDashboard />} />
+      <Route path="/testt" element={<TravellerDashboard />} />
+    </Routes>
+  );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React from "react";
+// import { Routes, Route, Navigate } from "react-router-dom";
+
+// /* Pages (as per your existing structure) */
+// import Home from "./pages/Home/Home";
+// import Login from "./pages/Auth/Login";
+// import Register from "./pages/Auth/Register";
+// import AllServices from "./pages/Service/AllServices";
+// import ServiceDetails from "./pages/Service/ServiceDetails";
+// import TravellerDashboard from "./pages/Traveller/Dashboard";
+// import ProviderDashboard from "./pages/Provider/Dashboard";
+// import AdminLogin from "./pages/Admin/AdminLogin";
+// import AdminDashboard from "./pages/Admin/Dashboard";
+// import Toast from "./components/Toast";
+
+// // --- THIS IS THE NEW IMPORT IMAGE UPLOAD ---
+// import AddService from "./pages/Provider/AddService"; 
+// // --------------------------
+
+
+// // 🚨 CORRECTED IMPORTS: New components are imported from the 'components' folder
+// import SelectPlanPage from "./components/SelectPlanPage.jsx"; 
+// import PhotoUploadPage from "./components/PhotoUploadPage.jsx"; // 🌟 NEW IMPORT ADDED HERE
+// import CheckoutPage from "./components/CheckoutPage.jsx";     
+// import PaymentSuccessPage from "./components/PaymentSuccessPage.jsx";
+
+// import ProtectedRoute from "./components/ProtectedRoute";
+// import { useAuth } from "./context/AuthContext";
+
+
+// export default function App() {
+//   const { user } = useAuth();
+
+//   return (
+//     <Routes>
+//       <Route path="/" element={<Home />} />
+
+//       {/* Public service pages */}
+//       <Route path="/services" element={<AllServices />} />
+//       <Route path="/services/:id" element={<ServiceDetails />} />
+
+//       {/* Unified Auth pages */}
+//       <Route path="/login" element={<Login />} />
+//       <Route path="/register" element={<Register />} />
+
+//       {/* 💥 FIX: Payment Flow Routes with the missing Photo Upload route 💥 */}
+//       <Route path="/payment/select-plan" element={<SelectPlanPage />} />
+//       
+//       {/* 🌟 THE MISSING ROUTE IS ADDED HERE, resolving the 404 error */}
+//       <Route path="/post/add-photos" element={<PhotoUploadPage />} /> 
+      
+//       <Route path="/payment/checkout" element={<CheckoutPage />} />
+//       <Route path="/payment/success" element={<PaymentSuccessPage />} />
+
+//       {/* Protected routes */}
+//       <Route element={<ProtectedRoute allowedRoles={["traveller"]} />}>
+//         <Route path="/traveller/dashboard" element={<TravellerDashboard />} />
+//       </Route>
+
+//       <Route element={<ProtectedRoute allowedRoles={["provider"]} />}>
+//         <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+//       </Route>
+
+
+//       {/* Admin */}
+//       <Route path="/admin/login" element={<AdminLogin />} />
+//       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+//         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+//       </Route>
+
+//       <Route path="*" element={<div style={{ padding: 40 }}>404 - Not Found</div>} />
+
+
+//       {/*Temporory code part for testing */}
+//       <Route path="/testp" element={<ProviderDashboard />} />
+//       <Route path="/testt" element={<TravellerDashboard />} />
+
+
+//     </Routes>
+//   );
+// }
