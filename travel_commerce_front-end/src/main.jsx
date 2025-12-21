@@ -12,17 +12,20 @@ import "./styles/Home.css";
 import "./styles/Register.css";
 import "./styles/Login.css";
 import "./styles/Toast.css";
-
+import { HelmetProvider } from 'react-helmet-async';
 // 🚨 ADDED: Import CSS for the new Payment Flow pages
 import "./styles/PaymentFlow.css"; 
 
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </BrowserRouter>
+    {/* 2. WRAP EVERYTHING WITH HELMETPROVIDER */}
+      <HelmetProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   </React.StrictMode>
 );
