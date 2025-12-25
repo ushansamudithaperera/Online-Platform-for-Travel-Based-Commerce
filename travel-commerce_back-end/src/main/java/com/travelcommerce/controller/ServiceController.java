@@ -103,6 +103,7 @@ public class ServiceController {
         }
     }
 
+    
     // PUT /api/services/{id} (Update)
     @PutMapping("{id}")
     public ResponseEntity<?> update(@PathVariable String id, @RequestBody ServicePost body, Authentication auth) {
@@ -114,22 +115,33 @@ public class ServiceController {
         
         User user = userRepository.findById(userId).orElse(null);
         boolean owner = existing.getProviderId().equals(userId);
+        
+        // 👑 ADMIN POWER: Check if user is Admin
         boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
 
+        // Allow if Owner OR Admin
         if (!owner && !isAdmin) return ResponseEntity.status(403).body("Forbidden");
 
-        existing.setTitle(body.getTitle());
-        existing.setDescription(body.getDescription());
-        existing.setDistrict(body.getDistrict());
-        existing.setLocation(body.getLocation());
-        existing.setCategory(body.getCategory());
-        existing.setImages(body.getImages()); 
-        existing.setPlanId(body.getPlanId());
+        // 1. Update Standard Fields (Owner or Admin can do this)
+        if (body.getTitle() != null) existing.setTitle(body.getTitle());
+        if (body.getDescription() != null) existing.setDescription(body.getDescription());
+        if (body.getDistrict() != null) existing.setDistrict(body.getDistrict());
+        if (body.getLocation() != null) existing.setLocation(body.getLocation());
+        if (body.getCategory() != null) existing.setCategory(body.getCategory());
+        
+        // 2. 🚨 CRITICAL: Allow Status Update (ONLY Admin can do this)
+        if (isAdmin && body.getStatus() != null) {
+            existing.setStatus(body.getStatus());
+        }
+
+        // 3. Handle Images
+        if (body.getImages() != null) existing.setImages(body.getImages());
+        if (body.getImageBase64() != null) existing.setImageBase64(body.getImageBase64());
 
         ServicePost saved = servicePostService.update(existing);
         return ResponseEntity.ok(saved);
     }
-
+   
     // DELETE /api/services/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {

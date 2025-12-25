@@ -1,12 +1,13 @@
 /* HEADER HEIGHT VARIABLE */
 :root {
-  --nav-height: 50px;   /* adjust this to match your actual header height */
+  --nav-height: 50px;
 }
 
 /* Push content BELOW the fixed header */
 html, body {
   padding-top: 50px !important;
   scroll-padding-top: var(--nav-height) !important;
+  margin: 0; /* Reset default browser margin */
 }
 
 /* Fix big white gap issue */
@@ -34,15 +35,16 @@ html, body {
 
 body {
   font-family: Arial, Helvetica, sans-serif;
-  background: var(--bg);
+  background: var(--bg, #f8f9fa); /* Added default color */
   color: #222;
 }
 
 /* layout */
 .container {
-  max-width: 100px;
+  max-width: 1200px; /* ✅ FIXED: Changed 100px to 1200px */
   margin: 0 auto;
   padding: 20px;
+  width: 100%; /* Ensure it fills space on small screens */
 }
 
 .page {
@@ -57,11 +59,49 @@ body {
 
 /* sticky footer support */
 #root {
-  min-height: 100%;
+  min-height: 100vh; /* Changed 100% to 100vh for full viewport */
   display: flex;
   flex-direction: column;
 }
 
 .main-content {
   flex: 1;
+}
+
+/* 🚨 THE PURPLE BUTTON KILLER 🚨 
+   This forces Bootstrap button colors to override any other styles.
+*/
+button.btn-success {
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+  color: white !important;
+}
+
+button.btn-danger {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+}
+
+button.btn-primary {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: white !important;
+}
+
+/* ... existing code ... */
+
+/* 🚨 ADD THIS TO THE BOTTOM OF global.css 🚨 */
+
+/* Unpublish Button (Grey Outline) Fix */
+button.btn-outline-secondary {
+  background-color: transparent !important;
+  border: 1px solid #6c757d !important;
+  color: #6c757d !important;
+}
+
+/* When hovering over Unpublish */
+button.btn-outline-secondary:hover {
+  background-color: #6c757d !important;
+  color: white !important;
 }

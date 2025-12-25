@@ -16,5 +16,5 @@ export const searchServices = (category, district) => {
     if (category) params.append("category", category);
     if (district) params.append("district", district);
     // Calls: GET /api/services/search?category=Hotel&district=Kandy add other parameters later
-    return axios.get(`/services/search?${params.toString()}`);
+    return api.get(`/services/search?${params.toString()}`);
 };
