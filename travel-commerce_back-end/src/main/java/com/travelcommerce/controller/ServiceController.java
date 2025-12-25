@@ -1,3 +1,4 @@
+
 package com.travelcommerce.controller;
 
 import com.travelcommerce.model.ServicePost;
@@ -8,28 +9,39 @@ import com.travelcommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile; // 1. Import for File Upload
+import org.springframework.web.multipart.MultipartFile; 
 import org.springframework.security.core.Authentication;
 
-import java.io.IOException; // 2. Import for Error Handling
-import java.util.Base64;    // 3. Import for Image Conversion
+import java.io.IOException; 
+import java.util.Base64;    
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/services")
-@CrossOrigin(origins = "http://localhost:5173") // 4. ALLOW REACT FRONTEND ACCESS
+@CrossOrigin(origins = "http://localhost:5173") 
 public class ServiceController {
 
     @Autowired private ServicePostService servicePostService;
     @Autowired private UserRepository userRepository;
 
-    // GET /api/services (Fetch ALL - For Traveller/Admin)
+    // GET /api/services (Fetch ALL)
     @GetMapping
     public ResponseEntity<List<ServicePost>> all() {
         return ResponseEntity.ok(servicePostService.findAll());
     }
 
-    // GET /api/services/{id} (Single Post - For Details/SEO)
+    // 🚨 NEW SEARCH ENDPOINT ADDED HERE 🚨
+    // Example: /api/services/search?category=Hotel&district=Kandy
+    @GetMapping("/search")
+    public ResponseEntity<List<ServicePost>> search(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String district
+    ) {
+        List<ServicePost> results = servicePostService.searchPosts(category, district);
+        return ResponseEntity.ok(results);
+    }
+
+    // GET /api/services/{id} (Single Post)
     @GetMapping("{id}")
     public ResponseEntity<?> get(@PathVariable String id) {
         ServicePost p = servicePostService.findById(id);
@@ -37,7 +49,7 @@ public class ServiceController {
         return ResponseEntity.ok(p);
     }
 
-    // GET /api/services/provider-posts (Fetch ONLY Provider's Posts)
+    // GET /api/services/provider-posts (Provider specific)
     @GetMapping("/provider-posts")
     public ResponseEntity<List<ServicePost>> getProviderPosts(Authentication auth) {
         if (auth == null) {
@@ -48,7 +60,7 @@ public class ServiceController {
         return ResponseEntity.ok(posts);
     }
     
-    // 🚨 REFACTORED POST METHOD: Accepts File + Text Data 🚨
+    // POST /api/services (Create with Image)
     @PostMapping
     public ResponseEntity<?> create(
             @RequestParam("title") String title,
@@ -56,10 +68,9 @@ public class ServiceController {
             @RequestParam("district") String district,
             @RequestParam("location") String location,
             @RequestParam("category") String category,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile, // Catch the file
+            @RequestParam(value = "image", required = false) MultipartFile imageFile, 
             Authentication auth
     ) {
-        // A. Security Checks
         if (auth == null) return ResponseEntity.status(401).body("Unauthorized");
         String userId = auth.getName();
         User user = userRepository.findById(userId).orElse(null);
@@ -69,7 +80,6 @@ public class ServiceController {
         }
 
         try {
-            // B. Create the Object Manually
             ServicePost post = new ServicePost();
             post.setProviderId(user.getId());
             post.setStatus(com.travelcommerce.model.Status.PENDING);
@@ -80,10 +90,8 @@ public class ServiceController {
             post.setCategory(category);
             post.setCreatedAt(new java.util.Date());
 
-            // C. Image Logic (Convert File -> Base64 String)
             if (imageFile != null && !imageFile.isEmpty()) {
                 String base64Image = Base64.getEncoder().encodeToString(imageFile.getBytes());
-                // Make sure your ServicePost.java has this field!
                 post.setImageBase64("data:image/jpeg;base64," + base64Image);
             }
 
@@ -115,7 +123,6 @@ public class ServiceController {
         existing.setDistrict(body.getDistrict());
         existing.setLocation(body.getLocation());
         existing.setCategory(body.getCategory());
-        // If you want to update images via JSON body later, keep this:
         existing.setImages(body.getImages()); 
         existing.setPlanId(body.getPlanId());
 
@@ -188,6 +195,10 @@ public class ServiceController {
 
 
 
+
+
+
+
 // package com.travelcommerce.controller;
 
 // import com.travelcommerce.model.ServicePost;
@@ -198,24 +209,28 @@ public class ServiceController {
 // import org.springframework.beans.factory.annotation.Autowired;
 // import org.springframework.http.ResponseEntity;
 // import org.springframework.web.bind.annotation.*;
-// import org.springframework.security.core.Authentication; // Needed to get authenticated user details
+// import org.springframework.web.multipart.MultipartFile; // 1. Import for File Upload
+// import org.springframework.security.core.Authentication;
 
+// import java.io.IOException; // 2. Import for Error Handling
+// import java.util.Base64;    // 3. Import for Image Conversion
 // import java.util.List;
 
 // @RestController
 // @RequestMapping("/api/services")
+// @CrossOrigin(origins = "http://localhost:5173") // 4. ALLOW REACT FRONTEND ACCESS
 // public class ServiceController {
+
 //     @Autowired private ServicePostService servicePostService;
 //     @Autowired private UserRepository userRepository;
 
-//     // GET /api/services (Used by Traveller Dashboard - fetches ALL published posts)
+//     // GET /api/services (Fetch ALL - For Traveller/Admin)
 //     @GetMapping
 //     public ResponseEntity<List<ServicePost>> all() {
-//         // Assuming servicePostService.findAll() only returns ACTIVE/Published posts.
 //         return ResponseEntity.ok(servicePostService.findAll());
 //     }
 
-//     // GET /api/services/{id}
+//     // GET /api/services/{id} (Single Post - For Details/SEO)
 //     @GetMapping("{id}")
 //     public ResponseEntity<?> get(@PathVariable String id) {
 //         ServicePost p = servicePostService.findById(id);
@@ -223,38 +238,62 @@ public class ServiceController {
 //         return ResponseEntity.ok(p);
 //     }
 
-//     // 🚨 NEW ENDPOINT: GET /api/services/provider-posts 
-//     // Purpose: Fetch all posts belonging to the authenticated provider.
-//     // This is the method that caused the type mismatch error.
+//     // GET /api/services/provider-posts (Fetch ONLY Provider's Posts)
 //     @GetMapping("/provider-posts")
 //     public ResponseEntity<List<ServicePost>> getProviderPosts(Authentication auth) {
-        
-//         // 🛑 CRITICAL FIX: If unauthorized (token invalid), return 401 without a specific List body.
-//         // This resolves the Type mismatch error (cannot convert from ResponseEntity<String> to ResponseEntity<List<ServicePost>>)
 //         if (auth == null) {
 //             return ResponseEntity.status(401).build(); 
 //         }
-        
 //         String providerId = auth.getName(); 
-        
-//         // Call the service layer to retrieve posts filtered by this ID.
-//         // Assumes findByProviderId has been added to ServicePostService and ServiceRepository.
 //         List<ServicePost> posts = servicePostService.findByProviderId(providerId);
-        
 //         return ResponseEntity.ok(posts);
 //     }
     
-//     // POST /api/services (Create)
+//     // 🚨 REFACTORED POST METHOD: Accepts File + Text Data 🚨
 //     @PostMapping
-//     public ResponseEntity<?> create(@RequestBody ServicePost post, Authentication auth) {
+//     public ResponseEntity<?> create(
+//             @RequestParam("title") String title,
+//             @RequestParam("description") String description,
+//             @RequestParam("district") String district,
+//             @RequestParam("location") String location,
+//             @RequestParam("category") String category,
+//             @RequestParam(value = "image", required = false) MultipartFile imageFile, // Catch the file
+//             Authentication auth
+//     ) {
+//         // A. Security Checks
 //         if (auth == null) return ResponseEntity.status(401).body("Unauthorized");
 //         String userId = auth.getName();
 //         User user = userRepository.findById(userId).orElse(null);
-//         if (user == null || user.getRole() != Role.ROLE_PROVIDER) return ResponseEntity.status(403).body("Only providers can create services");
-//         post.setProviderId(user.getId());
-//         post.setStatus(com.travelcommerce.model.Status.PENDING);
-//         ServicePost saved = servicePostService.create(post);
-//         return ResponseEntity.ok(saved);
+        
+//         if (user == null || user.getRole() != Role.ROLE_PROVIDER) {
+//             return ResponseEntity.status(403).body("Only providers can create services");
+//         }
+
+//         try {
+//             // B. Create the Object Manually
+//             ServicePost post = new ServicePost();
+//             post.setProviderId(user.getId());
+//             post.setStatus(com.travelcommerce.model.Status.PENDING);
+//             post.setTitle(title);
+//             post.setDescription(description);
+//             post.setDistrict(district);
+//             post.setLocation(location);
+//             post.setCategory(category);
+//             post.setCreatedAt(new java.util.Date());
+
+//             // C. Image Logic (Convert File -> Base64 String)
+//             if (imageFile != null && !imageFile.isEmpty()) {
+//                 String base64Image = Base64.getEncoder().encodeToString(imageFile.getBytes());
+//                 // Make sure your ServicePost.java has this field!
+//                 post.setImageBase64("data:image/jpeg;base64," + base64Image);
+//             }
+
+//             ServicePost saved = servicePostService.create(post);
+//             return ResponseEntity.ok(saved);
+
+//         } catch (IOException e) {
+//             return ResponseEntity.status(500).body("Error processing image upload");
+//         }
 //     }
 
 //     // PUT /api/services/{id} (Update)
@@ -262,12 +301,14 @@ public class ServiceController {
 //     public ResponseEntity<?> update(@PathVariable String id, @RequestBody ServicePost body, Authentication auth) {
 //         ServicePost existing = servicePostService.findById(id);
 //         if (existing == null) return ResponseEntity.notFound().build();
+        
 //         String userId = auth != null ? auth.getName() : null;
+//         if (userId == null) return ResponseEntity.status(401).body("Unauthorized");
+        
 //         User user = userRepository.findById(userId).orElse(null);
-//         if (user == null) return ResponseEntity.status(401).body("Unauthorized");
-
 //         boolean owner = existing.getProviderId().equals(userId);
-//         boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+//         boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
+
 //         if (!owner && !isAdmin) return ResponseEntity.status(403).body("Forbidden");
 
 //         existing.setTitle(body.getTitle());
@@ -275,25 +316,76 @@ public class ServiceController {
 //         existing.setDistrict(body.getDistrict());
 //         existing.setLocation(body.getLocation());
 //         existing.setCategory(body.getCategory());
-//         existing.setImages(body.getImages());
+//         // If you want to update images via JSON body later, keep this:
+//         existing.setImages(body.getImages()); 
 //         existing.setPlanId(body.getPlanId());
 
 //         ServicePost saved = servicePostService.update(existing);
 //         return ResponseEntity.ok(saved);
 //     }
 
-//     // DELETE /api/services/{id} (Delete)
+//     // DELETE /api/services/{id}
 //     @DeleteMapping("{id}")
 //     public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
 //         ServicePost existing = servicePostService.findById(id);
 //         if (existing == null) return ResponseEntity.notFound().build();
+        
 //         String userId = auth != null ? auth.getName() : null;
 //         if (userId == null) return ResponseEntity.status(401).body("Unauthorized");
+        
 //         User user = userRepository.findById(userId).orElse(null);
 //         boolean owner = existing.getProviderId().equals(userId);
-//         boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+//         boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
+
 //         if (!owner && !isAdmin) return ResponseEntity.status(403).body("Forbidden");
+
 //         servicePostService.delete(id);
 //         return ResponseEntity.ok("Deleted");
 //     }
 // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
