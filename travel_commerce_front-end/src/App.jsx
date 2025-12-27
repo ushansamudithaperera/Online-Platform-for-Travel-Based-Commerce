@@ -13,63 +13,64 @@ import AdminLogin from "./pages/Admin/AdminLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import Toast from "./components/Toast";
 
-// 🚨 CORRECTED IMPORTS: New components are imported from the 'components' folder
-import SelectPlanPage from "./components/SelectPlanPage.jsx"; 
-import PhotoUploadPage from "./components/PhotoUploadPage.jsx"; // 🌟 NEW IMPORT ADDED HERE
-import CheckoutPage from "./components/CheckoutPage.jsx";     
+// Payment Flow Components (updated)
+import CheckoutPage from "./components/CheckoutPage.jsx";     
 import PaymentSuccessPage from "./components/PaymentSuccessPage.jsx";
+
+// Import the new ServiceFormModal if you want it as a standalone page (optional)
+// import ServiceFormPage from "./pages/Provider/ServiceFormPage"; 
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 
-
 export default function App() {
-  const { user } = useAuth();
+  const { user } = useAuth();
 
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
 
-      {/* Public service pages */}
-      <Route path="/services" element={<AllServices />} />
-      <Route path="/services/:id" element={<ServiceDetails />} />
+      {/* Public service pages */}
+      <Route path="/services" element={<AllServices />} />
+      <Route path="/services/:id" element={<ServiceDetails />} />
 
-      {/* Unified Auth pages */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Unified Auth pages */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      {/* 💥 FIX: Payment Flow Routes with the missing Photo Upload route 💥 */}
-      <Route path="/payment/select-plan" element={<SelectPlanPage />} />
-      
-      {/* 🌟 THE MISSING ROUTE IS ADDED HERE, resolving the 404 error */}
-      <Route path="/post/add-photos" element={<PhotoUploadPage />} /> 
-      
-      <Route path="/payment/checkout" element={<CheckoutPage />} />
-      <Route path="/payment/success" element={<PaymentSuccessPage />} />
+      {/* 💥 UPDATED: Payment Flow Routes with integrated form flow 💥 */}
+      {/* Note: SelectPlanPage and PhotoUploadPage are now integrated into ProviderDashboard modal */}
+      <Route path="/payment/checkout" element={<CheckoutPage />} />
+      <Route path="/payment/success" element={<PaymentSuccessPage />} />
 
-      {/* Protected routes */}
-      <Route element={<ProtectedRoute allowedRoles={["traveller"]} />}>
-        <Route path="/traveller/dashboard" element={<TravellerDashboard />} />
-      </Route>
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute allowedRoles={["traveller"]} />}>
+        <Route path="/traveller/dashboard" element={<TravellerDashboard />} />
+      </Route>
 
-      <Route element={<ProtectedRoute allowedRoles={["provider"]} />}>
-        <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-      </Route>
+      <Route element={<ProtectedRoute allowedRoles={["provider"]} />}>
+        <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+        {/* Optional: If you want a standalone service creation page */}
+        {/* <Route path="/provider/services/new" element={<ServiceFormPage />} /> */}
+      </Route>
 
-      {/* Admin */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      </Route>
+      {/* Admin */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      </Route>
 
-      <Route path="*" element={<div style={{ padding: 40 }}>404 - Not Found</div>} />
+      {/* Service edit route (if you implement it later) */}
+      <Route element={<ProtectedRoute allowedRoles={["provider"]} />}>
+        <Route path="/services/:id/edit" element={<div>Edit Service Page (To be implemented)</div>} />
+      </Route>
 
+      <Route path="*" element={<div style={{ padding: 40 }}>404 - Not Found</div>} />
 
-      {/*Temporory code part for testing */}
-      <Route path="/testp" element={<ProviderDashboard />} />
-      <Route path="/testt" element={<TravellerDashboard />} />
+      {/* Temporary code part for testing */}
+      <Route path="/testp" element={<ProviderDashboard />} />
+      <Route path="/testt" element={<TravellerDashboard />} />
 
-
-    </Routes>
-  );
+    </Routes>
+  );
 }

@@ -8,8 +8,10 @@ import com.travelcommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication; // Needed to get authenticated user details
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -106,4 +108,16 @@ public class ServiceController {
         servicePostService.delete(id);
         return ResponseEntity.ok("Deleted");
     }
+
+
+
+    // Add to ServiceController.java
+@PostMapping("/upload/images")
+public ResponseEntity<?> uploadImages(@RequestParam("images") List<MultipartFile> files) {
+    // Implement image upload logic (save to cloud storage or server)
+    // Return URLs of uploaded images
+    List<String> imageUrls = new ArrayList<>();
+    // Your upload logic here...
+    return ResponseEntity.ok(imageUrls);
+}
 }
