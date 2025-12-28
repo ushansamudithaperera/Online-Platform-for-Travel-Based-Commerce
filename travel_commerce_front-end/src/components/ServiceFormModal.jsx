@@ -1,189 +1,241 @@
 // src/components/ServiceFormModal.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createService } from "../api/serviceApi";
-import "../styles/ServiceFormModal.css"; // We'll create this CSS
+import { createService, updateService } from "../api/serviceApi";
+import "../styles/ServiceFormModal.css";
 
-// Define plans with photo limits
+// same backend base URL logic as ProviderDashboard
+const backendBaseUrl = "http://localhost:8080";
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
+  }
+  if (imagePath.startsWith("/")) {
+    return `${backendBaseUrl}${imagePath}`;
+  }
+  return `${backendBaseUrl}/uploads/${imagePath}`;
+};
+
+// Plans with photo limits (plan is not changeable in edit mode)
 const PLANS = [
-  { id: 'standard', name: 'Standard Listing', price: 5, photoLimit: 5, color: '#7B68EE' },
-  { id: 'featured', name: 'Featured Visibility', price: 15, photoLimit: 10, color: '#6A5ACD' },
-  { id: 'premium', name: 'Premium Spotlight', price: 30, photoLimit: 30, color: '#9370DB', recommended: true },
+  { id: "standard", name: "Standard Listing", price: 5, photoLimit: 5, color: "#7B68EE" },
+  { id: "featured", name: "Featured Visibility", price: 15, photoLimit: 10, color: "#6A5ACD" },
+  { id: "premium", name: "Premium Spotlight", price: 30, photoLimit: 30, color: "#9370DB", recommended: true },
 ];
 
-export default function ServiceFormModal({ isOpen, onClose, onSuccess }) {
+export default function ServiceFormModal({
+  isOpen,
+  onClose,
+  onSuccess,       // for create
+  mode = "create", // "create" | "edit"
+  initialService,  // for edit
+  onUpdate,        // for edit
+}) {
+  const isEdit = mode === "edit";
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-  // Form state
+
+  // text fields
   const [serviceData, setServiceData] = useState({
-    title: '',
-    description: '',
-    district: '',
-    location: '',
-    category: '',
+    title: "",
+    description: "",
+    district: "",
+    location: "",
+    category: "",
   });
-  
-  // Plan state
+
+  // plan (used for photo limit & price; not editable in edit)
   const [selectedPlan, setSelectedPlan] = useState(PLANS[0]);
-  
-  // Photos state
+
+  // existing images already saved in DB (edit mode)
+  const [existingImages, setExistingImages] = useState([]);
+
+  // new photos selected in this modal (both create & edit)
   const [photos, setPhotos] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
-  
-  // If modal closes, reset form
-  useEffect(() => {
-    if (!isOpen) {
-      resetForm();
-    }
-  }, [isOpen]);
 
+  // reset everything
   const resetForm = () => {
     setServiceData({
-      title: '',
-      description: '',
-      district: '',
-      location: '',
-      category: '',
+      title: "",
+      description: "",
+      district: "",
+      location: "",
+      category: "",
     });
     setSelectedPlan(PLANS[0]);
+    setExistingImages([]);
     setPhotos([]);
     setError("");
     setUploadProgress({});
   };
 
-  // Handle text input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setServiceData(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Handle plan selection
-  const handlePlanSelect = (plan) => {
-    setSelectedPlan(plan);
-    // If user has more photos than new limit, trim them
-    if (photos.length > plan.photoLimit) {
-      setPhotos(prev => prev.slice(0, plan.photoLimit));
-    }
-  };
-
-  // Handle photo upload
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const remainingSlots = selectedPlan.photoLimit - photos.length;
-    
-    if (remainingSlots <= 0) {
-      setError(`Maximum ${selectedPlan.photoLimit} photos allowed for ${selectedPlan.name} plan`);
+  // init on open
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
       return;
     }
-    
+
+    if (isEdit && initialService) {
+      setServiceData({
+        title: initialService.title || "",
+        description: initialService.description || "",
+        district: initialService.district || "",
+        location: initialService.location || "",
+        category: initialService.category || "",
+      });
+
+      if (initialService.planId) {
+        const found = PLANS.find((p) => p.id === initialService.planId);
+        if (found) setSelectedPlan(found);
+      }
+
+      setExistingImages(initialService.images || []);
+      setPhotos([]);
+      setUploadProgress({});
+      setError("");
+    }
+
+    if (!isEdit) {
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isEdit, initialService]);
+
+  // computed counts for photo limits
+  const maxPhotos = isEdit
+    ? selectedPlan?.photoLimit || 30
+    : selectedPlan.photoLimit;
+
+  const totalImagesCount = isEdit
+    ? existingImages.length + photos.length
+    : photos.length;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setServiceData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePlanSelect = (plan) => {
+    if (isEdit) return; // can't change plan after purchase
+    setSelectedPlan(plan);
+    // apply limit to new photos in create mode
+    if (photos.length > plan.photoLimit) {
+      setPhotos((prev) => prev.slice(0, plan.photoLimit));
+    }
+  };
+
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const remainingSlots = maxPhotos - totalImagesCount;
+
+    if (remainingSlots <= 0) {
+      setError(
+        `Maximum ${maxPhotos} photos allowed for ${
+          selectedPlan?.name || "your plan"
+        }`
+      );
+      return;
+    }
+
     const newFiles = files.slice(0, remainingSlots);
-    setPhotos(prev => [...prev, ...newFiles]);
+    setPhotos((prev) => [...prev, ...newFiles]);
     setError("");
   };
 
-  // Remove a photo
   const removePhoto = (index) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Upload photos to backend (mock implementation - you'll need to implement actual upload)
-  const uploadPhotosToServer = async (files) => {
-    // This is a mock implementation
-    // In real app, you would upload to cloud storage or your server
-    const mockImageUrls = files.map((file, index) => 
-      `https://mock-server.com/images/service-${Date.now()}-${index}.jpg`
-    );
-    
-    // Simulate upload progress
-    files.forEach((file, index) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        setUploadProgress(prev => ({ ...prev, [index]: progress }));
-        if (progress >= 100) {
-          clearInterval(interval);
-        }
-      }, 100);
-    });
-    
-    // Wait for all "uploads" to complete
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return mockImageUrls;
+  const removeExistingImage = (index) => {
+    if (!isEdit) return;
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Handle form submission
-   // Update the handleSubmit function completely:
+  // submit handler (create + edit)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // 1. Validate form
       if (!serviceData.title.trim() || !serviceData.description.trim()) {
         throw new Error("Title and description are required");
       }
 
+      // ------------- EDIT MODE -------------
+      if (isEdit) {
+        if (!initialService?.id) {
+          throw new Error("Missing service ID for update");
+        }
+
+        const formData = new FormData();
+        const serviceJson = JSON.stringify({
+          ...serviceData,
+          existingImages, // images user decided to keep
+        });
+
+        formData.append("serviceData", serviceJson);
+        photos.forEach((file) => formData.append("images", file));
+
+        const res = await updateService(initialService.id, formData);
+        if (onUpdate) onUpdate(res.data);
+        onClose();
+        return;
+      }
+
+      // ------------- CREATE MODE -------------
       if (photos.length === 0) {
         throw new Error("Please upload at least one photo");
       }
 
-      // 2. Create FormData object
       const formData = new FormData();
-      
-      // 3. Prepare service data JSON
       const serviceJson = JSON.stringify({
         ...serviceData,
         planId: selectedPlan.id,
-        planName: selectedPlan.name
-      });
-      
-      // 4. Append service data as JSON string
-      formData.append("serviceData", serviceJson);
-      
-      // 5. Append all photo files
-      photos.forEach((file, index) => {
-        formData.append("images", file);
+        planName: selectedPlan.name,
       });
 
-      // 6. Send to backend
+      formData.append("serviceData", serviceJson);
+      photos.forEach((file) => formData.append("images", file));
+
       const response = await createService(formData);
       const createdService = response.data;
 
-      // 7. Close modal and navigate to checkout
       onClose();
-      
-      // 8. Navigate to checkout with service data and selected plan
+
       navigate("/payment/checkout", {
         state: {
           postData: createdService,
           selectedPlan: selectedPlan,
-        }
+        },
       });
 
-      // 9. Optionally call success callback
       if (onSuccess) onSuccess(createdService);
+    } catch (err) {
+      const backendMsg = err.response?.data;
+      const fallbackMsg =
+        err.message || "Failed to save service. Please try again.";
 
-} catch (err) {
-  const backendMsg = err.response?.data;
-  const fallbackMsg = err.message || "Failed to create service. Please try again.";
+      let finalMsg;
+      if (typeof backendMsg === "string") {
+        finalMsg = backendMsg;
+      } else if (backendMsg && typeof backendMsg === "object") {
+        finalMsg = JSON.stringify(backendMsg);
+      } else {
+        finalMsg = fallbackMsg;
+      }
 
-  let finalMsg;
-  if (typeof backendMsg === "string") {
-    finalMsg = backendMsg;
-  } else if (backendMsg && typeof backendMsg === "object") {
-    finalMsg = JSON.stringify(backendMsg);
-  } else {
-    finalMsg = fallbackMsg;
-  }
-
-  setError(finalMsg);
-  console.error("Submission error:", err);
-} finally {
-  setLoading(false);
-}
+      setError(finalMsg);
+      console.error("Submission error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -192,16 +244,18 @@ export default function ServiceFormModal({ isOpen, onClose, onSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="service-form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Create New Service</h2>
-          <button className="close-btn" onClick={onClose}>&times;</button>
+          <h2>{isEdit ? "Edit Service" : "Create New Service"}</h2>
+          <button className="close-btn" onClick={onClose} type="button">
+            &times;
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="service-form">
-          {/* Left Column: Service Details */}
           <div className="form-columns">
+            {/* LEFT: Service details */}
             <div className="form-left">
               <h3>Service Details</h3>
-              
+
               <div className="form-group">
                 <label>Service Title *</label>
                 <input
@@ -262,112 +316,230 @@ export default function ServiceFormModal({ isOpen, onClose, onSuccess }) {
               </div>
 
               <div className="form-group">
-                <label>Location (Google Maps URL) *</label>
+                <label>Location (Google Maps URL)</label>
                 <input
                   type="url"
                   name="location"
                   value={serviceData.location}
                   onChange={handleInputChange}
                   placeholder="https://maps.google.com/..."
-                  required
                 />
               </div>
+
+              {isEdit && (
+                <p className="edit-note">
+                  You can update information and manage photos. Plan and payment
+                  remain unchanged.
+                </p>
+              )}
             </div>
 
-            {/* Right Column: Plan Selection & Photos */}
+            {/* RIGHT: Create vs Edit */}
             <div className="form-right">
-              <h3>Visibility Plan</h3>
-              
-              {/* Plan Selection */}
-              <div className="plan-selection">
-                {PLANS.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className={`plan-option ${selectedPlan.id === plan.id ? 'selected' : ''} ${plan.recommended ? 'recommended' : ''}`}
-                    onClick={() => handlePlanSelect(plan)}
-                  >
-                    {plan.recommended && <span className="recommended-badge">Recommended</span>}
-                    <h4>{plan.name}</h4>
-                    <div className="plan-price">${plan.price}</div>
-                    <div className="plan-features">
-                      <div>📷 {plan.photoLimit} photos</div>
-                      <div>✅ One-time payment</div>
-                      {plan.id === 'premium' && <div>⭐ Top visibility</div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {isEdit ? (
+                <>
+                  <h3>Manage Images</h3>
+                  <p className="upload-hint">
+                    Your current plan (
+                    {selectedPlan?.name || "Listing"}) allows up to{" "}
+                    {maxPhotos} photos. You currently have{" "}
+                    {totalImagesCount}/{maxPhotos}.
+                  </p>
 
-              {/* Photo Upload Section */}
-              <div className="photo-upload-section">
-                <h4>Upload Photos ({photos.length}/{selectedPlan.photoLimit})</h4>
-                
-                <div className="upload-area">
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoUpload}
-                    disabled={photos.length >= selectedPlan.photoLimit || loading}
-                    style={{ display: 'none' }}
-                  />
-                  <label 
-                    htmlFor="photo-upload" 
-                    className={`upload-button ${photos.length >= selectedPlan.photoLimit ? 'disabled' : ''}`}
-                  >
-                    📁 Choose Photos
-                  </label>
-                  <p className="upload-hint">Drag & drop or click to upload (max {selectedPlan.photoLimit})</p>
-                </div>
-
-                {/* Photo Preview Grid */}
-                {photos.length > 0 && (
-                  <div className="photo-preview-grid">
-                    {photos.map((file, index) => (
-                      <div key={index} className="photo-preview-item">
-                        <img 
-                          src={URL.createObjectURL(file)} 
-                          alt={`Preview ${index + 1}`} 
-                        />
-                        <div className="photo-overlay">
-                          <span className="photo-index">{index + 1}</span>
-                          <button 
-                            type="button"
-                            className="remove-photo"
-                            onClick={() => removePhoto(index)}
-                            disabled={loading}
+                  {/* Existing images */}
+                  {existingImages.length > 0 && (
+                    <>
+                      <h4>Current Photos ({existingImages.length})</h4>
+                      <div className="photo-preview-grid">
+                        {existingImages.map((url, index) => (
+                          <div
+                            key={index}
+                            className="photo-preview-item existing"
                           >
-                            ×
-                          </button>
-                        </div>
-                        {uploadProgress[index] && (
-                          <div className="upload-progress">
-                            <div 
-                              className="progress-bar" 
-                              style={{ width: `${uploadProgress[index]}%` }}
+                            <img
+                              src={getImageUrl(url)}
+                              alt={`Existing ${index + 1}`}
                             />
+                            <div className="photo-overlay">
+                              <span className="photo-index">
+                                {index + 1}
+                              </span>
+                              <button
+                                type="button"
+                                className="remove-photo"
+                                onClick={() => removeExistingImage(index)}
+                                disabled={loading}
+                              >
+                                ×
+                              </button>
+                            </div>
                           </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* New images in edit */}
+                  <div className="photo-upload-section">
+                    <h4>
+                      Add New Photos ({photos.length}) – total{" "}
+                      {totalImagesCount}/{maxPhotos}
+                    </h4>
+
+                    <div className="upload-area">
+                      <input
+                        type="file"
+                        id="photo-upload-edit"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        disabled={totalImagesCount >= maxPhotos || loading}
+                        style={{ display: "none" }}
+                      />
+                      <label
+                        htmlFor="photo-upload-edit"
+                        className={`upload-button ${
+                          totalImagesCount >= maxPhotos ? "disabled" : ""
+                        }`}
+                      >
+                        📁 Add Photos
+                      </label>
+                      <p className="upload-hint">
+                        You can add up to {maxPhotos} photos total (existing +
+                        new).
+                      </p>
+                    </div>
+
+                    {photos.length > 0 && (
+                      <div className="photo-preview-grid">
+                        {photos.map((file, index) => (
+                          <div
+                            key={index}
+                            className="photo-preview-item new-photo"
+                          >
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`New ${index + 1}`}
+                            />
+                            <div className="photo-overlay">
+                              <span className="photo-index">
+                                {existingImages.length + index + 1}
+                              </span>
+                              <button
+                                type="button"
+                                className="remove-photo"
+                                onClick={() => removePhoto(index)}
+                                disabled={loading}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3>Visibility Plan</h3>
+
+                  <div className="plan-selection">
+                    {PLANS.map((plan) => (
+                      <div
+                        key={plan.id}
+                        className={`plan-option ${
+                          selectedPlan.id === plan.id ? "selected" : ""
+                        } ${plan.recommended ? "recommended" : ""}`}
+                        onClick={() => handlePlanSelect(plan)}
+                      >
+                        {plan.recommended && (
+                          <span className="recommended-badge">
+                            Recommended
+                          </span>
                         )}
+                        <h4>{plan.name}</h4>
+                        <div className="plan-price">${plan.price}</div>
+                        <div className="plan-features">
+                          <div>📷 {plan.photoLimit} photos</div>
+                          <div>✅ One-time payment</div>
+                          {plan.id === "premium" && (
+                            <div>⭐ Top visibility</div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                )}
 
-                {/* Plan Limit Warning */}
-                {photos.length >= selectedPlan.photoLimit && (
-                  <div className="limit-warning">
-                    ⚠️ Maximum {selectedPlan.photoLimit} photos reached for {selectedPlan.name} plan
+                  <div className="photo-upload-section">
+                    <h4>
+                      Upload Photos ({photos.length}/{selectedPlan.photoLimit})
+                    </h4>
+
+                    <div className="upload-area">
+                      <input
+                        type="file"
+                        id="photo-upload"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        disabled={totalImagesCount >= maxPhotos || loading}
+                        style={{ display: "none" }}
+                      />
+                      <label
+                        htmlFor="photo-upload"
+                        className={`upload-button ${
+                          totalImagesCount >= maxPhotos ? "disabled" : ""
+                        }`}
+                      >
+                        📁 Choose Photos
+                      </label>
+                      <p className="upload-hint">
+                        Drag & drop or click to upload (max{" "}
+                        {selectedPlan.photoLimit})
+                      </p>
+                    </div>
+
+                    {photos.length > 0 && (
+                      <div className="photo-preview-grid">
+                        {photos.map((file, index) => (
+                          <div key={index} className="photo-preview-item">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Preview ${index + 1}`}
+                            />
+                            <div className="photo-overlay">
+                              <span className="photo-index">
+                                {index + 1}
+                              </span>
+                              <button
+                                type="button"
+                                className="remove-photo"
+                                onClick={() => removePhoto(index)}
+                                disabled={loading}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {totalImagesCount >= maxPhotos && (
+                      <div className="limit-warning">
+                        ⚠️ Maximum {maxPhotos} photos reached for{" "}
+                        {selectedPlan.name} plan
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Error Message */}
           {error && <div className="form-error">{error}</div>}
 
-          {/* Action Buttons */}
           <div className="form-actions">
             <button
               type="button"
@@ -380,16 +552,20 @@ export default function ServiceFormModal({ isOpen, onClose, onSuccess }) {
             <button
               type="submit"
               className="submit-btn"
-              disabled={loading || photos.length === 0}
+              disabled={loading || (!isEdit && photos.length === 0)}
             >
-              {loading ? (
-                <>
-                  <span className="spinner"></span>
-                  Processing...
-                </>
-              ) : (
-                `Proceed to Checkout ($${selectedPlan.price})`
-              )}
+              {isEdit
+                ? loading
+                  ? "Saving..."
+                  : "Save Changes"
+                : loading
+                ? (
+                  <>
+                    <span className="spinner"></span>
+                    Processing...
+                  </>
+                )
+                : `Proceed to Checkout ($${selectedPlan.price})`}
             </button>
           </div>
         </form>

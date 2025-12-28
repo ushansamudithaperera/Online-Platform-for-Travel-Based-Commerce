@@ -44,17 +44,19 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
 
-                // ✅ Allow images under /uploads/** without JWT
+                // Allow images for <img> without JWT
                 .requestMatchers("/uploads/**").permitAll()
 
-                // existing public APIs
+                // Public auth endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+
+                // Public services listing and single service
                 .requestMatchers("/api/services", "/api/services/*").permitAll()
 
-                // admin
+                // Admin area
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
 
-                // everything else requires authentication
+                // Everything else requires authentication
                 .anyRequest().authenticated()
             );
 

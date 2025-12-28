@@ -16,7 +16,6 @@ public class ServicePostService {
     private ServiceRepository repo;
 
     public List<ServicePost> findAll() {
-        // Fetch all posts (you can filter by status elsewhere if needed)
         return repo.findAll();
     }
 
@@ -40,14 +39,14 @@ public class ServicePostService {
         repo.deleteById(id);
     }
 
-    // Create post and save images
+    // Create with images
     public ServicePost createWithImages(ServicePost post, List<MultipartFile> files) {
         List<String> savedUrls = uploadFiles(files);
         post.setImages(savedUrls);
         return repo.save(post);
     }
 
-    // Store files on disk and return their URLs
+    // Store files to /uploads and return relative URLs
     public List<String> uploadFiles(List<MultipartFile> files) {
         List<String> urls = new ArrayList<>();
 
@@ -70,7 +69,6 @@ public class ServicePostService {
                 java.nio.file.Path path = java.nio.file.Paths.get(uploadDir + fileName);
                 java.nio.file.Files.copy(file.getInputStream(), path);
 
-                // ✅ Store relative URL in DB
                 String relativeUrl = "/uploads/" + fileName;
                 urls.add(relativeUrl);
 

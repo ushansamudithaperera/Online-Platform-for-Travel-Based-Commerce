@@ -1,10 +1,12 @@
-// src/pages/Provider/ProviderDashboard.jsx (Updated)
+// src/pages/Provider/ProviderDashboard.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import "../../styles/ProviderDashboard.css";
 import Footer from "../../components/Footer";
-import { getProviderServices, deleteService } from "../../api/serviceApi";
+import {
+  getProviderServices,
+  deleteService,
+} from "../../api/serviceApi";
 import ServiceFormModal from "../../components/ServiceFormModal";
 
 const backendBaseUrl = "http://localhost:8080";
@@ -12,65 +14,41 @@ const backendBaseUrl = "http://localhost:8080";
 export default function ProviderDashboard() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [posts, setPosts] = useState([]);
-  const navigate = useNavigate();
 
-  // Function to get full image URL
-  // Function to get full image URL
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-
-    // 1) Full URL already (use as-is)
     if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
       return imagePath;
     }
-
-    // 2) Relative path starting with "/"
     if (imagePath.startsWith("/")) {
       return `${backendBaseUrl}${imagePath}`;
     }
-
-    // 3) Only a file name
     return `${backendBaseUrl}/uploads/${imagePath}`;
   };
-  // Add this debug useEffect to check what data you're getting
+
   useEffect(() => {
-    console.log("Selected post data:", selectedPost);
-    if (selectedPost?.images) {
-      console.log("Post images URLs:", selectedPost.images);
-      // Test each image URL
-      selectedPost.images.forEach((url, index) => {
-        console.log(`Image ${index}: ${url}`);
-        // Try to load image to see if it's accessible
-        const img = new Image();
-        img.onload = () => console.log(`Image ${index} loaded successfully`);
-        img.onerror = () => console.log(`Image ${index} failed to load: ${url}`);
-        img.src = getImageUrl(url);
-      });
-    }
+    setActiveImageIndex(0);
   }, [selectedPost]);
 
-  // Fetch provider's posts
   useEffect(() => {
     fetchProviderPosts();
   }, []);
 
   const fetchProviderPosts = async () => {
     try {
-      console.log("Fetching provider posts...");
       const response = await getProviderServices();
-      console.log("Posts received:", response.data);
-      
-      // Log image URLs for debugging
-      response.data.forEach((post, index) => {
-        console.log(`Post ${index} - ${post.title}:`, {
-          images: post.images,
-          imageCount: post.images?.length || 0
-        });
-      });
-      
-      setPosts(response.data);
+      const data = response.data || [];
+      setPosts(data);
+      if (!selectedPost && data.length > 0) {
+        setSelectedPost(data[0]);
+      }
     } catch (error) {
       console.error("Failed to fetch provider posts:", error);
     } finally {
@@ -78,13 +56,12 @@ export default function ProviderDashboard() {
     }
   };
 
-  // Handle post deletion
   const handleDelete = async (postId) => {
     if (window.confirm("Are you sure you want to delete this service?")) {
       try {
         await deleteService(postId);
-        setPosts(prev => prev.filter(p => p.id !== postId));
-        setSelectedPost(null);
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+        if (selectedPost?.id === postId) setSelectedPost(null);
       } catch (error) {
         console.error("Delete failed:", error);
         alert("Error deleting service");
@@ -92,12 +69,32 @@ export default function ProviderDashboard() {
     }
   };
 
-  // Handle modal success (post creation)
   const handleServiceCreated = (newService) => {
-    // Add the new service to the list
-    setPosts(prev => [newService, ...prev]);
-    // Optionally select the new service
+    setPosts((prev) => [newService, ...prev]);
     setSelectedPost(newService);
+  };
+
+  const handleServiceUpdated = (updatedService) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === updatedService.id ? updatedService : p))
+    );
+    setSelectedPost(updatedService);
+  };
+
+  const images = selectedPost?.images || [];
+
+  const goToPrevImage = () => {
+    if (!images.length) return;
+    setActiveImageIndex((prev) =>
+      prev === 0 ? images.length - 1 : prev - 1
+    );
+  };
+
+  const goToNextImage = () => {
+    if (!images.length) return;
+    setActiveImageIndex((prev) =>
+      prev === images.length - 1 ? 0 : prev + 1
+    );
   };
 
   return (
@@ -105,13 +102,18 @@ export default function ProviderDashboard() {
       <Navbar />
 
       <div className="provider-container">
-        {/* LEFT SIDE — MAIN DETAIL VIEW */}
+        {/* LEFT SIDE */}
         <div className="provider-left">
           <div className="provider-header">
-            <h2>Provider Dashboard</h2>
-            <button 
-              className="add-btn" 
-              onClick={() => setShowModal(true)}
+            <div>
+              <h2>Provider Dashboard</h2>
+              <p className="provider-subtitle">
+                Manage your services, photos and visibility in one place.
+              </p>
+            </div>
+            <button
+              className="add-btn"
+              onClick={() => setShowCreateModal(true)}
             >
               + Add New Service
             </button>
@@ -121,42 +123,70 @@ export default function ProviderDashboard() {
             <p className="loading-msg">Loading dashboard data...</p>
           ) : selectedPost ? (
             <div className="large-post">
+              {/* IMAGE GALLERY */}
               <div className="post-images">
-                {selectedPost.images && selectedPost.images.length > 0 ? (
+                {images.length > 0 ? (
                   <>
-                    <img 
-                      src={getImageUrl(selectedPost.images[0])} 
-                      alt={selectedPost.title} 
-                      className="main-image"
-                      onError={(e) => {
-                        console.error("Failed to load image URL:", selectedPost.images[0]);
-                        e.target.style.display = 'none';
-                        // Show debug info
-                        const debugDiv = document.createElement('div');
-                        debugDiv.className = 'debug-info';
-                        debugDiv.innerHTML = `
-                          <p><strong>Failed to load image</strong></p>
-                          <p>URL: ${selectedPost.images[0]}</p>
-                          <p>Full URL: ${getImageUrl(selectedPost.images[0])}</p>
-                          <p>Try opening this URL in new tab to test</p>
-                        `;
-                        e.target.parentElement.appendChild(debugDiv);
-                      }}
-                      onLoad={() => console.log("Main image loaded successfully")}
-                    />
-                    {selectedPost.images.length > 1 && (
-                      <div className="image-thumbnails">
-                        {selectedPost.images.slice(1, 4).map((img, idx) => (
-                          <img 
-                            key={idx} 
-                            src={getImageUrl(img)} 
-                            alt={`Thumb ${idx + 1}`}
-                            onError={(e) => {
-                              console.error("Failed to load thumbnail:", img);
-                              e.target.style.display = 'none';
+                    <div className="image-main-wrapper">
+                      <img
+                        src={getImageUrl(images[activeImageIndex])}
+                        alt={`${selectedPost.title} - Image ${
+                          activeImageIndex + 1
+                        }`}
+                        className="main-image"
+                        onClick={() => {
+                          setLightboxIndex(activeImageIndex);
+                          setLightboxOpen(true);
+                        }}
+                      />
+                      {images.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            className="gallery-nav prev"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              goToPrevImage();
                             }}
-                            onLoad={() => console.log(`Thumbnail ${idx} loaded successfully`)}
-                          />
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            className="gallery-nav next"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              goToNextImage();
+                            }}
+                          >
+                            ›
+                          </button>
+                        </>
+                      )}
+                      {images.length > 0 && (
+                        <div className="image-badge">
+                          {activeImageIndex + 1} / {images.length}
+                        </div>
+                      )}
+                    </div>
+
+                    {images.length > 1 && (
+                      <div className="image-thumbnails">
+                        {images.map((img, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`thumb-wrapper ${
+                              idx === activeImageIndex ? "active" : ""
+                            }`}
+                            onClick={() => setActiveImageIndex(idx)}
+                          >
+                            <img
+                              src={getImageUrl(img)}
+                              alt={`Thumbnail ${idx + 1}`}
+                              className="thumbnail-image"
+                            />
+                          </button>
                         ))}
                       </div>
                     )}
@@ -168,45 +198,95 @@ export default function ProviderDashboard() {
                   </div>
                 )}
               </div>
-              
+
+              {/* DETAILS */}
               <div className="post-details">
                 <div className="post-header">
-                  <h3>{selectedPost.title}</h3>
-                  <span className={`status-badge ${selectedPost.status?.toLowerCase()}`}>
-                    {selectedPost.status || 'PENDING'}
+                  <div className="post-header-main">
+                    <h3>{selectedPost.title}</h3>
+                    <div className="post-header-tags">
+                      <span className="category-chip">
+                        {selectedPost.category}
+                      </span>
+                      <span className="district-chip">
+                        {selectedPost.district}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={`status-badge ${
+                      selectedPost.status?.toLowerCase() || "pending"
+                    }`}
+                  >
+                    {selectedPost.status || "PENDING"}
                   </span>
                 </div>
-                
+
                 <p className="post-description">{selectedPost.description}</p>
-                
+
                 <div className="post-meta">
                   <div className="meta-item">
-                    <span className="meta-label">Category:</span>
-                    <span className="meta-value">{selectedPost.category}</span>
+                    <span className="meta-label">Category</span>
+                    <span className="meta-value">
+                      {selectedPost.category || "-"}
+                    </span>
                   </div>
                   <div className="meta-item">
-                    <span className="meta-label">District:</span>
-                    <span className="meta-value">{selectedPost.district}</span>
+                    <span className="meta-label">District</span>
+                    <span className="meta-value">
+                      {selectedPost.district || "-"}
+                    </span>
                   </div>
                   <div className="meta-item">
-                    <span className="meta-label">Plan:</span>
-                    <span className="meta-value plan-tag">{selectedPost.planName || 'Standard'}</span>
+                    <span className="meta-label">Plan</span>
+                    <span className="meta-value plan-tag">
+                      {selectedPost.planName || "Standard Listing"}
+                    </span>
                   </div>
                   <div className="meta-item">
-                    <span className="meta-label">Images:</span>
-                    <span className="meta-value">{selectedPost.images?.length || 0} photos</span>
+                    <span className="meta-label">Images</span>
+                    <span className="meta-value">
+                      {images.length} photo{images.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <div className="meta-item meta-location">
+                    <span className="meta-label">Location</span>
+                    {selectedPost.location ? (
+                      <a
+                        href={selectedPost.location}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="meta-link"
+                      >
+                        View on Google Maps
+                      </a>
+                    ) : (
+                      <span className="meta-value">Not provided</span>
+                    )}
+                  </div>
+                  <div className="meta-item">
+                    <span className="meta-label">Created</span>
+                    <span className="meta-value">
+                      {selectedPost.createdAt
+                        ? new Date(
+                            selectedPost.createdAt
+                          ).toLocaleDateString()
+                        : "-"}
+                    </span>
                   </div>
                 </div>
 
                 <div className="action-buttons">
-                  <button 
+                  <button
                     className="edit-btn"
-                    onClick={() => navigate(`/services/${selectedPost.id}/edit`)}
+                    type="button"
+                    onClick={() => setShowEditModal(true)}
                   >
                     Edit Service
                   </button>
-                  <button 
-                    className="delete-btn" 
+                  <button
+                    className="delete-btn"
+                    type="button"
                     onClick={() => handleDelete(selectedPost.id)}
                   >
                     Delete Service
@@ -217,10 +297,13 @@ export default function ProviderDashboard() {
           ) : (
             <div className="no-post-selected">
               <h3>👈 Select a Service</h3>
-              <p>Choose a service from the list to view details and manage it.</p>
-              <button 
+              <p>
+                Choose a service from the list to view details, update
+                information or manage photos.
+              </p>
+              <button
                 className="add-btn-secondary"
-                onClick={() => setShowModal(true)}
+                onClick={() => setShowCreateModal(true)}
               >
                 + Create Your First Service
               </button>
@@ -228,11 +311,11 @@ export default function ProviderDashboard() {
           )}
         </div>
 
-        {/* RIGHT SIDE — SERVICES LIST */}
+        {/* RIGHT SIDE */}
         <div className="provider-right">
           <div className="services-header">
             <h3>My Services ({posts.length})</h3>
-            <button 
+            <button
               className="refresh-btn"
               onClick={fetchProviderPosts}
               title="Refresh list"
@@ -240,74 +323,144 @@ export default function ProviderDashboard() {
               ↻
             </button>
           </div>
-          
+
           <div className="services-list">
             {loading ? (
               <p>Loading services...</p>
             ) : posts.length === 0 ? (
               <div className="empty-state">
                 <p>No services yet. Create your first one!</p>
-                <button 
+                <button
                   className="add-btn-small"
-                  onClick={() => setShowModal(true)}
+                  onClick={() => setShowCreateModal(true)}
                 >
                   + Add Service
                 </button>
               </div>
             ) : (
-              posts.map((post) => (
-                <div
-                  key={post.id}
-                  className={`service-item ${selectedPost?.id === post.id ? 'active' : ''}`}
-                  onClick={() => {
-                    console.log("Selected post:", post);
-                    console.log("Post images:", post.images);
-                    setSelectedPost(post);
-                  }}
-                >
-                  <div className="service-image">
-                    {post.images && post.images.length > 0 ? (
-                      <img 
-                        src={getImageUrl(post.images[0])} 
-                        alt={post.title}
-                        onError={(e) => {
-                          console.error("Failed to load list image:", post.images[0]);
-                          e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = '<div class="placeholder-img">📷</div>';
-                        }}
-                        onLoad={() => console.log("List image loaded successfully")}
-                      />
-                    ) : (
-                      <div className="placeholder-img">📷</div>
-                    )}
-                  </div>
-                  <div className="service-info">
-                    <h4>{post.title}</h4>
-                    <p className="service-category">{post.category}</p>
-                    <div className="service-meta">
-                      <span className="service-district">{post.district}</span>
-                      <span className={`service-status ${post.status?.toLowerCase()}`}>
-                        {post.status || 'Draft'}
-                      </span>
-                      {post.images && (
-                        <span className="image-count">
-                          📸 {post.images.length}
-                        </span>
+              posts.map((post) => {
+                const img = post.images && post.images[0];
+                return (
+                  <div
+                    key={post.id}
+                    className={`service-item ${
+                      selectedPost?.id === post.id ? "active" : ""
+                    }`}
+                    onClick={() => setSelectedPost(post)}
+                  >
+                    <div className="service-image">
+                      {img ? (
+                        <img
+                          src={getImageUrl(img)}
+                          alt={post.title}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML =
+                              '<div class="placeholder-img">📷</div>';
+                          }}
+                        />
+                      ) : (
+                        <div className="placeholder-img">📷</div>
                       )}
                     </div>
+                    <div className="service-info">
+                      <h4>{post.title}</h4>
+                      <p className="service-category">{post.category}</p>
+                      <div className="service-meta">
+                        <span className="service-district">
+                          {post.district}
+                        </span>
+                        <span
+                          className={`service-status ${
+                            post.status?.toLowerCase() || "pending"
+                          }`}
+                        >
+                          {post.status || "PENDING"}
+                        </span>
+                        {post.images && post.images.length > 0 && (
+                          <span className="image-count">
+                            📸 {post.images.length}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       </div>
 
-      {/* NEW SERVICE FORM MODAL */}
+      {/* IMAGE LIGHTBOX */}
+      {lightboxOpen && selectedPost?.images?.length > 0 && (
+        <div
+          className="lightbox-overlay"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div
+            className="lightbox-inner"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="lightbox-close"
+              type="button"
+              onClick={() => setLightboxOpen(false)}
+            >
+              ×
+            </button>
+            <img
+              src={getImageUrl(selectedPost.images[lightboxIndex])}
+              alt={`Image ${lightboxIndex + 1}`}
+            />
+            {selectedPost.images.length > 1 && (
+              <div className="lightbox-nav">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightboxIndex((prev) =>
+                      prev === 0
+                        ? selectedPost.images.length - 1
+                        : prev - 1
+                    )
+                  }
+                >
+                  ‹
+                </button>
+                <span className="lightbox-counter">
+                  {lightboxIndex + 1} / {selectedPost.images.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightboxIndex((prev) =>
+                      prev === selectedPost.images.length - 1 ? 0 : prev + 1
+                    )
+                  }
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CREATE SERVICE MODAL */}
       <ServiceFormModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        mode="create"
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
         onSuccess={handleServiceCreated}
+      />
+
+      {/* EDIT SERVICE MODAL (same component, edit mode) */}
+      <ServiceFormModal
+        mode="edit"
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        initialService={selectedPost}
+        onUpdate={handleServiceUpdated}
       />
 
       <Footer />
