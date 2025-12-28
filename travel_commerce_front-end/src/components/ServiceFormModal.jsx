@@ -114,6 +114,7 @@ export default function ServiceFormModal({ isOpen, onClose, onSuccess }) {
   };
 
   // Handle form submission
+   // Update the handleSubmit function completely:
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -129,26 +130,32 @@ export default function ServiceFormModal({ isOpen, onClose, onSuccess }) {
         throw new Error("Please upload at least one photo");
       }
 
-      // 2. Upload photos (in real app, this would be actual upload)
-      const imageUrls = await uploadPhotosToServer(photos);
+      // 2. Create FormData object
+      const formData = new FormData();
       
-      // 3. Prepare service data with images and plan
-      const serviceWithImages = {
+      // 3. Prepare service data JSON
+      const serviceJson = JSON.stringify({
         ...serviceData,
-        images: imageUrls,
         planId: selectedPlan.id,
-        planName: selectedPlan.name,
-        price: selectedPlan.price, // Optional: add plan price to service
-      };
+        planName: selectedPlan.name
+      });
+      
+      // 4. Append service data as JSON string
+      formData.append("serviceData", serviceJson);
+      
+      // 5. Append all photo files
+      photos.forEach((file, index) => {
+        formData.append("images", file);
+      });
 
-      // 4. Create service in backend
-      const response = await createService(serviceWithImages);
+      // 6. Send to backend
+      const response = await createService(formData);
       const createdService = response.data;
 
-      // 5. Close modal and navigate to checkout
+      // 7. Close modal and navigate to checkout
       onClose();
       
-      // Navigate to checkout with service data and selected plan
+      // 8. Navigate to checkout with service data and selected plan
       navigate("/payment/checkout", {
         state: {
           postData: createdService,
@@ -156,15 +163,27 @@ export default function ServiceFormModal({ isOpen, onClose, onSuccess }) {
         }
       });
 
-      // Optionally call success callback
+      // 9. Optionally call success callback
       if (onSuccess) onSuccess(createdService);
 
-    } catch (err) {
-      setError(err.message || "Failed to create service. Please try again.");
-      console.error("Submission error:", err);
-    } finally {
-      setLoading(false);
-    }
+} catch (err) {
+  const backendMsg = err.response?.data;
+  const fallbackMsg = err.message || "Failed to create service. Please try again.";
+
+  let finalMsg;
+  if (typeof backendMsg === "string") {
+    finalMsg = backendMsg;
+  } else if (backendMsg && typeof backendMsg === "object") {
+    finalMsg = JSON.stringify(backendMsg);
+  } else {
+    finalMsg = fallbackMsg;
+  }
+
+  setError(finalMsg);
+  console.error("Submission error:", err);
+} finally {
+  setLoading(false);
+}
   };
 
   if (!isOpen) return null;
