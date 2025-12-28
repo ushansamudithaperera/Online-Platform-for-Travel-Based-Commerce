@@ -1,4 +1,3 @@
-
 package com.travelcommerce.controller;
 
 import com.travelcommerce.model.ServicePost;
@@ -6,42 +5,34 @@ import com.travelcommerce.model.User;
 import com.travelcommerce.model.Role;
 import com.travelcommerce.service.ServicePostService;
 import com.travelcommerce.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile; 
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 
-import java.io.IOException; 
-import java.util.Base64;    
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/services")
-@CrossOrigin(origins = "http://localhost:5173") 
 public class ServiceController {
 
     @Autowired private ServicePostService servicePostService;
     @Autowired private UserRepository userRepository;
+    @Autowired private ObjectMapper objectMapper;
 
-    // GET /api/services (Fetch ALL)
+
+    // GET /api/services
     @GetMapping
     public ResponseEntity<List<ServicePost>> all() {
         return ResponseEntity.ok(servicePostService.findAll());
     }
 
-    // 🚨 NEW SEARCH ENDPOINT ADDED HERE 🚨
-    // Example: /api/services/search?category=Hotel&district=Kandy
-    @GetMapping("/search")
-    public ResponseEntity<List<ServicePost>> search(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String district
-    ) {
-        List<ServicePost> results = servicePostService.searchPosts(category, district);
-        return ResponseEntity.ok(results);
-    }
-
-    // GET /api/services/{id} (Single Post)
+    // GET /api/services/{id}
     @GetMapping("{id}")
     public ResponseEntity<?> get(@PathVariable String id) {
         ServicePost p = servicePostService.findById(id);
@@ -49,109 +40,183 @@ public class ServiceController {
         return ResponseEntity.ok(p);
     }
 
-    // GET /api/services/provider-posts (Provider specific)
+
+
+    // GET /api/services/provider-posts
     @GetMapping("/provider-posts")
     public ResponseEntity<List<ServicePost>> getProviderPosts(Authentication auth) {
         if (auth == null) {
-            return ResponseEntity.status(401).build(); 
+            return ResponseEntity.status(401).build();
         }
-        String providerId = auth.getName(); 
+        String providerId = auth.getName();
         List<ServicePost> posts = servicePostService.findByProviderId(providerId);
         return ResponseEntity.ok(posts);
     }
-    
-    // POST /api/services (Create with Image)
-    @PostMapping
+
+    // CREATE - multipart/form-data with JSON + images
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> create(
-            @RequestParam("title") String title,
-            @RequestParam("description") String description,
-            @RequestParam("district") String district,
-            @RequestParam("location") String location,
-            @RequestParam("category") String category,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile, 
-            Authentication auth
-    ) {
+            @RequestPart("serviceData") String serviceDataJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            Authentication auth) {
+
         if (auth == null) return ResponseEntity.status(401).body("Unauthorized");
-        String userId = auth.getName();
-        User user = userRepository.findById(userId).orElse(null);
-        
-        if (user == null || user.getRole() != Role.ROLE_PROVIDER) {
-            return ResponseEntity.status(403).body("Only providers can create services");
-        }
 
         try {
-            ServicePost post = new ServicePost();
-            post.setProviderId(user.getId());
-            post.setStatus(com.travelcommerce.model.Status.PENDING);
-            post.setTitle(title);
-            post.setDescription(description);
-            post.setDistrict(district);
-            post.setLocation(location);
-            post.setCategory(category);
-            post.setCreatedAt(new java.util.Date());
-
-            if (imageFile != null && !imageFile.isEmpty()) {
-                String base64Image = Base64.getEncoder().encodeToString(imageFile.getBytes());
-                post.setImageBase64("data:image/jpeg;base64," + base64Image);
+            String userId = auth.getName();
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null || user.getRole() != Role.ROLE_PROVIDER) {
+                return ResponseEntity.status(403).body("Forbidden");
             }
 
-            ServicePost saved = servicePostService.create(post);
-            return ResponseEntity.ok(saved);
+            Map<String, Object> serviceData = objectMapper.readValue(serviceDataJson, Map.class);
 
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body("Error processing image upload");
+            ServicePost post = new ServicePost();
+            post.setTitle((String) serviceData.get("title"));
+            post.setDescription((String) serviceData.get("description"));
+            post.setDistrict((String) serviceData.get("district"));
+            post.setLocation((String) serviceData.get("location"));
+            post.setCategory((String) serviceData.get("category"));
+            post.setPlanId((String) serviceData.get("planId"));
+            post.setPlanName((String) serviceData.get("planName"));
+            post.setProviderId(userId);
+
+            ServicePost saved;
+            if (images != null && !images.isEmpty()) {
+                System.out.println("Uploading " + images.size() + " image(s)");
+                saved = servicePostService.createWithImages(post, images);
+                System.out.println("Image URLs saved: " + saved.getImages());
+            } else {
+                saved = servicePostService.create(post);
+            }
+
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error creating service: " + e.getMessage());
         }
     }
 
-    
-    // PUT /api/services/{id} (Update)
-    @PutMapping("{id}")
-    public ResponseEntity<?> update(@PathVariable String id, @RequestBody ServicePost body, Authentication auth) {
-        ServicePost existing = servicePostService.findById(id);
-        if (existing == null) return ResponseEntity.notFound().build();
-        
-        String userId = auth != null ? auth.getName() : null;
-        if (userId == null) return ResponseEntity.status(401).body("Unauthorized");
-        
-        User user = userRepository.findById(userId).orElse(null);
-        boolean owner = existing.getProviderId().equals(userId);
-        
-        // 👑 ADMIN POWER: Check if user is Admin
-        boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
+    // EDIT - JSON only (no images, no plan change)
+// EDIT - JSON ONLY (no images, if used elsewhere)
+@PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+public ResponseEntity<?> updateJson(
+        @PathVariable String id,
+        @RequestBody ServicePost updated,
+        Authentication auth) {
 
-        // Allow if Owner OR Admin
-        if (!owner && !isAdmin) return ResponseEntity.status(403).body("Forbidden");
+    if (auth == null) {
+        return ResponseEntity.status(401).body("Unauthorized");
+    }
 
-        // 1. Update Standard Fields (Owner or Admin can do this)
-        if (body.getTitle() != null) existing.setTitle(body.getTitle());
-        if (body.getDescription() != null) existing.setDescription(body.getDescription());
-        if (body.getDistrict() != null) existing.setDistrict(body.getDistrict());
-        if (body.getLocation() != null) existing.setLocation(body.getLocation());
-        if (body.getCategory() != null) existing.setCategory(body.getCategory());
-        
-        // 2. 🚨 CRITICAL: Allow Status Update (ONLY Admin can do this)
-        if (isAdmin && body.getStatus() != null) {
-            existing.setStatus(body.getStatus());
+    ServicePost existing = servicePostService.findById(id);
+    if (existing == null) {
+        return ResponseEntity.notFound().build();
+    }
+
+    String userId = auth.getName();
+    User user = userRepository.findById(userId).orElse(null);
+
+    boolean owner = existing.getProviderId().equals(userId);
+    boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
+
+    if (!owner && !isAdmin) {
+        return ResponseEntity.status(403).body("Forbidden");
+    }
+
+    existing.setTitle(updated.getTitle());
+    existing.setDescription(updated.getDescription());
+    existing.setDistrict(updated.getDistrict());
+    existing.setLocation(updated.getLocation());
+    existing.setCategory(updated.getCategory());
+
+    ServicePost saved = servicePostService.update(existing);
+    return ResponseEntity.ok(saved);
+}
+
+// EDIT WITH IMAGES - multipart/form-data
+@PutMapping(value = "{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> updateWithImages(
+        @PathVariable String id,
+        @RequestPart("serviceData") String serviceDataJson,
+        @RequestPart(value = "images", required = false) List<MultipartFile> images,
+        Authentication auth) {
+
+    if (auth == null) {
+        return ResponseEntity.status(401).body("Unauthorized");
+    }
+
+    ServicePost existing = servicePostService.findById(id);
+    if (existing == null) {
+        return ResponseEntity.notFound().build();
+    }
+
+    String userId = auth.getName();
+    User user = userRepository.findById(userId).orElse(null);
+
+    boolean owner = existing.getProviderId().equals(userId);
+    boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
+
+    if (!owner && !isAdmin) {
+        return ResponseEntity.status(403).body("Forbidden");
+    }
+
+    try {
+        Map<String, Object> data = objectMapper.readValue(serviceDataJson, Map.class);
+
+        existing.setTitle((String) data.get("title"));
+        existing.setDescription((String) data.get("description"));
+        existing.setDistrict((String) data.get("district"));
+        existing.setLocation((String) data.get("location"));
+        existing.setCategory((String) data.get("category"));
+
+        // images to keep (existingImages array from frontend)
+        List<String> finalImages = new java.util.ArrayList<>();
+        Object keepObj = data.get("existingImages");
+        if (keepObj instanceof List<?>) {
+            for (Object o : (List<?>) keepObj) {
+                if (o != null) {
+                    finalImages.add(o.toString());
+                }
+            }
         }
 
-        // 3. Handle Images
-        if (body.getImages() != null) existing.setImages(body.getImages());
-        if (body.getImageBase64() != null) existing.setImageBase64(body.getImageBase64());
+        // upload new images and append
+        if (images != null && !images.isEmpty()) {
+            List<String> newUrls = servicePostService.uploadFiles(images);
+            finalImages.addAll(newUrls);
+        }
+
+        existing.setImages(finalImages);
 
         ServicePost saved = servicePostService.update(existing);
         return ResponseEntity.ok(saved);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.badRequest().body("Error updating service: " + e.getMessage());
     }
-   
+}
+
+
+    // Stand-alone image upload if needed
+    @PostMapping("/upload/images")
+    public ResponseEntity<?> uploadImages(@RequestParam("images") List<MultipartFile> files) {
+        List<String> imageUrls = servicePostService.uploadFiles(files);
+        return ResponseEntity.ok(imageUrls);
+    }
+
     // DELETE /api/services/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
         ServicePost existing = servicePostService.findById(id);
         if (existing == null) return ResponseEntity.notFound().build();
-        
+
         String userId = auth != null ? auth.getName() : null;
         if (userId == null) return ResponseEntity.status(401).body("Unauthorized");
-        
+
         User user = userRepository.findById(userId).orElse(null);
+
         boolean owner = existing.getProviderId().equals(userId);
         boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
 
@@ -161,243 +226,3 @@ public class ServiceController {
         return ResponseEntity.ok("Deleted");
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// package com.travelcommerce.controller;
-
-// import com.travelcommerce.model.ServicePost;
-// import com.travelcommerce.model.User;
-// import com.travelcommerce.model.Role;
-// import com.travelcommerce.service.ServicePostService;
-// import com.travelcommerce.repository.UserRepository;
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.http.ResponseEntity;
-// import org.springframework.web.bind.annotation.*;
-// import org.springframework.web.multipart.MultipartFile; // 1. Import for File Upload
-// import org.springframework.security.core.Authentication;
-
-// import java.io.IOException; // 2. Import for Error Handling
-// import java.util.Base64;    // 3. Import for Image Conversion
-// import java.util.List;
-
-// @RestController
-// @RequestMapping("/api/services")
-// @CrossOrigin(origins = "http://localhost:5173") // 4. ALLOW REACT FRONTEND ACCESS
-// public class ServiceController {
-
-//     @Autowired private ServicePostService servicePostService;
-//     @Autowired private UserRepository userRepository;
-
-//     // GET /api/services (Fetch ALL - For Traveller/Admin)
-//     @GetMapping
-//     public ResponseEntity<List<ServicePost>> all() {
-//         return ResponseEntity.ok(servicePostService.findAll());
-//     }
-
-//     // GET /api/services/{id} (Single Post - For Details/SEO)
-//     @GetMapping("{id}")
-//     public ResponseEntity<?> get(@PathVariable String id) {
-//         ServicePost p = servicePostService.findById(id);
-//         if (p == null) return ResponseEntity.notFound().build();
-//         return ResponseEntity.ok(p);
-//     }
-
-//     // GET /api/services/provider-posts (Fetch ONLY Provider's Posts)
-//     @GetMapping("/provider-posts")
-//     public ResponseEntity<List<ServicePost>> getProviderPosts(Authentication auth) {
-//         if (auth == null) {
-//             return ResponseEntity.status(401).build(); 
-//         }
-//         String providerId = auth.getName(); 
-//         List<ServicePost> posts = servicePostService.findByProviderId(providerId);
-//         return ResponseEntity.ok(posts);
-//     }
-    
-//     // 🚨 REFACTORED POST METHOD: Accepts File + Text Data 🚨
-//     @PostMapping
-//     public ResponseEntity<?> create(
-//             @RequestParam("title") String title,
-//             @RequestParam("description") String description,
-//             @RequestParam("district") String district,
-//             @RequestParam("location") String location,
-//             @RequestParam("category") String category,
-//             @RequestParam(value = "image", required = false) MultipartFile imageFile, // Catch the file
-//             Authentication auth
-//     ) {
-//         // A. Security Checks
-//         if (auth == null) return ResponseEntity.status(401).body("Unauthorized");
-//         String userId = auth.getName();
-//         User user = userRepository.findById(userId).orElse(null);
-        
-//         if (user == null || user.getRole() != Role.ROLE_PROVIDER) {
-//             return ResponseEntity.status(403).body("Only providers can create services");
-//         }
-
-//         try {
-//             // B. Create the Object Manually
-//             ServicePost post = new ServicePost();
-//             post.setProviderId(user.getId());
-//             post.setStatus(com.travelcommerce.model.Status.PENDING);
-//             post.setTitle(title);
-//             post.setDescription(description);
-//             post.setDistrict(district);
-//             post.setLocation(location);
-//             post.setCategory(category);
-//             post.setCreatedAt(new java.util.Date());
-
-//             // C. Image Logic (Convert File -> Base64 String)
-//             if (imageFile != null && !imageFile.isEmpty()) {
-//                 String base64Image = Base64.getEncoder().encodeToString(imageFile.getBytes());
-//                 // Make sure your ServicePost.java has this field!
-//                 post.setImageBase64("data:image/jpeg;base64," + base64Image);
-//             }
-
-//             ServicePost saved = servicePostService.create(post);
-//             return ResponseEntity.ok(saved);
-
-//         } catch (IOException e) {
-//             return ResponseEntity.status(500).body("Error processing image upload");
-//         }
-//     }
-
-//     // PUT /api/services/{id} (Update)
-//     @PutMapping("{id}")
-//     public ResponseEntity<?> update(@PathVariable String id, @RequestBody ServicePost body, Authentication auth) {
-//         ServicePost existing = servicePostService.findById(id);
-//         if (existing == null) return ResponseEntity.notFound().build();
-        
-//         String userId = auth != null ? auth.getName() : null;
-//         if (userId == null) return ResponseEntity.status(401).body("Unauthorized");
-        
-//         User user = userRepository.findById(userId).orElse(null);
-//         boolean owner = existing.getProviderId().equals(userId);
-//         boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
-
-//         if (!owner && !isAdmin) return ResponseEntity.status(403).body("Forbidden");
-
-//         existing.setTitle(body.getTitle());
-//         existing.setDescription(body.getDescription());
-//         existing.setDistrict(body.getDistrict());
-//         existing.setLocation(body.getLocation());
-//         existing.setCategory(body.getCategory());
-//         // If you want to update images via JSON body later, keep this:
-//         existing.setImages(body.getImages()); 
-//         existing.setPlanId(body.getPlanId());
-
-//         ServicePost saved = servicePostService.update(existing);
-//         return ResponseEntity.ok(saved);
-//     }
-
-//     // DELETE /api/services/{id}
-//     @DeleteMapping("{id}")
-//     public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
-//         ServicePost existing = servicePostService.findById(id);
-//         if (existing == null) return ResponseEntity.notFound().build();
-        
-//         String userId = auth != null ? auth.getName() : null;
-//         if (userId == null) return ResponseEntity.status(401).body("Unauthorized");
-        
-//         User user = userRepository.findById(userId).orElse(null);
-//         boolean owner = existing.getProviderId().equals(userId);
-//         boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
-
-//         if (!owner && !isAdmin) return ResponseEntity.status(403).body("Forbidden");
-
-//         servicePostService.delete(id);
-//         return ResponseEntity.ok("Deleted");
-//     }
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

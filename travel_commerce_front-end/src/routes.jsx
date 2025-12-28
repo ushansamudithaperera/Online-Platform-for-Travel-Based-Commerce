@@ -11,7 +11,7 @@ import ServiceDetails from "./pages/Service/ServiceDetails.jsx";
 /* dashboards / admin */
 import TravellerDashboard from "./pages/Traveller/TravellerDashboard.jsx";
 import ProviderDashboard from "./pages/Provider/ProviderDashboard.jsx";
-import AdminLogin from "./pages/Admin/AdminLogin.jsx";  // added admin login page
+import AdminLogin from "./pages/Admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
