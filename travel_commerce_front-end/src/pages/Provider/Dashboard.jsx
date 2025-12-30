@@ -22,6 +22,8 @@ export default function ProviderDashboard() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
@@ -33,8 +35,16 @@ export default function ProviderDashboard() {
     return `${backendBaseUrl}/uploads/${imagePath}`;
   };
 
+  const formatPrice = (value) => {
+    if (value === null || value === undefined || value === "") return null;
+    const num = Number(value);
+    if (Number.isNaN(num)) return value;
+    return num.toLocaleString();
+  };
+
   useEffect(() => {
     setActiveImageIndex(0);
+    setShowFullDescription(false);
   }, [selectedPost]);
 
   useEffect(() => {
@@ -97,6 +107,23 @@ export default function ProviderDashboard() {
     );
   };
 
+  // Description + pricing helpers
+  const priceFromText = selectedPost ? formatPrice(selectedPost.priceFrom) : null;
+  const priceToText = selectedPost ? formatPrice(selectedPost.priceTo) : null;
+  const hasPrice = !!(priceFromText || priceToText);
+
+  const descriptionText = selectedPost?.description || "";
+  const descriptionTooLong = descriptionText.length > 280;
+  const descriptionToShow =
+    showFullDescription || !descriptionTooLong
+      ? descriptionText
+      : descriptionText.slice(0, 280) + "…";
+
+  // Rating preview (no real data yet, just future placeholder)
+  const rating = selectedPost?.averageRating;      // future backend field
+  const reviewCount = selectedPost?.reviewCount;   // future backend field
+  const hasRating = rating !== undefined && rating !== null;
+
   return (
     <>
       <Navbar />
@@ -108,7 +135,8 @@ export default function ProviderDashboard() {
             <div>
               <h2>Provider Dashboard</h2>
               <p className="provider-subtitle">
-                Manage your services, photos and visibility in one place.
+                Preview how your service will appear to travellers. Update details,
+                images and pricing anytime.
               </p>
             </div>
             <button
@@ -222,7 +250,66 @@ export default function ProviderDashboard() {
                   </span>
                 </div>
 
-                <p className="post-description">{selectedPost.description}</p>
+                {/* INFO STRIP: price + rating preview + booking preview */}
+                <div className="info-strip">
+                  {hasPrice && (
+                    <div className="price-highlight">
+                      <span className="price-amount">
+                        {selectedPost.currency || "LKR"}{" "}
+                        {priceFromText}
+                        {priceToText && priceFromText
+                          ? ` – ${priceToText}`
+                          : !priceFromText && priceToText
+                          ? priceToText
+                          : ""}
+                      </span>
+                      {selectedPost.priceUnit && (
+                        <span className="price-unit-chip">
+                          {selectedPost.priceUnit}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="rating-preview">
+                    {hasRating ? (
+                      <>
+                        <span className="rating-value">
+                          ⭐ {rating.toFixed(1)}
+                        </span>
+                        <span className="rating-count">
+                          ({reviewCount || 0} reviews)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="rating-placeholder">
+                        ⭐ No reviews yet — travellers will rate this service
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="booking-preview">
+                    <span className="booking-label">Booking ready</span>
+                    <span className="booking-text">
+                      Travellers can request or book this service from their
+                      dashboard.
+                    </span>
+                  </div>
+                </div>
+
+                <h4 className="about-heading">About this service</h4>
+                <p className="post-description description-body">
+                  {descriptionToShow || "No description provided yet."}
+                </p>
+                {descriptionTooLong && (
+                  <button
+                    type="button"
+                    className="description-toggle"
+                    onClick={() => setShowFullDescription((prev) => !prev)}
+                  >
+                    {showFullDescription ? "Show less" : "Show more"}
+                  </button>
+                )}
 
                 <div className="post-meta">
                   <div className="meta-item">
@@ -340,6 +427,9 @@ export default function ProviderDashboard() {
             ) : (
               posts.map((post) => {
                 const img = post.images && post.images[0];
+                const listPrice =
+                  formatPrice(post.priceFrom ?? post.priceTo) || null;
+
                 return (
                   <div
                     key={post.id}
@@ -380,6 +470,11 @@ export default function ProviderDashboard() {
                         {post.images && post.images.length > 0 && (
                           <span className="image-count">
                             📸 {post.images.length}
+                          </span>
+                        )}
+                        {listPrice && (
+                          <span className="service-price">
+                            {(post.currency || "LKR") + " " + listPrice}
                           </span>
                         )}
                       </div>
@@ -454,7 +549,7 @@ export default function ProviderDashboard() {
         onSuccess={handleServiceCreated}
       />
 
-      {/* EDIT SERVICE MODAL (same component, edit mode) */}
+      {/* EDIT SERVICE MODAL */}
       <ServiceFormModal
         mode="edit"
         isOpen={showEditModal}
