@@ -4,6 +4,32 @@ import { useNavigate } from "react-router-dom";
 import { createService, updateService } from "../api/serviceApi";
 import "../styles/ServiceFormModal.css";
 
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+
+// define toolbar config near the top of the file
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, false] }],
+    ["bold", "italic", "underline"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link"],
+    ["clean"],
+  ],
+};
+
+const quillFormats = [
+  "header",
+  "bold",
+  "italic",
+  "underline",
+  "list",
+  "bullet",
+  "link",
+];
+
+
+
 // same backend base URL logic as ProviderDashboard
 const backendBaseUrl = "http://localhost:8080";
 
@@ -157,6 +183,14 @@ export default function ServiceFormModal({
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+
+
+  //update relevant for handlesubmit
+  const stripHtml = (html) =>
+  html
+    ? html.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim()
+    : "";
+
   // submit handler (create + edit)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -164,9 +198,12 @@ export default function ServiceFormModal({
     setError("");
 
     try {
-      if (!serviceData.title.trim() || !serviceData.description.trim()) {
-        throw new Error("Title and description are required");
-      }
+    // helper to strip HTML tags, defined above handleSubmit
+    const descPlain = stripHtml(serviceData.description);
+
+    if (!serviceData.title.trim() || !descPlain) {
+      throw new Error("Title and description are required");
+    }
 
       // ------------- EDIT MODE -------------
       if (isEdit) {
@@ -268,17 +305,19 @@ export default function ServiceFormModal({
                 />
               </div>
 
-              <div className="form-group">
-                <label>Description *</label>
-                <textarea
-                  name="description"
-                  value={serviceData.description}
-                  onChange={handleInputChange}
-                  placeholder="Describe your service in detail..."
-                  rows="4"
-                  required
-                />
-              </div>
+<div className="form-group">
+  <label>Description *</label>
+  <ReactQuill
+    value={serviceData.description}
+    onChange={(value) =>
+      setServiceData((prev) => ({ ...prev, description: value }))
+    }
+    modules={quillModules}
+    formats={quillFormats}
+    theme="snow"
+    placeholder="Describe your service, what’s included, price details, etc..."
+  />
+</div>
 
               <div className="form-group">
                 <label>Category *</label>

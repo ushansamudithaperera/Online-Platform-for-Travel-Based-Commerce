@@ -9,6 +9,9 @@ import {
 } from "../../api/serviceApi";
 import ServiceFormModal from "../../components/ServiceFormModal";
 
+
+
+
 const backendBaseUrl = "http://localhost:8080";
 
 export default function ProviderDashboard() {
@@ -41,6 +44,18 @@ export default function ProviderDashboard() {
     if (Number.isNaN(num)) return value;
     return num.toLocaleString();
   };
+
+  //update relevant
+    const stripHtml = (html) =>
+    html
+      ? html
+          .replace(/<[^>]+>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+      : "";
+
+
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -112,12 +127,9 @@ export default function ProviderDashboard() {
   const priceToText = selectedPost ? formatPrice(selectedPost.priceTo) : null;
   const hasPrice = !!(priceFromText || priceToText);
 
-  const descriptionText = selectedPost?.description || "";
-  const descriptionTooLong = descriptionText.length > 280;
-  const descriptionToShow =
-    showFullDescription || !descriptionTooLong
-      ? descriptionText
-      : descriptionText.slice(0, 280) + "…";
+const descriptionHtml = selectedPost?.description || "";
+const descriptionPlain = stripHtml(descriptionHtml);
+const descriptionTooLong = descriptionPlain.length > 280;
 
   // Rating preview (no real data yet, just future placeholder)
   const rating = selectedPost?.averageRating;      // future backend field
@@ -297,19 +309,28 @@ export default function ProviderDashboard() {
                   </div>
                 </div>
 
-                <h4 className="about-heading">About this service</h4>
-                <p className="post-description description-body">
-                  {descriptionToShow || "No description provided yet."}
-                </p>
-                {descriptionTooLong && (
-                  <button
-                    type="button"
-                    className="description-toggle"
-                    onClick={() => setShowFullDescription((prev) => !prev)}
-                  >
-                    {showFullDescription ? "Show less" : "Show more"}
-                  </button>
-                )}
+<h4 className="about-heading">About this service</h4>
+
+<div
+  className={
+    "post-description description-body" +
+    (!showFullDescription && descriptionTooLong ? " clamped" : "")
+  }
+  dangerouslySetInnerHTML={{
+    __html:
+      descriptionHtml || "<p>No description provided yet.</p>",
+  }}
+/>
+
+{descriptionTooLong && (
+  <button
+    type="button"
+    className="description-toggle"
+    onClick={() => setShowFullDescription((prev) => !prev)}
+  >
+    {showFullDescription ? "Show less" : "Show more"}
+  </button>
+)}
 
                 <div className="post-meta">
                   <div className="meta-item">

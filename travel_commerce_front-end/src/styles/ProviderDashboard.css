@@ -249,9 +249,52 @@
   color: #4b5563;
   line-height: 1.7;
   font-size: 14px;
-  white-space: pre-line;   /* NEW: show line breaks as typed in textarea */
-  word-break: break-word;  /* optional: avoid overflow on very long words */
+  white-space: normal; /* HTML controls line breaks */
 }
+
+/*update*/
+/* When description contains HTML: make paragraphs and lists look nice */
+/* When description contains HTML: make paragraphs and lists look nice */
+.description-body p {
+  margin: 0 0 6px;
+}
+
+.description-body ul,
+.description-body ol {
+  margin: 4px 0 6px 18px;
+}
+
+.description-body li {
+  margin-bottom: 3px;
+}
+
+.description-body strong {
+  font-weight: 600;
+}
+
+.description-body em {
+  font-style: italic;
+}
+
+/* Clamp long descriptions when collapsed */
+.description-body.clamped {
+  max-height: 110px;        /* adjust number of visible lines */
+  overflow: hidden;
+  position: relative;
+}
+
+.description-body.clamped::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff);
+}
+
+
+
 
 /* Meta grid */
 .post-meta {
