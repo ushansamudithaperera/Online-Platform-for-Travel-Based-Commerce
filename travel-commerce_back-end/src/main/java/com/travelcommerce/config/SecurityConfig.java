@@ -53,6 +53,9 @@ public class SecurityConfig {
                 // Public services listing and single service
                 .requestMatchers("/api/services", "/api/services/*").permitAll()
 
+                // Public reviews for any service
+                .requestMatchers("/api/reviews/service/*").permitAll()
+
                 // Admin area
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
 
