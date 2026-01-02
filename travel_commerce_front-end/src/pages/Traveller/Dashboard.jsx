@@ -236,6 +236,30 @@ export default function TravellerDashboard() {
         return (first + last).toUpperCase();
     };
 
+    const toPlainText = (html) => {
+        if (!html) return "";
+        return String(html)
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    };
+
+    const renderCardRating = (ratingValue, reviewCount) => {
+        const value = Math.max(0, Math.min(5, Number(ratingValue) || 0));
+        const count = Number(reviewCount) || 0;
+        return (
+            <div className="card-rating" aria-label={`Rated ${value} out of 5`}>
+                <span className="card-rating-number">{value.toFixed(1)}</span>
+                <span className="card-rating-stars" aria-hidden="true">
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                        <span key={idx} className={idx < Math.round(value) ? "star filled" : "star"}>★</span>
+                    ))}
+                </span>
+                <span className="card-rating-count">({count})</span>
+            </div>
+        );
+    };
+
     const renderStars = (ratingValue) => {
         const value = Math.max(0, Math.min(5, Number(ratingValue) || 0));
         return (
@@ -266,6 +290,9 @@ export default function TravellerDashboard() {
             : p.category.toLowerCase().replace(/ /g, '_') === selectedCategory.toLowerCase() 
         ))
         .filter((p) => (selectedDistrict === "all" ? true : p.district === selectedDistrict));
+
+    // Hybrid layout: list view when searching/filtering and no selection
+    const isListView = !selectedPost && (searchTerm.trim() !== "" || selectedCategory !== "all");
 
     return (
         <>
@@ -507,7 +534,7 @@ export default function TravellerDashboard() {
                             )}
 
                             {/* RIGHT: Posts List */}
-                            <div className={`posts-section ${selectedPost ? "shrunk" : ""}`}>
+                            <div className={`posts-section ${selectedPost ? "shrunk" : ""} ${isListView ? "list-view" : ""}`}>
                                 {loading ? (
                                     <p style={{ padding: '20px' }}>Loading services...</p>
                                 ) : filteredPosts.length === 0 ? (
@@ -517,6 +544,10 @@ export default function TravellerDashboard() {
                                         const cardImages = (p.images || []).filter(Boolean);
                                         const collageImages = cardImages.slice(0, 4);
                                         const remainingCount = Math.max(0, cardImages.length - collageImages.length);
+                                        const ratingValue = p.averageRating ?? p.rating ?? 0;
+                                        const reviewCount = p.reviewCount ?? p.ratingsCount ?? 0;
+                                        const plainDescription = toPlainText(p.description || "");
+                                        const isLongDescription = plainDescription.length > 180;
 
                                         // ensure at least one cell so the card always has a visual
                                         const renderImages = collageImages.length ? collageImages : [null];
@@ -527,6 +558,9 @@ export default function TravellerDashboard() {
                                                 className="post-card"
                                                 onClick={() => setSelectedPost(p)}
                                             >
+                                                <div className="card-rating-badge">
+                                                    {renderCardRating(ratingValue, reviewCount)}
+                                                </div>
                                                 <div
                                                     className={`post-card-media ${
                                                         renderImages.length <= 1 ? "single" : "collage"
@@ -558,14 +592,42 @@ export default function TravellerDashboard() {
                                                 </div>
 
                                                 <div className="post-card-content">
-                                                    <h4 className="post-title">{p.title}</h4>
-                                                    <div className="post-card-subtitle">
-                                                        <span className="post-card-district">{p.district}</span>
-                                                        {p.category && (
-                                                            <span className="post-card-category">
-                                                                {String(p.category).replace(/_/g, " ")}
-                                                            </span>
-                                                        )}
+                                                    <div className="post-card-header-row">
+                                                        <h4 className="post-title">{p.title}</h4>
+                                                    </div>
+
+                                                    <div
+                                                        className="post-card-description-preview"
+                                                        dangerouslySetInnerHTML={{ __html: p.description || "" }}
+                                                    />
+                                                    {isListView && isLongDescription && (
+                                                        <button
+                                                            type="button"
+                                                            className="see-more-link"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedPost(p);
+                                                            }}
+                                                        >
+                                                            See more
+                                                        </button>
+                                                    )}
+
+                                                    <div className="post-card-footer">
+                                                        <div className="post-card-subtitle">
+                                                            <span className="post-card-district">{p.district}</span>
+                                                            {p.category && (
+                                                                <span className="post-card-category">
+                                                                    {String(p.category).replace(/_/g, " ")}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            className="view-details-btn"
+                                                        >
+                                                            View Details
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>

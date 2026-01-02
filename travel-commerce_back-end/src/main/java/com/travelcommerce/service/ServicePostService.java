@@ -2,6 +2,8 @@ package com.travelcommerce.service;
 
 import com.travelcommerce.model.ServicePost;
 import com.travelcommerce.repository.ServiceRepository;
+import com.travelcommerce.repository.ReviewRepository;
+import com.travelcommerce.model.Review;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,16 +17,27 @@ public class ServicePostService {
     @Autowired
     private ServiceRepository repo;
 
+    @Autowired
+    private ReviewRepository reviewRepository;
+
     public List<ServicePost> findAll() {
-        return repo.findAll();
+        List<ServicePost> posts = repo.findAll();
+        attachRatings(posts);
+        return posts;
     }
 
     public List<ServicePost> findByProviderId(String providerId) {
-        return repo.findByProviderId(providerId);
+        List<ServicePost> posts = repo.findByProviderId(providerId);
+        attachRatings(posts);
+        return posts;
     }
 
     public ServicePost findById(String id) {
-        return repo.findById(id).orElse(null);
+        ServicePost post = repo.findById(id).orElse(null);
+        if (post != null) {
+            attachRating(post);
+        }
+        return post;
     }
 
     public ServicePost create(ServicePost p) {
@@ -44,6 +57,24 @@ public class ServicePostService {
         List<String> savedUrls = uploadFiles(files);
         post.setImages(savedUrls);
         return repo.save(post);
+    }
+
+    private void attachRatings(List<ServicePost> posts) {
+        if (posts == null) return;
+        posts.forEach(this::attachRating);
+    }
+
+    private void attachRating(ServicePost post) {
+        if (post == null || post.getId() == null) return;
+        List<Review> reviews = reviewRepository.findByServiceId(post.getId());
+        if (reviews == null || reviews.isEmpty()) {
+            post.setAverageRating(0.0);
+            post.setReviewCount(0L);
+            return;
+        }
+        double avg = reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
+        post.setAverageRating(avg);
+        post.setReviewCount((long) reviews.size());
     }
 
     // Store files to /uploads and return relative URLs

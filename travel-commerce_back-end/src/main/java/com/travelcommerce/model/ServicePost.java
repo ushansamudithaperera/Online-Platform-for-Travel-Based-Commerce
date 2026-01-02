@@ -2,6 +2,7 @@ package com.travelcommerce.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.util.Date;
@@ -22,4 +23,10 @@ public class ServicePost {
     private String planName; // ADD THIS LINE
     private Status status = Status.PENDING;
     private Date createdAt = new Date();
+
+    @Transient
+    private Double averageRating;
+
+    @Transient
+    private Long reviewCount;
 }
