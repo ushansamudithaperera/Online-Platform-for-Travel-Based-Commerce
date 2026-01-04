@@ -39,11 +39,11 @@ body {
 }
 
 /* layout */
-.container {
+/* .container {
   max-width: 100px;
   margin: 0 auto;
   padding: 20px;
-}
+} removed to fix bootstrap conflict */
 
 .page {
   padding: 20px 0;

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 /* Pages */
 import Home from "./pages/Home/Home";
+import About from "./pages/About/About"; // Imported About
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import AllServices from "./pages/Service/AllServices";
@@ -31,6 +32,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
       <Route path="/services" element={<AllServices />} />
       <Route path="/services/:id" element={<ServiceDetails />} />
       <Route path="/login" element={<Login />} />
