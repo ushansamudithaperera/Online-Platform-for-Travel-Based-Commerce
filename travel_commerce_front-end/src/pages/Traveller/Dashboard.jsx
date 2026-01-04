@@ -3,6 +3,7 @@ import Navbar from "../../components/Navbar";
 import "../../styles/TravellerDashboard.css";
 import Footer from "../../components/Footer";
 import { getAllServices } from "../../api/serviceApi"; 
+import { getWishlist, getWishlistIds, toggleWishlist } from "../../api/wishlistApi";
 import { 
     createBooking, 
     getMyBookings, 
@@ -25,7 +26,7 @@ const backendBaseUrl = import.meta.env.VITE_API_BASE?.replace('/api', '') || "ht
 
 export default function TravellerDashboard() {
     const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState("services"); // services, bookings, reviews
+    const [activeTab, setActiveTab] = useState("services"); // services, favorites, bookings, reviews
     
     const [search, setSearch] = useState("");
     const [searchTerm, setSearchTerm] = useState(""); 
@@ -34,6 +35,10 @@ export default function TravellerDashboard() {
     const [selectedPost, setSelectedPost] = useState(null);
     const [loading, setLoading] = useState(true); 
     const [posts, setPosts] = useState([]);
+
+    // Wishlist / Favorites
+    const [wishlistIds, setWishlistIds] = useState([]); // array of serviceIds
+    const [favoritePosts, setFavoritePosts] = useState([]);
 
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     
@@ -90,13 +95,23 @@ export default function TravellerDashboard() {
     
     // Fetch data from backend on component mount
     useEffect(() => {
-        fetchAllServices();
+        if (activeTab === "services") {
+            fetchAllServices();
+            fetchWishlistIds();
+        }
+        if (activeTab === "favorites") {
+            fetchWishlist();
+            fetchWishlistIds();
+        }
         if (activeTab === "bookings") fetchMyBookings();
         if (activeTab === "reviews") fetchMyReviews();
+
+        // avoid carrying a selection across tabs
+        setSelectedPost(null);
     }, [activeTab]); 
 
     useEffect(() => {
-        if (selectedPost && activeTab === "services") {
+        if (selectedPost && (activeTab === "services" || activeTab === "favorites")) {
             fetchServiceReviews(selectedPost.id);
         }
     }, [selectedPost, activeTab]);
@@ -113,6 +128,30 @@ export default function TravellerDashboard() {
         } catch (error) {
             console.error("Failed to fetch public services:", error);
             setPosts([]); 
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function fetchWishlistIds() {
+        try {
+            const response = await getWishlistIds();
+            const ids = Array.isArray(response.data) ? response.data : [];
+            setWishlistIds(ids);
+        } catch (error) {
+            // user might not be logged in / token expired
+            setWishlistIds([]);
+        }
+    }
+
+    async function fetchWishlist() {
+        try {
+            setLoading(true);
+            const response = await getWishlist();
+            setFavoritePosts(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error("Failed to fetch wishlist:", error);
+            setFavoritePosts([]);
         } finally {
             setLoading(false);
         }
@@ -227,6 +266,41 @@ export default function TravellerDashboard() {
         setSearch(searchTerm.toLowerCase());
     };
 
+    const wishlistIdSet = new Set(wishlistIds);
+
+    const handleToggleWishlist = async (e, serviceId) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!serviceId) return;
+
+        const wasLiked = wishlistIdSet.has(serviceId);
+        // optimistic UI update
+        setWishlistIds((prev) => {
+            const prevSet = new Set(Array.isArray(prev) ? prev : []);
+            if (wasLiked) prevSet.delete(serviceId);
+            else prevSet.add(serviceId);
+            return Array.from(prevSet);
+        });
+
+        if (activeTab === "favorites" && wasLiked) {
+            setFavoritePosts((prev) => (Array.isArray(prev) ? prev.filter((p) => p?.id !== serviceId) : prev));
+        }
+
+        try {
+            await toggleWishlist(serviceId);
+        } catch (error) {
+            // revert if server failed
+            setWishlistIds((prev) => {
+                const prevSet = new Set(Array.isArray(prev) ? prev : []);
+                if (wasLiked) prevSet.add(serviceId);
+                else prevSet.delete(serviceId);
+                return Array.from(prevSet);
+            });
+            console.error("Wishlist toggle failed:", error);
+        }
+    };
+
     const getInitials = (name) => {
         const cleaned = String(name || "").trim();
         if (!cleaned) return "TR";
@@ -291,8 +365,10 @@ export default function TravellerDashboard() {
         ))
         .filter((p) => (selectedDistrict === "all" ? true : p.district === selectedDistrict));
 
+    const visiblePosts = activeTab === "favorites" ? favoritePosts : filteredPosts;
+
     // Hybrid layout: list view when searching/filtering and no selection
-    const isListView = !selectedPost && (searchTerm.trim() !== "" || selectedCategory !== "all");
+    const isListView = activeTab === "services" && !selectedPost && (searchTerm.trim() !== "" || selectedCategory !== "all");
 
     return (
         <>
@@ -306,6 +382,12 @@ export default function TravellerDashboard() {
                         onClick={() => setActiveTab("services")}
                     >
                         Browse Services
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === "favorites" ? "active" : ""}`}
+                        onClick={() => setActiveTab("favorites")}
+                    >
+                        My Favorites
                     </button>
                     <button 
                         className={`tab-btn ${activeTab === "bookings" ? "active" : ""}`}
@@ -321,70 +403,85 @@ export default function TravellerDashboard() {
                     </button>
                 </div>
 
-                {/* SERVICES TAB */}
-                {activeTab === "services" && (
+                {/* SERVICES / FAVORITES TAB */}
+                {(activeTab === "services" || activeTab === "favorites") && (
                     <>
-                        {/* SEARCH BAR */}
-                        <div className="search-section">
-                            <div className="search-input-wrapper"> 
-                                <input
-                                    className="search-input"
-                                    type="text"
-                                    placeholder="Search services"
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)} 
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleSearch();
-                                        }
-                                    }}
-                                />
-                                <button className="search-icon-btn" onClick={handleSearch}>
-                                    🔍 
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* DISTRICT FILTER */}
-                        <div className="filter-bar">
-                            <div className="filter-card">
-                                <div className="filter-card-label">District</div>
-                                <select
-                                    className="filter-select"
-                                    value={selectedDistrict}
-                                    onChange={(e) => setSelectedDistrict(e.target.value)}
-                                >
-                                    <option value="all">All Districts</option>
-                                    <option value="Colombo">Colombo</option>
-                                    <option value="Kandy">Kandy</option>
-                                    <option value="Galle">Galle</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* CATEGORY SECTION */}
-                        <div className="category-section">
-                            <div className="category-header">
-                                <div>
-                                    <h3 className="category-title">Categories</h3>
-                                    <p className="category-subtitle">Pick what you’re looking for</p>
+                        {activeTab === "services" && (
+                            <>
+                                {/* SEARCH BAR */}
+                                <div className="search-section">
+                                    <div className="search-input-wrapper"> 
+                                        <input
+                                            className="search-input"
+                                            type="text"
+                                            placeholder="Search services"
+                                            value={searchTerm} 
+                                            onChange={(e) => setSearchTerm(e.target.value)} 
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleSearch();
+                                                }
+                                            }}
+                                        />
+                                        <button className="search-icon-btn" onClick={handleSearch}>
+                                            🔍 
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="category-grid">
-                                {categories.map((cat) => (
-                                    <div
-                                        key={cat.id}
-                                        className={`category-card ${selectedCategory === cat.id ? "active" : ""}`}
-                                        onClick={() => setSelectedCategory(cat.id)}
-                                    >
-                                        <div className="icon-wrapper" aria-hidden="true">
+
+                                {/* DISTRICT FILTER */}
+                                <div className="filter-bar">
+                                    <div className="filter-card">
+                                        <div className="filter-card-label">District</div>
+                                        <select
+                                            className="filter-select"
+                                            value={selectedDistrict}
+                                            onChange={(e) => setSelectedDistrict(e.target.value)}
+                                        >
+                                            <option value="all">All Districts</option>
+                                            <option value="Colombo">Colombo</option>
+                                            <option value="Kandy">Kandy</option>
+                                            <option value="Galle">Galle</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* CATEGORY SECTION */}
+                                <div className="category-section">
+                                    <div className="category-header">
+                                        <div>
+                                            <h3 className="category-title">Categories</h3>
+                                            <p className="category-subtitle">Pick what you’re looking for</p>
+                                        </div>
+                                    </div>
+                                    <div className="category-grid">
+                                        {categories.map((cat) => (
+                                            <div
+                                                key={cat.id}
+                                                className={`category-card ${selectedCategory === cat.id ? "active" : ""}`}
+                                                onClick={() => setSelectedCategory(cat.id)}
+                                            >
+                                                <div className="icon-wrapper" aria-hidden="true">
                                             <cat.icon className="category-icon" />
                                         </div>
                                         <p className="category-name">{cat.name}</p>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                </div>
+                            </>
+                        )}
+
+                        {activeTab === "favorites" && (
+                            <div className="category-section" style={{ marginTop: 0 }}>
+                                <div className="category-header">
+                                    <div>
+                                        <h3 className="category-title">My Favorites</h3>
+                                        <p className="category-subtitle">Services you’ve liked</p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* MAIN CONTENT: TWO COLUMN LAYOUT */}
                         <div className={`main-content ${selectedPost ? "show-two-column" : "single-column"}`}>
@@ -537,15 +634,19 @@ export default function TravellerDashboard() {
                             <div className={`posts-section ${selectedPost ? "shrunk" : ""} ${isListView ? "list-view" : ""}`}>
                                 {loading ? (
                                     <p style={{ padding: '20px' }}>Loading services...</p>
-                                ) : filteredPosts.length === 0 ? (
-                                    <p className="no-results-error">😔 No services found.</p>
+                                ) : visiblePosts.length === 0 ? (
+                                    <p className="no-results-error">
+                                        {activeTab === "favorites" ? "No favorites yet." : "😔 No services found."}
+                                    </p>
                                 ) : (
-                                    filteredPosts.map((p) => {
+                                    visiblePosts.map((p) => {
+                                        const serviceId = p?.id || p?._id;
                                         const cardImages = (p.images || []).filter(Boolean);
                                         const collageImages = cardImages.slice(0, 4);
                                         const remainingCount = Math.max(0, cardImages.length - collageImages.length);
                                         const ratingValue = p.averageRating ?? p.rating ?? 0;
                                         const reviewCount = p.reviewCount ?? p.ratingsCount ?? 0;
+                                        const isLiked = Boolean(serviceId && wishlistIdSet.has(serviceId));
                                         const plainDescription = toPlainText(p.description || "");
                                         const isLongDescription = plainDescription.length > 180;
 
@@ -554,12 +655,20 @@ export default function TravellerDashboard() {
 
                                         return (
                                             <div
-                                                key={p.id}
+                                                key={serviceId}
                                                 className="post-card"
                                                 onClick={() => setSelectedPost(p)}
                                             >
                                                 <div className="card-rating-badge">
                                                     {renderCardRating(ratingValue, reviewCount)}
+                                                    <button
+                                                        type="button"
+                                                        className={`heart-btn ${isLiked ? "active" : ""}`}
+                                                        aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
+                                                        onClick={(e) => handleToggleWishlist(e, serviceId)}
+                                                    >
+                                                        {isLiked ? "♥" : "♡"}
+                                                    </button>
                                                 </div>
                                                 <div
                                                     className={`post-card-media ${

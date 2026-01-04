@@ -17,14 +17,11 @@ public class ServicePostService {
     @Autowired
     private ServiceRepository repo;
 
-<<<<<<< HEAD
     @Autowired
     private ReviewRepository reviewRepository;
-=======
     // ==================================================================================
     // 🟢 TEAMMATES' ORIGINAL CODE (DO NOT TOUCH - KEEPS APP WORKING)
     // ==================================================================================
->>>>>>> origin/main
 
     public List<ServicePost> findAll() {
         List<ServicePost> posts = repo.findAll();

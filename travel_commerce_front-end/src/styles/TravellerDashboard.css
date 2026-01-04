@@ -910,6 +910,11 @@
   gap: 12px;
 }
 
+/* In list view the badge is top-right, so reserve space for it */
+.posts-section.list-view .post-card-header-row {
+  padding-right: 180px;
+}
+
 .card-rating {
   display: inline-flex;
   align-items: center;
@@ -923,8 +928,54 @@
 
 .card-rating-badge {
   position: absolute;
-  top: 10px;
   right: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+/* Grid view: place badge at the bottom of the card */
+.posts-section:not(.list-view) .card-rating-badge {
+  top: auto;
+  bottom: 10px;
+}
+
+/* List view: keep badge at the top-right */
+.posts-section.list-view .card-rating-badge {
+  top: 10px;
+  bottom: auto;
+}
+
+.heart-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.heart-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(17, 24, 39, 0.22);
+}
+
+.heart-btn:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.heart-btn.active {
+  color: #e11d48;
+  border-color: rgba(225, 29, 72, 0.25);
+  background: rgba(225, 29, 72, 0.08);
 }
 
 .card-rating-number {
@@ -956,6 +1007,7 @@
 .posts-section.list-view .post-card-description-preview {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
@@ -1087,6 +1139,11 @@
   font-size: 16px;
   margin-top: 8px;
   font-weight: 700;
+
+  /* Keep long titles from covering the rating badge area */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .post-card-subtitle {
