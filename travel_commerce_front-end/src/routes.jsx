@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 /* pages */
 import Home from "./pages/Home/Home.jsx";
+import About from "./pages/About/About.jsx";
 import Login from "./pages/Auth/Login.jsx";
 import Register from "./pages/Auth/Register.jsx";
 import AllServices from "./pages/Service/AllServices.jsx";
@@ -11,7 +12,7 @@ import ServiceDetails from "./pages/Service/ServiceDetails.jsx";
 /* dashboards / admin */
 import TravellerDashboard from "./pages/Traveller/TravellerDashboard.jsx";
 import ProviderDashboard from "./pages/Provider/ProviderDashboard.jsx";
-import AdminLogin from "./pages/Admin/AdminLogin.jsx";
+import AdminLogin from "./pages/Admin/AdminLogin.jsx";  // added admin login page
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -20,6 +21,7 @@ export default function RoutesElement() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
 
       <Route path="/services" element={<AllServices />} />
       <Route path="/services/:id" element={<ServiceDetails />} />

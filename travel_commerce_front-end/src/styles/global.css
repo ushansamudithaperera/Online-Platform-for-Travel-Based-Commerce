@@ -39,11 +39,11 @@ body {
 }
 
 /* layout */
-.container {
+/* .container {
   max-width: 100px;
   margin: 0 auto;
   padding: 20px;
-}
+} removed to fix bootstrap conflict */
 
 .page {
   padding: 20px 0;
@@ -65,42 +65,3 @@ body {
 .main-content {
   flex: 1;
 }
-
-/* 🚨 THE PURPLE BUTTON KILLER 🚨 
-   This forces Bootstrap button colors to override any other styles.
-*/
-button.btn-success {
-  background-color: #198754 !important;
-  border-color: #198754 !important;
-  color: white !important;
-}
-
-button.btn-danger {
-  background-color: #dc3545 !important;
-  border-color: #dc3545 !important;
-  color: white !important;
-}
-
-button.btn-primary {
-  background-color: #0d6efd !important;
-  border-color: #0d6efd !important;
-  color: white !important;
-}
-
-/* ... existing code ... */
-
-/* 🚨 ADD THIS TO THE BOTTOM OF global.css 🚨 */
-
-/* Unpublish Button (Grey Outline) Fix */
-button.btn-outline-secondary {
-  background-color: transparent !important;
-  border: 1px solid #6c757d !important;
-  color: #6c757d !important;
-}
-
-/* When hovering over Unpublish */
-button.btn-outline-secondary:hover {
-  background-color: #6c757d !important;
-  color: white !important;
-}
-

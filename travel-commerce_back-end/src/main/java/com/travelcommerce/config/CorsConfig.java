@@ -11,6 +11,7 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin("http://localhost:5173"); // React Vite
+        config.addAllowedOrigin("http://localhost:5500"); // React Vite (alternative port)
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
