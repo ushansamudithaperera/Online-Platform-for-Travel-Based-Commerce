@@ -13,6 +13,19 @@ import java.util.List;
 public class ServicePostService {
     @Autowired private ServiceRepository repo;
 
+    @Autowired
+    private ServiceRepository repo;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
+    // ==================================================================================
+    // 🟢 TEAMMATES' ORIGINAL CODE (DO NOT TOUCH - KEEPS APP WORKING)
+    // ==================================================================================
+
+    public List<ServicePost> findAll() {
+        List<ServicePost> posts = repo.findAll();
+        attachRatings(posts);
+        return posts;
     public List<ServicePost> findAll() { 
         // Assuming this fetches published/active posts for the Traveller Dashboard
         return repo.findAll(); 
