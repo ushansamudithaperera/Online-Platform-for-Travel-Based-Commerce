@@ -39,16 +39,29 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/services", "/api/services/*").permitAll()
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                        .anyRequest().authenticated()
-                );
+                // Allow images for <img> without JWT
+                .requestMatchers("/uploads/**").permitAll()
+
+                // Public auth endpoints
+                .requestMatchers("/api/auth/**").permitAll()
+
+                // Public services listing and single service
+                .requestMatchers("/api/services", "/api/services/*").permitAll()
+
+                // Public reviews for any service
+                .requestMatchers("/api/reviews/service/*").permitAll()
+
+                // Admin area
+                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+
+                // Everything else requires authentication
+                .anyRequest().authenticated()
+            );
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
