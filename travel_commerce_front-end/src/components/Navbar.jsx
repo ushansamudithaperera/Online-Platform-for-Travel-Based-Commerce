@@ -55,11 +55,23 @@ export default function Navbar() {
       <div className="nav-inner">
         <Link to="/" className="brand">TravelCommerce</Link>
 
-        <nav className="nav-links">
-          <Link to="/services" className="gradient-link">Services</Link>
-          <Link to="/about" className="gradient-link">About Us</Link>
-          <Link to="/contact" className="gradient-link">Contact</Link>
-          <Link to="/feedback" className="gradient-link">Feedback</Link>
+ 
+          {/* Menu Items */}
+          <ul className="navbar-nav mx-auto mb-2 mb-lg-0">
+            <li className="nav-item">
+              <Link className="nav-link mx-2" to="/services" onClick={closeNav}>Explore</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link mx-2" to="/about" onClick={closeNav}>About Us</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link mx-2" to="/contact" onClick={closeNav}>Contact</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link mx-2" to="/feedback" onClick={closeNav}>Feedback</Link>
+            </li>
+          </ul>
+ 
 
           {!user ? (
             <>

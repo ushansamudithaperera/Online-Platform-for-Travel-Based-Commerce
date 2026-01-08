@@ -3,6 +3,11 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 /* Pages (as per your existing structure) */
 import Home from "./pages/Home/Home";
+ 
+import About from "./pages/About/About"; // Imported About
+import Contact from "./pages/Contact/Contact"; // Imported Contact
+import Feedback from "./pages/Feedback/Feedback"; // Imported Feedback
+ 
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import AllServices from "./pages/Service/AllServices";
@@ -29,8 +34,11 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-
-      {/* Public service pages */}
+ 
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/feedback" element={<Feedback />} />
+ 
       <Route path="/services" element={<AllServices />} />
       <Route path="/services/:id" element={<ServiceDetails />} />
 
