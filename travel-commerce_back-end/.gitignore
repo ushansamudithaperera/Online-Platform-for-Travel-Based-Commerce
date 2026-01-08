@@ -30,6 +30,7 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
+.vscode/
 
-### Secrets ###
-src/main/resources/application.properties
+### Runtime uploads ###
+uploads/

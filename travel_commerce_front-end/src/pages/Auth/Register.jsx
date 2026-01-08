@@ -176,7 +176,7 @@ export default function Register() {
                 }
               >
                 {countryCodes.map((c) => (
-                  <option key={c.name} value={c.code}>
+                  <option key={c.code} value={c.code}>
                     {c.code} ({c.name})
                   </option>
                 ))}
