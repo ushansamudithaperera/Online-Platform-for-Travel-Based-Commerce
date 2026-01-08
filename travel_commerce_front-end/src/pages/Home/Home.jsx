@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
@@ -20,9 +20,46 @@ export default function Home() {
   const navigate = useNavigate();
 
   // Scroll to services when clicking a category
+  // Scroll to services when clicking a category
   const handleCategoryClick = () => {
     navigate("/services");
   };
+
+  /* ---------------- ANIMATION LOGIC ---------------- */
+  const txts = ["Ayubowan", "ආයුබෝවන්"];
+  const [text, setText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loopNum, setLoopNum] = useState(0);
+  const [typingSpeed, setTypingSpeed] = useState(150);
+
+  useEffect(() => {
+    const handleType = () => {
+      const i = loopNum % txts.length;
+      const fullText = txts[i];
+
+      setText(isDeleting
+        ? fullText.substring(0, text.length - 1)
+        : fullText.substring(0, text.length + 1)
+      );
+
+      // Typing Speed
+      setTypingSpeed(isDeleting ? 80 : 150);
+
+      if (!isDeleting && text === fullText) {
+        // Full word typed, pause before deleting
+        setTimeout(() => setIsDeleting(true), 2000);
+        setTypingSpeed(2000); // pause duration
+      } else if (isDeleting && text === "") {
+        // Fully deleted, move to next word
+        setIsDeleting(false);
+        setLoopNum(loopNum + 1);
+        setTypingSpeed(500);
+      }
+    };
+
+    const timer = setTimeout(handleType, typingSpeed);
+    return () => clearTimeout(timer);
+  }, [text, isDeleting, loopNum, typingSpeed, txts]);
 
   return (
     <div style={styles.pageContainer}>
@@ -32,7 +69,9 @@ export default function Home() {
       <section style={styles.heroSection}>
         <div style={styles.heroOverlay}></div>
         <div style={styles.heroContent}>
-          <h1 style={styles.ayubowanText}>Ayubowan</h1>
+          <h1 style={styles.ayubowanText}>
+            {text}<span style={styles.cursor}>|</span>
+          </h1>
           <h2 style={styles.subText}>Experience the Pearl of the Indian Ocean</h2>
           <p style={styles.introText}>
             Connect with verified local guides, drivers, and hosts for an authentic Sri Lankan journey.
@@ -171,6 +210,12 @@ const styles = {
     marginBottom: "10px",
     letterSpacing: "2px",
     fontFamily: "Georgia, serif", // More elegant font for greeting
+    minHeight: "90px", // prevent layout shift
+  },
+  cursor: {
+    color: "#fff",
+    animation: "blink 1s step-end infinite",
+    fontWeight: "100",
   },
   subText: {
     fontSize: "1.8rem",

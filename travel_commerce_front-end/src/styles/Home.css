@@ -1,6 +1,7 @@
 /* Reset default browser spacing */
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -28,14 +29,17 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* full section fills hero */
+  object-fit: cover;
+  /* full section fills hero */
   z-index: 0;
   opacity: 0;
-  transition: opacity 1s ease-in-out; /* smooth fade */
+  transition: opacity 1s ease-in-out;
+  /* smooth fade */
 }
 
 .hero-img.active {
-  opacity: 1; /* show current image */
+  opacity: 1;
+  /* show current image */
 }
 
 /* Overlay for dim effect */
@@ -46,7 +50,7 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 1;
 }
 
@@ -64,13 +68,13 @@ html, body {
 /* Hero text styling */
 .hero h1 {
   font-size: 3rem;
-  text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
 }
 
 .hero p {
   font-size: 1.2rem;
   max-width: 600px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
   margin: 15px auto;
 }
 
@@ -108,7 +112,8 @@ html, body {
   transition: all 0.3s ease;
   display: inline-block;
   letter-spacing: 0.5px;
-  /**/ box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.37); 
+  /**/
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.37);
 }
 
 /* 🔥 REGISTER Button – Gradient */
@@ -154,14 +159,15 @@ html, body {
 .hero-dot {
   width: 9px;
   height: 9px;
-  background-color: rgba(255,255,255,0.6);
+  background-color: rgba(255, 255, 255, 0.6);
   border-radius: 20%;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .hero-dot.active {
-  background-color: #610688; /* highlight active dot */
+  background-color: #610688;
+  /* highlight active dot */
   transform: scale(1.2);
 }
 
@@ -180,15 +186,17 @@ html, body {
   margin: 60px auto;
   padding: 40px 30px;
   text-align: left;
-  background: #f3e8ff; /* light purple background */
+  background: #f3e8ff;
+  /* light purple background */
   border-radius: 16px;
-  box-shadow: 0px 6px 20px rgba(0,0,0,0.08);
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 .our-services h2.section-title {
   font-size: 36px;
   font-weight: bold;
-  color: #6a0dad; /* bold purple heading */
+  color: #6a0dad;
+  /* bold purple heading */
   margin-bottom: 30px;
   text-align: center;
 }
@@ -196,7 +204,8 @@ html, body {
 .our-services .service-description {
   font-size: 18px;
   line-height: 1.8;
-  color: #4b0082; /* deep purple text */
+  color: #4b0082;
+  /* deep purple text */
   max-width: 900px;
   margin: 0 auto;
   white-space: pre-wrap;
@@ -241,20 +250,22 @@ html, body {
   gap: 40px;
   max-width: 1600px;
   width: 100%;
-  margin:  auto;
+  margin: auto;
 }
 
 /* Larger slider wrapper */
 .slider-box {
   width: 100%;
-  max-width: 650px;   /* ⭐ wider */
+  max-width: 650px;
+  /* ⭐ wider */
   margin: auto;
 }
 
 /* Slider titles */
 .slider-title {
   text-align: center;
-  font-size: 26px;     /* bigger title */
+  font-size: 26px;
+  /* bigger title */
   margin-bottom: 12px;
   font-weight: bold;
 }
@@ -274,12 +285,14 @@ html, body {
 
 
 .providers {
-  color: #7a3eb0; /* rich purple */
+  color: #7a3eb0;
+  /* rich purple */
   font-weight: 700;
 }
 
 .travellers {
-  color: #9b59b6; /* lighter complementary purple */
+  color: #9b59b6;
+  /* lighter complementary purple */
   font-weight: 700;
 }
 
@@ -287,7 +300,8 @@ html, body {
 /* Slider container (bigger height + width) */
 .services-slider {
   position: relative;
-  height: 500px;        /* ⭐ Increased height */
+  height: 500px;
+  /* ⭐ Increased height */
   width: 100%;
   /* 
   border-radius: 12px;*/
@@ -315,6 +329,7 @@ html, body {
 .service-card.active {
   left: 0;
 }
+
 .service-card.inactive {
   left: -100%;
 }
@@ -327,7 +342,7 @@ html, body {
   width: 100%;
   height: 100%;
   border-radius: 10px;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
 }
 
 /* Card content */
@@ -358,8 +373,10 @@ html, body {
 
 .dot {
   display: inline-block;
-  width: 10px;    /* bigger */
-  height: 10px;   /* bigger */
+  width: 10px;
+  /* bigger */
+  height: 10px;
+  /* bigger */
   margin: 0 6px;
   background: #bbb;
   border-radius: 50%;
@@ -378,7 +395,8 @@ html, body {
   }
 
   .services-slider {
-    height: 420px;   /* slightly less on mobile */
+    height: 420px;
+    /* slightly less on mobile */
   }
 
   .slider-box {
@@ -418,26 +436,30 @@ html, body {
 }
 
 .feature-box {
-  background: linear-gradient(145deg, #4b0082, #7a3eb0); /* deep purple gradient */
-  color: #f4eaff; /* soft light text */
+  background: linear-gradient(145deg, #4b0082, #7a3eb0);
+  /* deep purple gradient */
+  color: #f4eaff;
+  /* soft light text */
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .feature-box:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
 }
 
 .feature-box h3 {
-  color: #ffeaff; /* light accent heading */
+  color: #ffeaff;
+  /* light accent heading */
   margin-bottom: 10px;
 }
 
 .feature-box p {
-  color: #e0d4ff; /* slightly lighter text */
+  color: #e0d4ff;
+  /* slightly lighter text */
 }
 
 
@@ -458,30 +480,47 @@ html, body {
 }
 
 .step-box {
-  background: #f3e8ff; /* light purple background */
+  background: #f3e8ff;
+  /* light purple background */
   padding: 30px;
   border-radius: 14px;
-  box-shadow: 0px 4px 15px rgba(0,0,0,0.08);
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .step-box:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .step-number {
   font-size: 36px;
   font-weight: bold;
-  color: #8eae12; /* bold purple */
+  color: #8eae12;
+  /* bold purple */
   display: block;
   margin-bottom: 10px;
 }
 
 .step-box h3 {
-  color: #7a3eb0; /* purple headings */
+  color: #7a3eb0;
+  /* purple headings */
 }
 
 .step-box p {
-  color: #4b0082; /* deep purple text */
+  color: #4b0082;
+  /* deep purple text */
+}
+
+/* ---------------- TYPING ANIMATION ---------------- */
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }

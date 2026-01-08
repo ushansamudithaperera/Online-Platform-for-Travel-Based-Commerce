@@ -84,6 +84,9 @@ export default function Navbar() {
             <li className="nav-item">
               <Link className="nav-link mx-2" to="/contact" onClick={closeNav}>Contact</Link>
             </li>
+            <li className="nav-item">
+              <Link className="nav-link mx-2" to="/feedback" onClick={closeNav}>Feedback</Link>
+            </li>
           </ul>
 
           {/* Actions */}
