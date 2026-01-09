@@ -9,11 +9,12 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("overview");
     
     // Data State
-    const [users, setUsers] = useState([]); // 🟢 Now holding REAL data
+    const [users, setUsers] = useState([]); 
     const [posts, setPosts] = useState([]); 
+    const [reviews, setReviews] = useState([]); // 🟢 NEW: Reviews State
     const [loading, setLoading] = useState(false);
 
-    // 1. LOAD REAL DATA (Users & Services)
+    // 1. LOAD REAL DATA
     useEffect(() => {
         const token = localStorage.getItem("token");
         const role = localStorage.getItem("role");
@@ -23,57 +24,49 @@ export default function AdminDashboard() {
             return;
         }
 
+        // Load everything
         fetchServices();
-        fetchUsers(); // 🟢 Load users when dashboard opens
+        fetchUsers();
+        fetchReviews(); // 🟢 NEW: Load reviews
     }, [navigate]);
 
-    // --- FETCH DATA FUNCTIONS ---
+    // --- FETCH FUNCTIONS ---
 
     const fetchServices = async () => {
-        // (Keep existing fetchServices logic)
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(`http://localhost:8080/api/services?t=${new Date().getTime()}`, {
                 method: 'GET',
-                headers: { 
-                    Authorization: `Bearer ${token}`,
-                    'Cache-Control': 'no-cache, no-store'
-                }
+                headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache, no-store' }
             });
-            if (res.ok) {
-                const data = await res.json();
-                setPosts(data);
-            }
-        } catch (err) {
-            console.error("Failed to load services", err);
-        }
+            if (res.ok) setPosts(await res.json());
+        } catch (err) { console.error(err); }
     };
 
-    // 🟢 NEW: Fetch Real Users from Backend
     const fetchUsers = async () => {
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(`http://localhost:8080/api/users`, {
-                method: 'GET',
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) {
-                const data = await res.json();
-                setUsers(data);
-            } else {
-                console.error("Failed to fetch users");
-            }
-        } catch (err) {
-            console.error("Network error fetching users", err);
-        }
+            if (res.ok) setUsers(await res.json());
+        } catch (err) { console.error(err); }
+    };
+
+    // 🟢 NEW: Fetch Reviews
+    const fetchReviews = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`http://localhost:8080/api/reviews`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) setReviews(await res.json());
+        } catch (err) { console.error(err); }
     };
 
     // --- ACTION HANDLERS ---
 
     const handlePostAction = async (postId, action) => {
-        // (Keep your existing handlePostAction logic exactly as it was)
-        // ... paste your existing handlePostAction code here or use the one from previous step ...
-        // For brevity, I am summarizing it, but ensure you keep the full logic:
         const confirmMessage = action === 'delete' ? "Delete post?" : `Mark as ${action}?`;
         if (!window.confirm(confirmMessage)) return;
 
@@ -82,19 +75,11 @@ export default function AdminDashboard() {
 
         const token = localStorage.getItem("token");
         let url = `http://localhost:8080/api/services/${postId}`;
-        let method = "DELETE";
+        let method = action === 'delete' ? "DELETE" : "PUT";
+        
         let body = null;
-        let newStatus = null;
-
-        if (action === 'approve') {
-            method = "PUT";
-            newStatus = "ACTIVE";
-            body = JSON.stringify({ ...postToUpdate, status: newStatus });
-        } else if (action === 'reject') {
-            method = "PUT";
-            newStatus = "BANNED";
-            body = JSON.stringify({ ...postToUpdate, status: newStatus });
-        }
+        if (action === 'approve') body = JSON.stringify({ ...postToUpdate, status: "ACTIVE" });
+        if (action === 'reject') body = JSON.stringify({ ...postToUpdate, status: "BANNED" });
 
         try {
             const res = await fetch(url, {
@@ -107,46 +92,49 @@ export default function AdminDashboard() {
                 if (action === 'delete') {
                     setPosts(prev => prev.filter(p => p.id !== postId));
                 } else {
-                    setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: newStatus } : p));
+                    setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: body ? JSON.parse(body).status : p.status } : p));
                 }
-                fetchServices();
+                alert("Success!");
             } else {
                 alert("Action failed");
             }
-        } catch (err) {
-            alert("Network error");
-        }
+        } catch (err) { alert("Network error"); }
     };
 
-    // 🟢 NEW: Handle User Deletion
     const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Are you sure you want to remove this user? This cannot be undone.")) return;
-
+        if (!window.confirm("Remove this user?")) return;
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
-
             if (res.ok) {
-                alert("User removed successfully");
-                // Optimistic Update
                 setUsers(prev => prev.filter(u => u.id !== userId));
-            } else {
-                const text = await res.text();
-                alert(`Failed: ${text}`);
-            }
-        } catch (err) {
-            console.error(err);
-            alert("Network error deleting user");
-        }
+                alert("User removed");
+            } else alert("Failed to remove user");
+        } catch (err) { alert("Network error"); }
+    };
+
+    // 🟢 NEW: Delete Review
+    const handleDeleteReview = async (reviewId) => {
+        if (!window.confirm("Delete this review?")) return;
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch(`http://localhost:8080/api/reviews/${reviewId}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setReviews(prev => prev.filter(r => r.id !== reviewId));
+                alert("Review deleted");
+            } else alert("Failed to delete review");
+        } catch (err) { alert("Network error"); }
     };
 
     // --- RENDERERS ---
 
     const renderOverview = () => {
-        // 🟢 Calculate Real Stats
         const totalTravellers = users.filter(u => u.role === 'ROLE_TRAVELLER').length;
         const totalProviders = users.filter(u => u.role === 'ROLE_PROVIDER').length;
         
@@ -155,48 +143,34 @@ export default function AdminDashboard() {
                 <div className="stat-card total-users" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
                     <h3>Total Users</h3>
                     <p>{users.length}</p>
-                    <div style={{fontSize: '0.8rem', marginTop: '10px', opacity: 0.9}}>
-                        <span>🎒 {totalTravellers} Travellers</span> • <span>🏢 {totalProviders} Providers</span>
+                    <div style={{fontSize: '0.8rem', marginTop: '10px'}}>
+                        {totalTravellers} Travellers • {totalProviders} Providers
                     </div>
                 </div>
                 <div className="stat-card active-posts">
                     <h3>Live Services</h3>
                     <p>{posts.filter(p => p.status === 'ACTIVE').length}</p>
                 </div>
-                <div className="stat-card pending-review">
-                    <h3>Pending Review</h3>
-                    <p>{posts.filter(p => p.status === 'PENDING').length}</p>
+                {/* 🟢 NEW: Reviews Stat */}
+                <div className="stat-card" style={{background: '#fff', borderLeft: '4px solid #f6ad55', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}>
+                    <h3 style={{margin: 0, color: '#718096', fontSize: '0.9rem', textTransform: 'uppercase'}}>Total Reviews</h3>
+                    <p style={{fontSize: '2rem', fontWeight: 'bold', margin: '10px 0 0', color: '#2d3748'}}>{reviews.length}</p>
                 </div>
             </div>
         );
     };
 
-    // 🟢 NEW: Render User Management Table
     const renderUserManagement = () => (
         <div className="table-container">
             <h3>Manage Users ({users.length})</h3>
             <table>
                 <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Phone</th>
-                        <th>Actions</th>
-                    </tr>
+                    <tr><th>Name</th><th>Role</th><th>Email</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                     {users.map(user => (
                         <tr key={user.id}>
-                            <td>
-                                <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                                    <div style={{width: '30px', height: '30px', borderRadius: '50%', background: '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'}}>
-                                        {user.fullname?.charAt(0) || "U"}
-                                    </div>
-                                    {user.fullname}
-                                </div>
-                            </td>
-                            <td>{user.email}</td>
+                            <td>{user.fullname}</td>
                             <td>
                                 <span className={`status-badge ${user.role === 'ROLE_ADMIN' ? 'admin' : user.role === 'ROLE_PROVIDER' ? 'provider' : 'traveller'}`} 
                                       style={{
@@ -207,16 +181,10 @@ export default function AdminDashboard() {
                                     {user.role.replace('ROLE_', '')}
                                 </span>
                             </td>
-                            <td>{user.telephone}</td>
+                            <td>{user.email}</td>
                             <td>
                                 {user.role !== 'ROLE_ADMIN' && (
-                                    <button 
-                                        className="btn small btn-danger" 
-                                        onClick={() => handleDeleteUser(user.id)}
-                                        style={{backgroundColor: '#ff4d4f', color: 'white'}}
-                                    >
-                                        Remove
-                                    </button>
+                                    <button className="btn small btn-danger" onClick={() => handleDeleteUser(user.id)} style={{backgroundColor: '#ff4d4f', color: 'white'}}>Remove</button>
                                 )}
                             </td>
                         </tr>
@@ -229,35 +197,51 @@ export default function AdminDashboard() {
     const renderPostManagement = () => (
         <div className="table-container">
             <h3>Manage Service Posts ({posts.length})</h3>
-            {/* ... Keep your existing Post Table logic here ... */}
             <table>
                 <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Title</th>
-                        <th>Provider</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
+                    <tr><th>Title</th><th>Provider</th><th>Status</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                     {posts.map(post => (
                         <tr key={post.id}>
-                            <td>
-                                <img src={post.images?.[0] || "/placeholder.png"} alt="img" style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px'}}/>
-                            </td>
                             <td>{post.title}</td>
                             <td>{post.providerId}</td>
                             <td><span className={`status-badge ${post.status?.toLowerCase()}`}>{post.status || 'PENDING'}</span></td>
                             <td className="post-actions-cell">
                                 <button className="btn small btn-approve" onClick={() => handlePostAction(post.id, 'approve')} disabled={post.status === 'ACTIVE'}>Approve</button>
                                 <button className="btn small btn-danger" onClick={() => handlePostAction(post.id, 'reject')} disabled={post.status === 'BANNED'}>Reject</button>
-                                <button className="btn small btn-danger" style={{marginLeft: '5px', background: '#dc3545'}} onClick={() => handlePostAction(post.id, 'delete')}>Delete</button>
+                                <button className="btn small btn-danger" onClick={() => handlePostAction(post.id, 'delete')} style={{marginLeft: '5px', background: '#dc3545'}}>Delete</button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+        </div>
+    );
+
+    // 🟢 NEW: Render Reviews Table
+    const renderReviewManagement = () => (
+        <div className="table-container">
+            <h3>Manage Reviews ({reviews.length})</h3>
+            {reviews.length === 0 ? <p>No reviews found.</p> : (
+            <table>
+                <thead>
+                    <tr><th>Traveller</th><th>Rating</th><th>Comment</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {reviews.map(review => (
+                        <tr key={review.id}>
+                            <td>{review.travellerName || "Anonymous"}</td>
+                            <td style={{color: '#f6ad55', fontSize: '1.2rem'}}>{'★'.repeat(review.rating)}</td>
+                            <td>{review.comment}</td>
+                            <td>
+                                <button className="btn small btn-danger" onClick={() => handleDeleteReview(review.id)} style={{backgroundColor: '#ff4d4f', color: 'white'}}>Delete</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            )}
         </div>
     );
 
@@ -272,19 +256,25 @@ export default function AdminDashboard() {
                             📊 Overview
                         </button>
                         <button className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-                            👥 User Management
+                            👥 Users
                         </button>
                         <button className={`nav-item ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>
-                            📝 Post Management
+                            📝 Posts
+                        </button>
+                        {/* 🟢 NEW: Review Tab Button */}
+                        <button className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>
+                            ⭐ Reviews
                         </button>
                     </nav>
                 </aside>
 
                 <main className="admin-content">
-                    <h1>{activeTab === 'users' ? 'User Management' : activeTab === 'posts' ? 'Post Management' : 'Overview'}</h1>
+                    <h1>{activeTab.toUpperCase()}</h1>
                     {activeTab === "overview" && renderOverview()}
                     {activeTab === "users" && renderUserManagement()}
                     {activeTab === "posts" && renderPostManagement()}
+                    {/* 🟢 NEW: Render Reviews */}
+                    {activeTab === "reviews" && renderReviewManagement()}
                 </main>
             </div>
             <Footer />
@@ -292,9 +282,308 @@ export default function AdminDashboard() {
     );
 }
 
-
-
 //http://localhost:5173/admin/login
+// with review tab added above
+
+
+
+// import React, { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import Navbar from "../../components/Navbar";
+// import Footer from "../../components/Footer";
+// import "../../styles/AdminDashboard.css"; 
+
+// export default function AdminDashboard() {
+//     const navigate = useNavigate();
+//     const [activeTab, setActiveTab] = useState("overview");
+    
+//     // Data State
+//     const [users, setUsers] = useState([]); // 🟢 Now holding REAL data
+//     const [posts, setPosts] = useState([]); 
+//     const [loading, setLoading] = useState(false);
+
+//     // 1. LOAD REAL DATA (Users & Services)
+//     useEffect(() => {
+//         const token = localStorage.getItem("token");
+//         const role = localStorage.getItem("role");
+
+//         if (!token || role !== "ROLE_ADMIN") {
+//             navigate("/admin/login");
+//             return;
+//         }
+
+//         fetchServices();
+//         fetchUsers(); // 🟢 Load users when dashboard opens
+//     }, [navigate]);
+
+//     // --- FETCH DATA FUNCTIONS ---
+
+//     const fetchServices = async () => {
+//         // (Keep existing fetchServices logic)
+//         try {
+//             const token = localStorage.getItem("token");
+//             const res = await fetch(`http://localhost:8080/api/services?t=${new Date().getTime()}`, {
+//                 method: 'GET',
+//                 headers: { 
+//                     Authorization: `Bearer ${token}`,
+//                     'Cache-Control': 'no-cache, no-store'
+//                 }
+//             });
+//             if (res.ok) {
+//                 const data = await res.json();
+//                 setPosts(data);
+//             }
+//         } catch (err) {
+//             console.error("Failed to load services", err);
+//         }
+//     };
+
+//     // 🟢 NEW: Fetch Real Users from Backend
+//     const fetchUsers = async () => {
+//         try {
+//             const token = localStorage.getItem("token");
+//             const res = await fetch(`http://localhost:8080/api/users`, {
+//                 method: 'GET',
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+//             if (res.ok) {
+//                 const data = await res.json();
+//                 setUsers(data);
+//             } else {
+//                 console.error("Failed to fetch users");
+//             }
+//         } catch (err) {
+//             console.error("Network error fetching users", err);
+//         }
+//     };
+
+//     // --- ACTION HANDLERS ---
+
+//     const handlePostAction = async (postId, action) => {
+//         // (Keep your existing handlePostAction logic exactly as it was)
+//         // ... paste your existing handlePostAction code here or use the one from previous step ...
+//         // For brevity, I am summarizing it, but ensure you keep the full logic:
+//         const confirmMessage = action === 'delete' ? "Delete post?" : `Mark as ${action}?`;
+//         if (!window.confirm(confirmMessage)) return;
+
+//         const postToUpdate = posts.find(p => p.id === postId);
+//         if (!postToUpdate && action !== 'delete') return;
+
+//         const token = localStorage.getItem("token");
+//         let url = `http://localhost:8080/api/services/${postId}`;
+//         let method = "DELETE";
+//         let body = null;
+//         let newStatus = null;
+
+//         if (action === 'approve') {
+//             method = "PUT";
+//             newStatus = "ACTIVE";
+//             body = JSON.stringify({ ...postToUpdate, status: newStatus });
+//         } else if (action === 'reject') {
+//             method = "PUT";
+//             newStatus = "BANNED";
+//             body = JSON.stringify({ ...postToUpdate, status: newStatus });
+//         }
+
+//         try {
+//             const res = await fetch(url, {
+//                 method: method,
+//                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+//                 body: body
+//             });
+
+//             if (res.ok) {
+//                 if (action === 'delete') {
+//                     setPosts(prev => prev.filter(p => p.id !== postId));
+//                 } else {
+//                     setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: newStatus } : p));
+//                 }
+//                 fetchServices();
+//             } else {
+//                 alert("Action failed");
+//             }
+//         } catch (err) {
+//             alert("Network error");
+//         }
+//     };
+
+//     // 🟢 NEW: Handle User Deletion
+//     const handleDeleteUser = async (userId) => {
+//         if (!window.confirm("Are you sure you want to remove this user? This cannot be undone.")) return;
+
+//         const token = localStorage.getItem("token");
+//         try {
+//             const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
+//                 method: "DELETE",
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+
+//             if (res.ok) {
+//                 alert("User removed successfully");
+//                 // Optimistic Update
+//                 setUsers(prev => prev.filter(u => u.id !== userId));
+//             } else {
+//                 const text = await res.text();
+//                 alert(`Failed: ${text}`);
+//             }
+//         } catch (err) {
+//             console.error(err);
+//             alert("Network error deleting user");
+//         }
+//     };
+
+//     // --- RENDERERS ---
+
+//     const renderOverview = () => {
+//         // 🟢 Calculate Real Stats
+//         const totalTravellers = users.filter(u => u.role === 'ROLE_TRAVELLER').length;
+//         const totalProviders = users.filter(u => u.role === 'ROLE_PROVIDER').length;
+        
+//         return (
+//             <div className="overview-grid">
+//                 <div className="stat-card total-users" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
+//                     <h3>Total Users</h3>
+//                     <p>{users.length}</p>
+//                     <div style={{fontSize: '0.8rem', marginTop: '10px', opacity: 0.9}}>
+//                         <span>🎒 {totalTravellers} Travellers</span> • <span>🏢 {totalProviders} Providers</span>
+//                     </div>
+//                 </div>
+//                 <div className="stat-card active-posts">
+//                     <h3>Live Services</h3>
+//                     <p>{posts.filter(p => p.status === 'ACTIVE').length}</p>
+//                 </div>
+//                 <div className="stat-card pending-review">
+//                     <h3>Pending Review</h3>
+//                     <p>{posts.filter(p => p.status === 'PENDING').length}</p>
+//                 </div>
+//             </div>
+//         );
+//     };
+
+//     // 🟢 NEW: Render User Management Table
+//     const renderUserManagement = () => (
+//         <div className="table-container">
+//             <h3>Manage Users ({users.length})</h3>
+//             <table>
+//                 <thead>
+//                     <tr>
+//                         <th>Name</th>
+//                         <th>Email</th>
+//                         <th>Role</th>
+//                         <th>Phone</th>
+//                         <th>Actions</th>
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {users.map(user => (
+//                         <tr key={user.id}>
+//                             <td>
+//                                 <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+//                                     <div style={{width: '30px', height: '30px', borderRadius: '50%', background: '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'}}>
+//                                         {user.fullname?.charAt(0) || "U"}
+//                                     </div>
+//                                     {user.fullname}
+//                                 </div>
+//                             </td>
+//                             <td>{user.email}</td>
+//                             <td>
+//                                 <span className={`status-badge ${user.role === 'ROLE_ADMIN' ? 'admin' : user.role === 'ROLE_PROVIDER' ? 'provider' : 'traveller'}`} 
+//                                       style={{
+//                                           backgroundColor: user.role === 'ROLE_ADMIN' ? '#000' : user.role === 'ROLE_PROVIDER' ? '#e3f2fd' : '#f1f8e9',
+//                                           color: user.role === 'ROLE_ADMIN' ? '#fff' : user.role === 'ROLE_PROVIDER' ? '#1976d2' : '#388e3c',
+//                                           padding: '4px 8px', borderRadius: '12px', fontSize: '12px'
+//                                       }}>
+//                                     {user.role.replace('ROLE_', '')}
+//                                 </span>
+//                             </td>
+//                             <td>{user.telephone}</td>
+//                             <td>
+//                                 {user.role !== 'ROLE_ADMIN' && (
+//                                     <button 
+//                                         className="btn small btn-danger" 
+//                                         onClick={() => handleDeleteUser(user.id)}
+//                                         style={{backgroundColor: '#ff4d4f', color: 'white'}}
+//                                     >
+//                                         Remove
+//                                     </button>
+//                                 )}
+//                             </td>
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+
+//     const renderPostManagement = () => (
+//         <div className="table-container">
+//             <h3>Manage Service Posts ({posts.length})</h3>
+//             {/* ... Keep your existing Post Table logic here ... */}
+//             <table>
+//                 <thead>
+//                     <tr>
+//                         <th>Image</th>
+//                         <th>Title</th>
+//                         <th>Provider</th>
+//                         <th>Status</th>
+//                         <th>Actions</th>
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {posts.map(post => (
+//                         <tr key={post.id}>
+//                             <td>
+//                                 <img src={post.images?.[0] || "/placeholder.png"} alt="img" style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px'}}/>
+//                             </td>
+//                             <td>{post.title}</td>
+//                             <td>{post.providerId}</td>
+//                             <td><span className={`status-badge ${post.status?.toLowerCase()}`}>{post.status || 'PENDING'}</span></td>
+//                             <td className="post-actions-cell">
+//                                 <button className="btn small btn-approve" onClick={() => handlePostAction(post.id, 'approve')} disabled={post.status === 'ACTIVE'}>Approve</button>
+//                                 <button className="btn small btn-danger" onClick={() => handlePostAction(post.id, 'reject')} disabled={post.status === 'BANNED'}>Reject</button>
+//                                 <button className="btn small btn-danger" style={{marginLeft: '5px', background: '#dc3545'}} onClick={() => handlePostAction(post.id, 'delete')}>Delete</button>
+//                             </td>
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+
+//     return (
+//         <>
+//             <Navbar />
+//             <div className="admin-page-container">
+//                 <aside className="admin-sidebar">
+//                     <h2>Admin Tools</h2>
+//                     <nav>
+//                         <button className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+//                             📊 Overview
+//                         </button>
+//                         <button className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+//                             👥 User Management
+//                         </button>
+//                         <button className={`nav-item ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>
+//                             📝 Post Management
+//                         </button>
+//                     </nav>
+//                 </aside>
+
+//                 <main className="admin-content">
+//                     <h1>{activeTab === 'users' ? 'User Management' : activeTab === 'posts' ? 'Post Management' : 'Overview'}</h1>
+//                     {activeTab === "overview" && renderOverview()}
+//                     {activeTab === "users" && renderUserManagement()}
+//                     {activeTab === "posts" && renderPostManagement()}
+//                 </main>
+//             </div>
+//             <Footer />
+//         </>
+//     );
+// }
+
+
+
+
 
 //=============================V2===============================//
 // import React, { useState, useEffect } from "react";
