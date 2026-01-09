@@ -133,6 +133,16 @@
   min-height: 100px;
 }
 
+/*update of red color mmessage*/
+/* Edit mode warning text */
+.edit-note {
+  margin-top: 6px;
+  font-size: 18px;
+  color: #c53030;        /* red */
+  font-weight: 600;
+}
+
+
 /* Plan Selection */
 .plan-selection {
   display: flex;
