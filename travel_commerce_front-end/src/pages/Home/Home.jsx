@@ -1,8 +1,8 @@
- 
+
 
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate} from "react-router-dom";
- 
+import { Link, useNavigate } from "react-router-dom";
+
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
@@ -112,17 +112,18 @@ export default function Home() {
   }, []);
 
   /* ---------------- TYPEWRITER ---------------- */
-  const fullText = `Travel Commerce bridges the gap between service providers and travellers seeking meaningful and reliable experiences.
+  /* ---------------- DESCRIPTIVE TEXT ---------------- */
+  const introParagraph = `Travel Commerce bridges the gap between service providers and travellers seeking meaningful and reliable experiences.
 Whether you’re offering city tours, local rides, adventures, hotel stays, or unique travel activities, our platform
 helps you share them with ease. Travellers can explore verified services, compare experiences, and book confidently all in one modern and seamless platform.`;
 
- 
+
   // Scroll to services when clicking a category
   // Scroll to services when clicking a category
   const handleCategoryClick = () => {
     navigate("/services");
   };
- 
+
 
   /* ---------------- ANIMATION LOGIC ---------------- */
   const txts = ["Ayubowan", "ආයුබෝවන්"];
@@ -161,14 +162,22 @@ helps you share them with ease. Travellers can explore verified services, compar
   }, [text, isDeleting, loopNum, typingSpeed, txts]);
 
   return (
-    <>
+    <div style={styles.pageContainer}>
       <Navbar />
 
- 
-      {/* ---------------- HERO SECTION ---------------- */}
-      <section style={styles.heroSection}>
-        <div style={styles.heroOverlay}></div>
-        <div style={styles.heroContent}>
+
+
+      {/* ---------------- HERO ---------------- */}
+      <section className="hero">
+        {heroImages.map((img, i) => (
+          <img
+            key={i}
+            src={img}
+            className={`hero-img ${i === currentHero ? "active" : ""}`}
+            alt="" />
+        ))}
+
+        <div className="hero-content">
           <h1 style={styles.ayubowanText}>
             {text}<span style={styles.cursor}>|</span>
           </h1>
@@ -176,176 +185,149 @@ helps you share them with ease. Travellers can explore verified services, compar
           <p style={styles.introText}>
             Connect with verified local guides, drivers, and hosts for an authentic Sri Lankan journey.
           </p>
+
+          <div className="hero-actions">
+            <Link to="/register" className="btn1">Register</Link>
+            <Link to="/login" className="btn1 outline">Login</Link>
+          </div>
+        </div>
+
+        <div className="hero-dots">
+          {heroImages.map((_, i) => (
+            <span
+              key={i}
+              className={`hero-dot ${i === currentHero ? "active" : ""}`}
+              onClick={() => setCurrentHero(i)} />
+          ))}
         </div>
       </section>
- 
 
-        {/* ---------------- HERO ---------------- */}
-        <section className="hero">
-          {heroImages.map((img, i) => (
-            <img
-              key={i}
-              src={img}
-              className={`hero-img ${i === currentHero ? "active" : ""}`}
-              alt=""
-            />
-          ))}
+      {/* ---------------- KEY FEATURES ---------------- */}
+      <section className="key-features scroll-appear">
+        <h2 className="section-title">Why Choose Travel Commerce?</h2>
 
-          <div className="hero-content">
-            <h1>Discover, Explore, Publish & Book Travel Services</h1>
-            <p>Connect with trusted service providers across Sri Lanka.</p>
-
-            <div className="hero-actions">
-              <Link to="/register" className="btn1">Register</Link>
-              <Link to="/login" className="btn1 outline">Login</Link>
-            </div>
+        <div className="features-grid">
+          <div className="feature-box">
+            <h3>✔ Verified Providers</h3>
+            <p>Only trusted and verified service providers.</p>
           </div>
+          <div className="feature-box">
+            <h3>✔ Secure Bookings</h3>
+            <p>Your bookings and payments are protected.</p>
+          </div>
+          <div className="feature-box">
+            <h3>✔ All-in-One Platform</h3>
+            <p>Guides, drivers, hotels & experiences.</p>
+          </div>
+        </div>
+      </section>
 
-          <div className="hero-dots">
-            {heroImages.map((_, i) => (
-              <span
+      {/* ---------------- OUR SERVICES ---------------- */}
+      <section className="our-services scroll-appear">
+        <h2 className="section-title">Our Services</h2>
+        <p className="service-description">{introParagraph}</p>
+      </section>
+
+      {/* ---------------- DUAL SLIDERS ---------------- */}
+      <div className="bothslides">
+
+        {/* PROVIDERS */}
+        <div className="slider-box">
+          <h3 className="slider-title providers">For Service Providers</h3>
+
+          <div
+            className="services-slider"
+            onMouseEnter={() => (providerTimer.current = startAutoSlide(providerServices, setProviderIndex))}
+            onMouseLeave={() => clearInterval(providerTimer.current)}
+          >
+            {providerServices.map((item, i) => (
+              <div
                 key={i}
-                className={`hero-dot ${i === currentHero ? "active" : ""}`}
-                onClick={() => setCurrentHero(i)}
-              />
+                className={`service-card ${i === providerIndex ? "active" : "inactive"}`}
+                style={{ backgroundImage: `url(${item.img})` }}
+              >
+                <div className="service-overlay" />
+                <div className="service-content">
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                </div>
+              </div>
             ))}
-          </div>
-        </section>
 
-        {/* ---------------- KEY FEATURES ---------------- */}
-        <section className="key-features scroll-appear">
-          <h2 className="section-title">Why Choose Travel Commerce?</h2>
-
-          <div className="features-grid">
-            <div className="feature-box">
-              <h3>✔ Verified Providers</h3>
-              <p>Only trusted and verified service providers.</p>
-            </div>
-            <div className="feature-box">
-              <h3>✔ Secure Bookings</h3>
-              <p>Your bookings and payments are protected.</p>
-            </div>
-            <div className="feature-box">
-              <h3>✔ All-in-One Platform</h3>
-              <p>Guides, drivers, hotels & experiences.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ---------------- OUR SERVICES ---------------- */}
-        <section className="our-services scroll-appear">
-          <h2 className="section-title">Our Services</h2>
-          <p className="service-description">{displayedText}</p>
-        </section>
-
-        {/* ---------------- DUAL SLIDERS ---------------- */}
-        <div className="bothslides">
-
-          {/* PROVIDERS */}
-          <div className="slider-box">
-            <h3 className="slider-title providers">For Service Providers</h3>
-
-            <div
-              className="services-slider"
-              onMouseEnter={() =>
-                (providerTimer.current = startAutoSlide(providerServices, setProviderIndex))
-              }
-              onMouseLeave={() => clearInterval(providerTimer.current)}
-            >
-              {providerServices.map((item, i) => (
-                <div
+            <div className="dots">
+              {providerServices.map((_, i) => (
+                <span
                   key={i}
-                  className={`service-card ${i === providerIndex ? "active" : "inactive"}`}
-                  style={{ backgroundImage: `url(${item.img})` }}
-                >
-                  <div className="service-overlay" />
-                  <div className="service-content">
-                    <h3>{item.title}</h3>
-                    <p>{item.desc}</p>
-                  </div>
-                </div>
+                  className={i === providerIndex ? "dot active" : "dot"}
+                  onClick={() => setProviderIndex(i)} />
               ))}
-
-              <div className="dots">
-                {providerServices.map((_, i) => (
-                  <span
-                    key={i}
-                    className={i === providerIndex ? "dot active" : "dot"}
-                    onClick={() => setProviderIndex(i)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* TRAVELLERS */}
-          <div className="slider-box">
-            <h3 className="slider-title travellers">For Travellers</h3>
-
-            <div
-              className="services-slider"
-              onMouseEnter={() =>
-                (travellerTimer.current = startAutoSlide(travellerServices, setTravellerIndex))
-              }
-              onMouseLeave={() => clearInterval(travellerTimer.current)}
-            >
-              {travellerServices.map((item, i) => (
-                <div
-                  key={i}
-                  className={`service-card ${i === travellerIndex ? "active" : "inactive"}`}
-                  style={{ backgroundImage: `url(${item.img})` }}
-                >
-                  <div className="service-overlay" />
-                  <div className="service-content">
-                    <h3>{item.title}</h3>
-                    <p>{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="dots">
-                {travellerServices.map((_, i) => (
-                  <span
-                    key={i}
-                    className={i === travellerIndex ? "dot active" : "dot"}
-                    onClick={() => setTravellerIndex(i)}
-                  />
-                ))}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* ---------------- HOW IT WORKS ---------------- */}
-        <section className="how-it-works scroll-appear">
-          <h2 className="section-title">How It Works</h2>
+        {/* TRAVELLERS */}
+        <div className="slider-box">
+          <h3 className="slider-title travellers">For Travellers</h3>
 
-          <div className="steps-grid">
-            <div className="step-box">
-              <span className="step-number">1</span>
-              <h3>Create Account</h3>
-              <p>Sign up as traveller or provider.</p>
-            </div>
-            <div className="step-box">
-              <span className="step-number">2</span>
-              <h3>Explore or Publish</h3>
-              <p>Browse or publish services easily.</p>
-            </div>
-            <div className="step-box">
-              <span className="step-number">3</span>
-              <h3>Book & Connect</h3>
-              <p>Secure bookings and communication.</p>
+          <div
+            className="services-slider"
+            onMouseEnter={() => (travellerTimer.current = startAutoSlide(travellerServices, setTravellerIndex))}
+            onMouseLeave={() => clearInterval(travellerTimer.current)}
+          >
+            {travellerServices.map((item, i) => (
+              <div
+                key={i}
+                className={`service-card ${i === travellerIndex ? "active" : "inactive"}`}
+                style={{ backgroundImage: `url(${item.img})` }}
+              >
+                <div className="service-overlay" />
+                <div className="service-content">
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                </div>
+              </div>
+            ))}
+
+            <div className="dots">
+              {travellerServices.map((_, i) => (
+                <span
+                  key={i}
+                  className={i === travellerIndex ? "dot active" : "dot"}
+                  onClick={() => setTravellerIndex(i)} />
+              ))}
             </div>
           </div>
-        </section>
-
+        </div>
       </div>
 
+      {/* ---------------- HOW IT WORKS ---------------- */}
+      <section className="how-it-works scroll-appear">
+        <h2 className="section-title">How It Works</h2>
+
+        <div className="steps-grid">
+          <div className="step-box">
+            <span className="step-number">1</span>
+            <h3>Create Account</h3>
+            <p>Sign up as traveller or provider.</p>
+          </div>
+          <div className="step-box">
+            <span className="step-number">2</span>
+            <h3>Explore or Publish</h3>
+            <p>Browse or publish services easily.</p>
+          </div>
+          <div className="step-box">
+            <span className="step-number">3</span>
+            <h3>Book & Connect</h3>
+            <p>Secure bookings and communication.</p>
+          </div>
+        </div>
+      </section>
+
       <Footer />
-    </>
+    </div>
   );
 }
- 
+
 
 /* ---------------- INLINE STYLES ---------------- */
 const styles = {
@@ -356,19 +338,6 @@ const styles = {
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
-  },
-  heroSection: {
-    position: "relative",
-    height: "85vh",
-    width: "100%",
-    backgroundImage: `url(${heroBg})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    color: "#fff",
   },
   heroOverlay: {
     position: "absolute",
@@ -569,4 +538,4 @@ const styles = {
     lineHeight: "1.5",
   },
 };
- 
+

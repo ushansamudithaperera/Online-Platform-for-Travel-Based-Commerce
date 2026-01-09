@@ -55,29 +55,22 @@ export default function Navbar() {
       <div className="nav-inner">
         <Link to="/" className="brand">TravelCommerce</Link>
 
- 
-          {/* Menu Items */}
-          <ul className="navbar-nav mx-auto mb-2 mb-lg-0">
-            <li className="nav-item">
-              <Link className="nav-link mx-2" to="/services" onClick={closeNav}>Explore</Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link mx-2" to="/about" onClick={closeNav}>About Us</Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link mx-2" to="/contact" onClick={closeNav}>Contact</Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link mx-2" to="/feedback" onClick={closeNav}>Feedback</Link>
-            </li>
-          </ul>
- 
 
+        {/* Menu Items */}
+        <div className="nav-links">
+          <Link className="gradient-link" to="/services">Explore</Link>
+          <Link className="gradient-link" to="/about">About Us</Link>
+          <Link className="gradient-link" to="/contact">Contact</Link>
+          <Link className="gradient-link" to="/feedback">Feedback</Link>
+        </div>
+
+
+        <div className="nav-auth-section">
           {!user ? (
-            <>
+            <div className="nav-actions">
               <Link to="/login" className="btn login-btn">Login</Link>
               <Link to="/register" className="btn register-btn">Register</Link>
-            </>
+            </div>
           ) : (
             // START OF NEW PROFILE ICON LOGIC
             <div className="profile-dropdown-container" ref={dropdownRef}>
@@ -88,9 +81,6 @@ export default function Navbar() {
                 aria-expanded={showDropdown}
                 aria-label="User Profile Menu"
               >
-                {/* REPLACED: Hi, {user.name} 
-                  WITH: A placeholder icon for the user profile 
-                */}
                 <span className="profile-icon">👤</span>
               </button>
 
@@ -103,30 +93,27 @@ export default function Navbar() {
                       <strong>{user.fullname || user.name || user.email}</strong>
                     </p>
                     <span className={`user-role-badge ${user.role}`}>
-                        {user.role}
+                      {user.role}
                     </span>
                   </div>
-                  
-                  {/* Link to the profile/dashboard */}
-                  <Link 
-                    to={getDashboardPath()} 
+
+                  <Link
+                    to={getDashboardPath()}
                     className="dropdown-link"
                     onClick={() => setShowDropdown(false)}
                   >
-                    {/* Assuming you want a general "Profile" or "Dashboard" link */}
                     Dashboard / Profile
                   </Link>
-                  
-                  {/* The Logout Button */}
+
                   <button onClick={handleLogout} className="dropdown-logout-btn">
                     Logout
                   </button>
                 </div>
               )}
             </div>
-            // END OF NEW PROFILE ICON LOGIC
           )}
-        </nav>
+        </div>
+
       </div>
     </header>
   );
