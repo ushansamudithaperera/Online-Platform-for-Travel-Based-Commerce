@@ -138,7 +138,7 @@
   overflow-x: auto;
   padding-bottom: 4px;
 }
-
+/*
 .thumb-wrapper {
   border: none;
   padding: 0;
@@ -163,6 +163,42 @@
   outline: 2px solid #7b68ee;
   outline-offset: 2px;
 }
+*/
+.thumb-wrapper {
+  padding: 0;
+  background: none;
+  border-radius: 10px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  cursor: pointer;
+  position: relative;
+
+  /* use a border so active state is more predictable */
+  border: 2px solid transparent;
+  box-sizing: border-box;
+}
+
+/* kill default browser focus ring on these buttons */
+.thumb-wrapper:focus,
+.thumb-wrapper:focus-visible {
+  outline: none;
+}
+
+.thumbnail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* active thumbnail highlight */
+.thumb-wrapper.active {
+  border-color: #7b68ee;
+  box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.25); /* optional glow */
+}
+
 
 /* No image state */
 .no-image {

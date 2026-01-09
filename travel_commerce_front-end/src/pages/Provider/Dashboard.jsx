@@ -9,13 +9,10 @@ import {
 } from "../../api/serviceApi";
 import ServiceFormModal from "../../components/ServiceFormModal";
 
+const backendBaseUrl =
+  import.meta.env.VITE_API_BASE?.replace("/api", "") || "http://localhost:8080";
 
-
-
-const backendBaseUrl = import.meta.env.VITE_API_BASE?.replace('/api', '') || "http://localhost:8080";
-
-//update
-// Standard display limit for service titles (e.g. like Airbnb)
+// Standard display limit for service titles
 const TITLE_MAX_LENGTH = 50;
 
 const truncateTitle = (title) => {
@@ -34,7 +31,6 @@ export default function ProviderDashboard() {
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const [showFullDescription, setShowFullDescription] = useState(false);
 
@@ -56,8 +52,7 @@ export default function ProviderDashboard() {
     return num.toLocaleString();
   };
 
-  //update relevant
-    const stripHtml = (html) =>
+  const stripHtml = (html) =>
     html
       ? html
           .replace(/<[^>]+>/g, "")
@@ -65,8 +60,6 @@ export default function ProviderDashboard() {
           .replace(/\s+/g, " ")
           .trim()
       : "";
-
-
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -134,17 +127,19 @@ export default function ProviderDashboard() {
   };
 
   // Description + pricing helpers
-  const priceFromText = selectedPost ? formatPrice(selectedPost.priceFrom) : null;
+  const priceFromText = selectedPost
+    ? formatPrice(selectedPost.priceFrom)
+    : null;
   const priceToText = selectedPost ? formatPrice(selectedPost.priceTo) : null;
   const hasPrice = !!(priceFromText || priceToText);
 
-const descriptionHtml = selectedPost?.description || "";
-const descriptionPlain = stripHtml(descriptionHtml);
-const descriptionTooLong = descriptionPlain.length > 180;
+  const descriptionHtml = selectedPost?.description || "";
+  const descriptionPlain = stripHtml(descriptionHtml);
+  const descriptionTooLong = descriptionPlain.length > 180;
 
-  // Rating preview (no real data yet, just future placeholder)
-  const rating = selectedPost?.averageRating;      // future backend field
-  const reviewCount = selectedPost?.reviewCount;   // future backend field
+  // Rating preview
+  const rating = selectedPost?.averageRating;
+  const reviewCount = selectedPost?.reviewCount;
   const hasRating = rating !== undefined && rating !== null;
 
   return (
@@ -158,8 +153,8 @@ const descriptionTooLong = descriptionPlain.length > 180;
             <div>
               <h2>Provider Dashboard</h2>
               <p className="provider-subtitle">
-                Preview how your service will appear to travellers. Update details,
-                images and pricing anytime.
+                Preview how your service will appear to travellers. Update
+                details, images and pricing anytime.
               </p>
             </div>
             <button
@@ -186,7 +181,6 @@ const descriptionTooLong = descriptionPlain.length > 180;
                         }`}
                         className="main-image"
                         onClick={() => {
-                          setLightboxIndex(activeImageIndex);
                           setLightboxOpen(true);
                         }}
                       />
@@ -320,28 +314,32 @@ const descriptionTooLong = descriptionPlain.length > 180;
                   </div>
                 </div>
 
-<h4 className="about-heading">About this service</h4>
+                <h4 className="about-heading">About this service</h4>
 
-<div
-  className={
-    "post-description description-body" +
-    (!showFullDescription && descriptionTooLong ? " clamped" : "")
-  }
-  dangerouslySetInnerHTML={{
-    __html:
-      descriptionHtml || "<p>No description provided yet.</p>",
-  }}
-/>
+                <div
+                  className={
+                    "post-description description-body" +
+                    (!showFullDescription && descriptionTooLong
+                      ? " clamped"
+                      : "")
+                  }
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      descriptionHtml || "<p>No description provided yet.</p>",
+                  }}
+                />
 
-{descriptionTooLong && (
-  <button
-    type="button"
-    className="description-toggle"
-    onClick={() => setShowFullDescription((prev) => !prev)}
-  >
-    {showFullDescription ? "Show less" : "Show more"}
-  </button>
-)}
+                {descriptionTooLong && (
+                  <button
+                    type="button"
+                    className="description-toggle"
+                    onClick={() =>
+                      setShowFullDescription((prev) => !prev)
+                    }
+                  >
+                    {showFullDescription ? "Show less" : "Show more"}
+                  </button>
+                )}
 
                 <div className="post-meta">
                   <div className="meta-item">
@@ -537,33 +535,23 @@ const descriptionTooLong = descriptionPlain.length > 180;
               ×
             </button>
             <img
-              src={getImageUrl(selectedPost.images[lightboxIndex])}
-              alt={`Image ${lightboxIndex + 1}`}
+              src={getImageUrl(images[activeImageIndex])}
+              alt={`Image ${activeImageIndex + 1}`}
             />
-            {selectedPost.images.length > 1 && (
+            {images.length > 1 && (
               <div className="lightbox-nav">
                 <button
                   type="button"
-                  onClick={() =>
-                    setLightboxIndex((prev) =>
-                      prev === 0
-                        ? selectedPost.images.length - 1
-                        : prev - 1
-                    )
-                  }
+                  onClick={goToPrevImage}
                 >
                   ‹
                 </button>
                 <span className="lightbox-counter">
-                  {lightboxIndex + 1} / {selectedPost.images.length}
+                  {activeImageIndex + 1} / {images.length}
                 </span>
                 <button
                   type="button"
-                  onClick={() =>
-                    setLightboxIndex((prev) =>
-                      prev === selectedPost.images.length - 1 ? 0 : prev + 1
-                    )
-                  }
+                  onClick={goToNextImage}
                 >
                   ›
                 </button>
