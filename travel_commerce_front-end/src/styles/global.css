@@ -1,11 +1,13 @@
 /* HEADER HEIGHT VARIABLE */
 :root {
-  --nav-height: 50px;   /* adjust this to match your actual header height */
+  --nav-height: 70px;
+  --bg: #fcfcfc;
 }
 
 /* Push content BELOW the fixed header */
-html, body {
-  padding-top: 50px !important;
+html,
+body {
+  padding-top: 70px !important;
   scroll-padding-top: var(--nav-height) !important;
 }
 
@@ -21,8 +23,14 @@ html, body {
 
 /* Mobile header adjustment */
 @media (max-width: 768px) {
-  :root { --nav-height: 60px; }
-  html, body { padding-top: var(--nav-height) !important; }
+  :root {
+    --nav-height: 60px;
+  }
+
+  html,
+  body {
+    padding-top: var(--nav-height) !important;
+  }
 }
 
 /* ================================
@@ -40,7 +48,7 @@ body {
 
 /* layout */
 .container {
-  max-width: 100px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -103,4 +111,3 @@ button.btn-outline-secondary:hover {
   background-color: #6c757d !important;
   color: white !important;
 }
-
