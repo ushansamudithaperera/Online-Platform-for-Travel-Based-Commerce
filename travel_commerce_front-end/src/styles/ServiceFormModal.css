@@ -80,6 +80,14 @@
   }
 }
 
+/*title update*/
+.title-char-counter {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #6b7280; /* grey */
+}
+
+
 .form-left h3,
 .form-right h3 {
   margin-top: 0;

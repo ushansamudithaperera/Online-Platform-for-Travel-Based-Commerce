@@ -12,7 +12,18 @@ import ServiceFormModal from "../../components/ServiceFormModal";
 
 
 
-const backendBaseUrl = "http://localhost:8080";
+const backendBaseUrl = import.meta.env.VITE_API_BASE?.replace('/api', '') || "http://localhost:8080";
+
+//update
+// Standard display limit for service titles (e.g. like Airbnb)
+const TITLE_MAX_LENGTH = 50;
+
+const truncateTitle = (title) => {
+  if (!title) return "";
+  return title.length > TITLE_MAX_LENGTH
+    ? title.slice(0, TITLE_MAX_LENGTH - 1) + "…"
+    : title;
+};
 
 export default function ProviderDashboard() {
   const [selectedPost, setSelectedPost] = useState(null);
@@ -28,7 +39,7 @@ export default function ProviderDashboard() {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
+    if (!imagePath) return "/placeholder.png";
     if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
       return imagePath;
     }
@@ -60,7 +71,7 @@ export default function ProviderDashboard() {
   useEffect(() => {
     setActiveImageIndex(0);
     setShowFullDescription(false);
-  }, [selectedPost]);
+  }, [selectedPost?.id]);
 
   useEffect(() => {
     fetchProviderPosts();
@@ -129,7 +140,7 @@ export default function ProviderDashboard() {
 
 const descriptionHtml = selectedPost?.description || "";
 const descriptionPlain = stripHtml(descriptionHtml);
-const descriptionTooLong = descriptionPlain.length > 280;
+const descriptionTooLong = descriptionPlain.length > 180;
 
   // Rating preview (no real data yet, just future placeholder)
   const rating = selectedPost?.averageRating;      // future backend field
@@ -243,7 +254,7 @@ const descriptionTooLong = descriptionPlain.length > 280;
               <div className="post-details">
                 <div className="post-header">
                   <div className="post-header-main">
-                    <h3>{selectedPost.title}</h3>
+                    <h3>{truncateTitle(selectedPost.title)}</h3>
                     <div className="post-header-tags">
                       <span className="category-chip">
                         {selectedPost.category}
@@ -475,7 +486,7 @@ const descriptionTooLong = descriptionPlain.length > 280;
                       )}
                     </div>
                     <div className="service-info">
-                      <h4>{post.title}</h4>
+                      <h4>{truncateTitle(post.title)}</h4>
                       <p className="service-category">{post.category}</p>
                       <div className="service-meta">
                         <span className="service-district">

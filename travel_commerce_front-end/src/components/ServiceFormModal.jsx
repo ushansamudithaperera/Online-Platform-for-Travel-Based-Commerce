@@ -28,7 +28,8 @@ const quillFormats = [
   "link",
 ];
 
-
+// ✅ ADD THIS
+const TITLE_MAX_LENGTH = 50; // or 20 if you prefer the same as ProviderDashboard
 
 // same backend base URL logic as ProviderDashboard
 const backendBaseUrl = "http://localhost:8080";
@@ -293,17 +294,23 @@ export default function ServiceFormModal({
             <div className="form-left">
               <h3>Service Details</h3>
 
-              <div className="form-group">
-                <label>Service Title *</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={serviceData.title}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Luxury Kandy Tour"
-                  required
-                />
-              </div>
+<div className="form-group">
+  <label>
+    Service Title *
+    <span className="title-char-counter">
+      {serviceData.title.length}/{TITLE_MAX_LENGTH}
+    </span>
+  </label>
+  <input
+    type="text"
+    name="title"
+    value={serviceData.title}
+    onChange={handleInputChange}
+    placeholder="e.g., Blue Horizon Ocean Resort & Spa"
+    required
+    maxLength={TITLE_MAX_LENGTH}
+  />
+</div>
 
 <div className="form-group">
   <label>Description *</label>

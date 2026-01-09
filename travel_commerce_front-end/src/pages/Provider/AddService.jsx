@@ -6,7 +6,11 @@ import { useNavigate } from "react-router-dom";
 export default function AddService() {
     const { user } = useAuth();
     const navigate = useNavigate();
+   
     
+
+    
+    const TITLE_MAX_LENGTH =25; // add near top of component
     // Form State
     const [formData, setFormData] = useState({
         title: "",
