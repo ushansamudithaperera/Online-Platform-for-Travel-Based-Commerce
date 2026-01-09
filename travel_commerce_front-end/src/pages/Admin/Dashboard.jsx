@@ -11,8 +11,10 @@ export default function AdminDashboard() {
     // Data State
     const [users, setUsers] = useState([]); 
     const [posts, setPosts] = useState([]); 
-    const [reviews, setReviews] = useState([]); // 🟢 NEW: Reviews State
-    const [loading, setLoading] = useState(false);
+    const [reviews, setReviews] = useState([]);
+    
+    // 🟢 NEW: Search State
+    const [searchTerm, setSearchTerm] = useState("");
 
     // 1. LOAD REAL DATA
     useEffect(() => {
@@ -24,14 +26,12 @@ export default function AdminDashboard() {
             return;
         }
 
-        // Load everything
         fetchServices();
         fetchUsers();
-        fetchReviews(); // 🟢 NEW: Load reviews
+        fetchReviews();
     }, [navigate]);
 
-    // --- FETCH FUNCTIONS ---
-
+    // --- FETCH FUNCTIONS (Keep exactly as they were) ---
     const fetchServices = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -53,7 +53,6 @@ export default function AdminDashboard() {
         } catch (err) { console.error(err); }
     };
 
-    // 🟢 NEW: Fetch Reviews
     const fetchReviews = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -65,19 +64,15 @@ export default function AdminDashboard() {
     };
 
     // --- ACTION HANDLERS ---
-
     const handlePostAction = async (postId, action) => {
-        const confirmMessage = action === 'delete' ? "Delete post?" : `Mark as ${action}?`;
-        if (!window.confirm(confirmMessage)) return;
+        if (!window.confirm(`Are you sure you want to ${action} this post?`)) return;
 
         const postToUpdate = posts.find(p => p.id === postId);
-        if (!postToUpdate && action !== 'delete') return;
-
         const token = localStorage.getItem("token");
         let url = `http://localhost:8080/api/services/${postId}`;
         let method = action === 'delete' ? "DELETE" : "PUT";
-        
         let body = null;
+        
         if (action === 'approve') body = JSON.stringify({ ...postToUpdate, status: "ACTIVE" });
         if (action === 'reject') body = JSON.stringify({ ...postToUpdate, status: "BANNED" });
 
@@ -92,31 +87,25 @@ export default function AdminDashboard() {
                 if (action === 'delete') {
                     setPosts(prev => prev.filter(p => p.id !== postId));
                 } else {
-                    setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: body ? JSON.parse(body).status : p.status } : p));
+                    setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: JSON.parse(body).status } : p));
                 }
-                alert("Success!");
-            } else {
-                alert("Action failed");
-            }
+            } else { alert("Action failed"); }
         } catch (err) { alert("Network error"); }
     };
 
     const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Remove this user?")) return;
+        if (!window.confirm("Remove this user permanently?")) return;
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) {
-                setUsers(prev => prev.filter(u => u.id !== userId));
-                alert("User removed");
-            } else alert("Failed to remove user");
+            if (res.ok) setUsers(prev => prev.filter(u => u.id !== userId));
+            else alert("Failed to remove user");
         } catch (err) { alert("Network error"); }
     };
 
-    // 🟢 NEW: Delete Review
     const handleDeleteReview = async (reviewId) => {
         if (!window.confirm("Delete this review?")) return;
         const token = localStorage.getItem("token");
@@ -125,125 +114,170 @@ export default function AdminDashboard() {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) {
-                setReviews(prev => prev.filter(r => r.id !== reviewId));
-                alert("Review deleted");
-            } else alert("Failed to delete review");
+            if (res.ok) setReviews(prev => prev.filter(r => r.id !== reviewId));
+            else alert("Failed to delete review");
         } catch (err) { alert("Network error"); }
+    };
+
+    // --- HELPER: SEARCH FILTER ---
+    // This allows searching any table by Name, Title, or Email
+    const filterData = (data, fields) => {
+        if (!searchTerm) return data;
+        return data.filter(item => 
+            fields.some(field => item[field]?.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
     };
 
     // --- RENDERERS ---
 
-    const renderOverview = () => {
-        const totalTravellers = users.filter(u => u.role === 'ROLE_TRAVELLER').length;
-        const totalProviders = users.filter(u => u.role === 'ROLE_PROVIDER').length;
-        
+    const renderSearchBar = (placeholder) => (
+        <div style={{marginBottom: '20px', display: 'flex', gap: '10px'}}>
+            <input 
+                type="text" 
+                placeholder={placeholder}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                    padding: '10px', 
+                    borderRadius: '5px', 
+                    border: '1px solid #ddd', 
+                    width: '100%', 
+                    maxWidth: '400px'
+                }}
+            />
+            {searchTerm && (
+                <button onClick={() => setSearchTerm("")} className="btn" style={{background: '#718096'}}>Clear</button>
+            )}
+        </div>
+    );
+
+    const renderOverview = () => (
+        <div className="overview-grid">
+            <div className="stat-card total-users" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
+                <h3>Total Users</h3>
+                <p>{users.length}</p>
+                <div style={{fontSize: '0.8rem', marginTop: '10px', opacity: 0.9}}>
+                    <span>🎒 {users.filter(u => u.role === 'ROLE_TRAVELLER').length} Travellers</span> • 
+                    <span>🏢 {users.filter(u => u.role === 'ROLE_PROVIDER').length} Providers</span>
+                </div>
+            </div>
+            <div className="stat-card active-posts" style={{background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)', color: 'white'}}>
+                <h3>Live Services</h3>
+                <p>{posts.filter(p => p.status === 'ACTIVE').length}</p>
+            </div>
+            <div className="stat-card" style={{background: 'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)', color: 'white'}}>
+                <h3>Total Reviews</h3>
+                <p>{reviews.length}</p>
+            </div>
+        </div>
+    );
+
+    const renderUserManagement = () => {
+        const filteredUsers = filterData(users, ['fullname', 'email', 'role']);
         return (
-            <div className="overview-grid">
-                <div className="stat-card total-users" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
-                    <h3>Total Users</h3>
-                    <p>{users.length}</p>
-                    <div style={{fontSize: '0.8rem', marginTop: '10px'}}>
-                        {totalTravellers} Travellers • {totalProviders} Providers
-                    </div>
-                </div>
-                <div className="stat-card active-posts">
-                    <h3>Live Services</h3>
-                    <p>{posts.filter(p => p.status === 'ACTIVE').length}</p>
-                </div>
-                {/* 🟢 NEW: Reviews Stat */}
-                <div className="stat-card" style={{background: '#fff', borderLeft: '4px solid #f6ad55', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}>
-                    <h3 style={{margin: 0, color: '#718096', fontSize: '0.9rem', textTransform: 'uppercase'}}>Total Reviews</h3>
-                    <p style={{fontSize: '2rem', fontWeight: 'bold', margin: '10px 0 0', color: '#2d3748'}}>{reviews.length}</p>
-                </div>
+            <div className="table-container">
+                <h3>Manage Users ({filteredUsers.length})</h3>
+                {renderSearchBar("Search by name, email, or role...")}
+                <table>
+                    <thead><tr><th>User</th><th>Role</th><th>Contact</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {filteredUsers.map(user => (
+                            <tr key={user.id}>
+                                <td>
+                                    <div style={{fontWeight: 'bold'}}>{user.fullname}</div>
+                                    <div style={{fontSize: '0.8rem', color: '#718096'}}>{user.email}</div>
+                                </td>
+                                <td>
+                                    <span className={`status-badge ${user.role === 'ROLE_ADMIN' ? 'admin' : user.role === 'ROLE_PROVIDER' ? 'provider' : 'traveller'}`}
+                                          style={{
+                                              background: user.role === 'ROLE_ADMIN' ? '#2d3748' : user.role === 'ROLE_PROVIDER' ? '#ebf8ff' : '#f0fff4',
+                                              color: user.role === 'ROLE_ADMIN' ? '#fff' : user.role === 'ROLE_PROVIDER' ? '#3182ce' : '#38a169',
+                                              padding: '4px 10px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold'
+                                          }}>
+                                        {user.role.replace('ROLE_', '')}
+                                    </span>
+                                </td>
+                                <td>{user.telephone || "N/A"}</td>
+                                <td>
+                                    {user.role !== 'ROLE_ADMIN' && (
+                                        <button className="btn small" onClick={() => handleDeleteUser(user.id)} style={{background: '#e53e3e', color: 'white'}}>🗑 Remove</button>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         );
     };
 
-    const renderUserManagement = () => (
-        <div className="table-container">
-            <h3>Manage Users ({users.length})</h3>
-            <table>
-                <thead>
-                    <tr><th>Name</th><th>Role</th><th>Email</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {users.map(user => (
-                        <tr key={user.id}>
-                            <td>{user.fullname}</td>
-                            <td>
-                                <span className={`status-badge ${user.role === 'ROLE_ADMIN' ? 'admin' : user.role === 'ROLE_PROVIDER' ? 'provider' : 'traveller'}`} 
-                                      style={{
-                                          backgroundColor: user.role === 'ROLE_ADMIN' ? '#000' : user.role === 'ROLE_PROVIDER' ? '#e3f2fd' : '#f1f8e9',
-                                          color: user.role === 'ROLE_ADMIN' ? '#fff' : user.role === 'ROLE_PROVIDER' ? '#1976d2' : '#388e3c',
-                                          padding: '4px 8px', borderRadius: '12px', fontSize: '12px'
-                                      }}>
-                                    {user.role.replace('ROLE_', '')}
-                                </span>
-                            </td>
-                            <td>{user.email}</td>
-                            <td>
-                                {user.role !== 'ROLE_ADMIN' && (
-                                    <button className="btn small btn-danger" onClick={() => handleDeleteUser(user.id)} style={{backgroundColor: '#ff4d4f', color: 'white'}}>Remove</button>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
+    const renderPostManagement = () => {
+        const filteredPosts = filterData(posts, ['title', 'category', 'providerId']);
+        return (
+            <div className="table-container">
+                <h3>Manage Services ({filteredPosts.length})</h3>
+                {renderSearchBar("Search by title or category...")}
+                <table>
+                    <thead><tr><th>Service</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {filteredPosts.map(post => (
+                            <tr key={post.id}>
+                                <td>
+                                    <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                                        <img src={post.images?.[0] || "/placeholder.png"} alt="img" style={{width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover'}}/>
+                                        <span style={{fontWeight: '500'}}>{post.title}</span>
+                                    </div>
+                                </td>
+                                <td>{post.category}</td>
+                                <td>
+                                    <span className={`status-badge ${post.status?.toLowerCase() || 'pending'}`}
+                                          style={{
+                                              padding: '4px 10px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold',
+                                              background: post.status === 'ACTIVE' ? '#c6f6d5' : post.status === 'BANNED' ? '#fed7d7' : '#feebc8',
+                                              color: post.status === 'ACTIVE' ? '#22543d' : post.status === 'BANNED' ? '#822727' : '#744210'
+                                          }}>
+                                        {post.status || 'PENDING'}
+                                    </span>
+                                </td>
+                                <td style={{display: 'flex', gap: '5px'}}>
+                                    <button onClick={() => handlePostAction(post.id, 'approve')} disabled={post.status === 'ACTIVE'} className="btn small" style={{background: '#48bb78', opacity: post.status === 'ACTIVE' ? 0.5 : 1}} title="Approve">✅</button>
+                                    <button onClick={() => handlePostAction(post.id, 'reject')} disabled={post.status === 'BANNED'} className="btn small" style={{background: '#ecc94b', opacity: post.status === 'BANNED' ? 0.5 : 1}} title="Reject">⚠️</button>
+                                    <button onClick={() => handlePostAction(post.id, 'delete')} className="btn small" style={{background: '#e53e3e'}} title="Delete">🗑</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
 
-    const renderPostManagement = () => (
-        <div className="table-container">
-            <h3>Manage Service Posts ({posts.length})</h3>
-            <table>
-                <thead>
-                    <tr><th>Title</th><th>Provider</th><th>Status</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {posts.map(post => (
-                        <tr key={post.id}>
-                            <td>{post.title}</td>
-                            <td>{post.providerId}</td>
-                            <td><span className={`status-badge ${post.status?.toLowerCase()}`}>{post.status || 'PENDING'}</span></td>
-                            <td className="post-actions-cell">
-                                <button className="btn small btn-approve" onClick={() => handlePostAction(post.id, 'approve')} disabled={post.status === 'ACTIVE'}>Approve</button>
-                                <button className="btn small btn-danger" onClick={() => handlePostAction(post.id, 'reject')} disabled={post.status === 'BANNED'}>Reject</button>
-                                <button className="btn small btn-danger" onClick={() => handlePostAction(post.id, 'delete')} style={{marginLeft: '5px', background: '#dc3545'}}>Delete</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-
-    // 🟢 NEW: Render Reviews Table
-    const renderReviewManagement = () => (
-        <div className="table-container">
-            <h3>Manage Reviews ({reviews.length})</h3>
-            {reviews.length === 0 ? <p>No reviews found.</p> : (
-            <table>
-                <thead>
-                    <tr><th>Traveller</th><th>Rating</th><th>Comment</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {reviews.map(review => (
-                        <tr key={review.id}>
-                            <td>{review.travellerName || "Anonymous"}</td>
-                            <td style={{color: '#f6ad55', fontSize: '1.2rem'}}>{'★'.repeat(review.rating)}</td>
-                            <td>{review.comment}</td>
-                            <td>
-                                <button className="btn small btn-danger" onClick={() => handleDeleteReview(review.id)} style={{backgroundColor: '#ff4d4f', color: 'white'}}>Delete</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            )}
-        </div>
-    );
+    const renderReviewManagement = () => {
+        const filteredReviews = filterData(reviews, ['comment', 'travellerName']);
+        return (
+            <div className="table-container">
+                <h3>Manage Reviews ({filteredReviews.length})</h3>
+                {renderSearchBar("Search reviews...")}
+                {filteredReviews.length === 0 ? <p>No reviews found.</p> : (
+                <table>
+                    <thead><tr><th>Traveller</th><th>Rating</th><th>Comment</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {filteredReviews.map(review => (
+                            <tr key={review.id}>
+                                <td>{review.travellerName}</td>
+                                <td style={{color: '#ed8936'}}>{"★".repeat(review.rating)}</td>
+                                <td style={{maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{review.comment}</td>
+                                <td>
+                                    <button className="btn small" onClick={() => handleDeleteReview(review.id)} style={{background: '#e53e3e', color: 'white'}}>🗑 Delete</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                )}
+            </div>
+        );
+    };
 
     return (
         <>
@@ -252,28 +286,17 @@ export default function AdminDashboard() {
                 <aside className="admin-sidebar">
                     <h2>Admin Tools</h2>
                     <nav>
-                        <button className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
-                            📊 Overview
-                        </button>
-                        <button className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-                            👥 Users
-                        </button>
-                        <button className={`nav-item ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>
-                            📝 Posts
-                        </button>
-                        {/* 🟢 NEW: Review Tab Button */}
-                        <button className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>
-                            ⭐ Reviews
-                        </button>
+                        <button className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => {setActiveTab('overview'); setSearchTerm("");}}>📊 Overview</button>
+                        <button className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => {setActiveTab('users'); setSearchTerm("");}}>👥 Users</button>
+                        <button className={`nav-item ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => {setActiveTab('posts'); setSearchTerm("");}}>📝 Services</button>
+                        <button className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => {setActiveTab('reviews'); setSearchTerm("");}}>⭐ Reviews</button>
                     </nav>
                 </aside>
-
                 <main className="admin-content">
                     <h1>{activeTab.toUpperCase()}</h1>
                     {activeTab === "overview" && renderOverview()}
                     {activeTab === "users" && renderUserManagement()}
                     {activeTab === "posts" && renderPostManagement()}
-                    {/* 🟢 NEW: Render Reviews */}
                     {activeTab === "reviews" && renderReviewManagement()}
                 </main>
             </div>
@@ -282,7 +305,294 @@ export default function AdminDashboard() {
     );
 }
 
-//http://localhost:5173/admin/login
+// final ui/ux touches above
+//http://localhost:5173/admin/login 
+
+// import React, { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import Navbar from "../../components/Navbar";
+// import Footer from "../../components/Footer";
+// import "../../styles/AdminDashboard.css"; 
+
+// export default function AdminDashboard() {
+//     const navigate = useNavigate();
+//     const [activeTab, setActiveTab] = useState("overview");
+    
+//     // Data State
+//     const [users, setUsers] = useState([]); 
+//     const [posts, setPosts] = useState([]); 
+//     const [reviews, setReviews] = useState([]); // 🟢 NEW: Reviews State
+//     const [loading, setLoading] = useState(false);
+
+//     // 1. LOAD REAL DATA
+//     useEffect(() => {
+//         const token = localStorage.getItem("token");
+//         const role = localStorage.getItem("role");
+
+//         if (!token || role !== "ROLE_ADMIN") {
+//             navigate("/admin/login");
+//             return;
+//         }
+
+//         // Load everything
+//         fetchServices();
+//         fetchUsers();
+//         fetchReviews(); // 🟢 NEW: Load reviews
+//     }, [navigate]);
+
+//     // --- FETCH FUNCTIONS ---
+
+//     const fetchServices = async () => {
+//         try {
+//             const token = localStorage.getItem("token");
+//             const res = await fetch(`http://localhost:8080/api/services?t=${new Date().getTime()}`, {
+//                 method: 'GET',
+//                 headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache, no-store' }
+//             });
+//             if (res.ok) setPosts(await res.json());
+//         } catch (err) { console.error(err); }
+//     };
+
+//     const fetchUsers = async () => {
+//         try {
+//             const token = localStorage.getItem("token");
+//             const res = await fetch(`http://localhost:8080/api/users`, {
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+//             if (res.ok) setUsers(await res.json());
+//         } catch (err) { console.error(err); }
+//     };
+
+//     // 🟢 NEW: Fetch Reviews
+//     const fetchReviews = async () => {
+//         try {
+//             const token = localStorage.getItem("token");
+//             const res = await fetch(`http://localhost:8080/api/reviews`, {
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+//             if (res.ok) setReviews(await res.json());
+//         } catch (err) { console.error(err); }
+//     };
+
+//     // --- ACTION HANDLERS ---
+
+//     const handlePostAction = async (postId, action) => {
+//         const confirmMessage = action === 'delete' ? "Delete post?" : `Mark as ${action}?`;
+//         if (!window.confirm(confirmMessage)) return;
+
+//         const postToUpdate = posts.find(p => p.id === postId);
+//         if (!postToUpdate && action !== 'delete') return;
+
+//         const token = localStorage.getItem("token");
+//         let url = `http://localhost:8080/api/services/${postId}`;
+//         let method = action === 'delete' ? "DELETE" : "PUT";
+        
+//         let body = null;
+//         if (action === 'approve') body = JSON.stringify({ ...postToUpdate, status: "ACTIVE" });
+//         if (action === 'reject') body = JSON.stringify({ ...postToUpdate, status: "BANNED" });
+
+//         try {
+//             const res = await fetch(url, {
+//                 method: method,
+//                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+//                 body: body
+//             });
+
+//             if (res.ok) {
+//                 if (action === 'delete') {
+//                     setPosts(prev => prev.filter(p => p.id !== postId));
+//                 } else {
+//                     setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: body ? JSON.parse(body).status : p.status } : p));
+//                 }
+//                 alert("Success!");
+//             } else {
+//                 alert("Action failed");
+//             }
+//         } catch (err) { alert("Network error"); }
+//     };
+
+//     const handleDeleteUser = async (userId) => {
+//         if (!window.confirm("Remove this user?")) return;
+//         const token = localStorage.getItem("token");
+//         try {
+//             const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
+//                 method: "DELETE",
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+//             if (res.ok) {
+//                 setUsers(prev => prev.filter(u => u.id !== userId));
+//                 alert("User removed");
+//             } else alert("Failed to remove user");
+//         } catch (err) { alert("Network error"); }
+//     };
+
+//     // 🟢 NEW: Delete Review
+//     const handleDeleteReview = async (reviewId) => {
+//         if (!window.confirm("Delete this review?")) return;
+//         const token = localStorage.getItem("token");
+//         try {
+//             const res = await fetch(`http://localhost:8080/api/reviews/${reviewId}`, {
+//                 method: "DELETE",
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+//             if (res.ok) {
+//                 setReviews(prev => prev.filter(r => r.id !== reviewId));
+//                 alert("Review deleted");
+//             } else alert("Failed to delete review");
+//         } catch (err) { alert("Network error"); }
+//     };
+
+//     // --- RENDERERS ---
+
+//     const renderOverview = () => {
+//         const totalTravellers = users.filter(u => u.role === 'ROLE_TRAVELLER').length;
+//         const totalProviders = users.filter(u => u.role === 'ROLE_PROVIDER').length;
+        
+//         return (
+//             <div className="overview-grid">
+//                 <div className="stat-card total-users" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
+//                     <h3>Total Users</h3>
+//                     <p>{users.length}</p>
+//                     <div style={{fontSize: '0.8rem', marginTop: '10px'}}>
+//                         {totalTravellers} Travellers • {totalProviders} Providers
+//                     </div>
+//                 </div>
+//                 <div className="stat-card active-posts">
+//                     <h3>Live Services</h3>
+//                     <p>{posts.filter(p => p.status === 'ACTIVE').length}</p>
+//                 </div>
+//                 {/* 🟢 NEW: Reviews Stat */}
+//                 <div className="stat-card" style={{background: '#fff', borderLeft: '4px solid #f6ad55', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}>
+//                     <h3 style={{margin: 0, color: '#718096', fontSize: '0.9rem', textTransform: 'uppercase'}}>Total Reviews</h3>
+//                     <p style={{fontSize: '2rem', fontWeight: 'bold', margin: '10px 0 0', color: '#2d3748'}}>{reviews.length}</p>
+//                 </div>
+//             </div>
+//         );
+//     };
+
+//     const renderUserManagement = () => (
+//         <div className="table-container">
+//             <h3>Manage Users ({users.length})</h3>
+//             <table>
+//                 <thead>
+//                     <tr><th>Name</th><th>Role</th><th>Email</th><th>Actions</th></tr>
+//                 </thead>
+//                 <tbody>
+//                     {users.map(user => (
+//                         <tr key={user.id}>
+//                             <td>{user.fullname}</td>
+//                             <td>
+//                                 <span className={`status-badge ${user.role === 'ROLE_ADMIN' ? 'admin' : user.role === 'ROLE_PROVIDER' ? 'provider' : 'traveller'}`} 
+//                                       style={{
+//                                           backgroundColor: user.role === 'ROLE_ADMIN' ? '#000' : user.role === 'ROLE_PROVIDER' ? '#e3f2fd' : '#f1f8e9',
+//                                           color: user.role === 'ROLE_ADMIN' ? '#fff' : user.role === 'ROLE_PROVIDER' ? '#1976d2' : '#388e3c',
+//                                           padding: '4px 8px', borderRadius: '12px', fontSize: '12px'
+//                                       }}>
+//                                     {user.role.replace('ROLE_', '')}
+//                                 </span>
+//                             </td>
+//                             <td>{user.email}</td>
+//                             <td>
+//                                 {user.role !== 'ROLE_ADMIN' && (
+//                                     <button className="btn small btn-danger" onClick={() => handleDeleteUser(user.id)} style={{backgroundColor: '#ff4d4f', color: 'white'}}>Remove</button>
+//                                 )}
+//                             </td>
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+
+//     const renderPostManagement = () => (
+//         <div className="table-container">
+//             <h3>Manage Service Posts ({posts.length})</h3>
+//             <table>
+//                 <thead>
+//                     <tr><th>Title</th><th>Provider</th><th>Status</th><th>Actions</th></tr>
+//                 </thead>
+//                 <tbody>
+//                     {posts.map(post => (
+//                         <tr key={post.id}>
+//                             <td>{post.title}</td>
+//                             <td>{post.providerId}</td>
+//                             <td><span className={`status-badge ${post.status?.toLowerCase()}`}>{post.status || 'PENDING'}</span></td>
+//                             <td className="post-actions-cell">
+//                                 <button className="btn small btn-approve" onClick={() => handlePostAction(post.id, 'approve')} disabled={post.status === 'ACTIVE'}>Approve</button>
+//                                 <button className="btn small btn-danger" onClick={() => handlePostAction(post.id, 'reject')} disabled={post.status === 'BANNED'}>Reject</button>
+//                                 <button className="btn small btn-danger" onClick={() => handlePostAction(post.id, 'delete')} style={{marginLeft: '5px', background: '#dc3545'}}>Delete</button>
+//                             </td>
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+
+//     // 🟢 NEW: Render Reviews Table
+//     const renderReviewManagement = () => (
+//         <div className="table-container">
+//             <h3>Manage Reviews ({reviews.length})</h3>
+//             {reviews.length === 0 ? <p>No reviews found.</p> : (
+//             <table>
+//                 <thead>
+//                     <tr><th>Traveller</th><th>Rating</th><th>Comment</th><th>Actions</th></tr>
+//                 </thead>
+//                 <tbody>
+//                     {reviews.map(review => (
+//                         <tr key={review.id}>
+//                             <td>{review.travellerName || "Anonymous"}</td>
+//                             <td style={{color: '#f6ad55', fontSize: '1.2rem'}}>{'★'.repeat(review.rating)}</td>
+//                             <td>{review.comment}</td>
+//                             <td>
+//                                 <button className="btn small btn-danger" onClick={() => handleDeleteReview(review.id)} style={{backgroundColor: '#ff4d4f', color: 'white'}}>Delete</button>
+//                             </td>
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//             )}
+//         </div>
+//     );
+
+//     return (
+//         <>
+//             <Navbar />
+//             <div className="admin-page-container">
+//                 <aside className="admin-sidebar">
+//                     <h2>Admin Tools</h2>
+//                     <nav>
+//                         <button className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+//                             📊 Overview
+//                         </button>
+//                         <button className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+//                             👥 Users
+//                         </button>
+//                         <button className={`nav-item ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>
+//                             📝 Posts
+//                         </button>
+//                         {/* 🟢 NEW: Review Tab Button */}
+//                         <button className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>
+//                             ⭐ Reviews
+//                         </button>
+//                     </nav>
+//                 </aside>
+
+//                 <main className="admin-content">
+//                     <h1>{activeTab.toUpperCase()}</h1>
+//                     {activeTab === "overview" && renderOverview()}
+//                     {activeTab === "users" && renderUserManagement()}
+//                     {activeTab === "posts" && renderPostManagement()}
+//                     {/* 🟢 NEW: Render Reviews */}
+//                     {activeTab === "reviews" && renderReviewManagement()}
+//                 </main>
+//             </div>
+//             <Footer />
+//         </>
+//     );
+// }
+
+
 // with review tab added above
 
 
