@@ -5,6 +5,8 @@ import Footer from "../../components/Footer";
 import { getAllServices, getServiceById } from "../../api/serviceApi"; 
 import { getWishlist, getWishlistIds, toggleWishlist } from "../../api/wishlistApi";
 import TripPlanner from "../../components/TripPlanner";
+import CategoryBookingForm from "../../components/CategoryBookingForm";
+import BookingDetailsCard from "../../components/BookingDetailsCard";
 import { 
     createBooking, 
     getMyBookings, 
@@ -12,7 +14,8 @@ import {
     createReview, 
     getServiceReviews,
     getMyReviews,
-    deleteReview 
+    deleteReview,
+    updateBookingStatus 
 } from "../../api/travellerApi";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -46,12 +49,7 @@ export default function TravellerDashboard() {
     // Booking states
     const [bookings, setBookings] = useState([]);
     const [showBookingModal, setShowBookingModal] = useState(false);
-    const [bookingForm, setBookingForm] = useState({
-        bookingDate: "",
-        contactEmail: user?.email || "",
-        contactPhone: "",
-        message: ""
-    });
+    const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
     
     // Review states
     const [reviews, setReviews] = useState([]);
@@ -216,25 +214,18 @@ export default function TravellerDashboard() {
         setShowBookingModal(true);
     };
 
-    const handleSubmitBooking = async (e) => {
-        e.preventDefault();
+    const handleSubmitBooking = async (bookingData) => {
+        setIsSubmittingBooking(true);
         try {
-            await createBooking({
-                serviceId: selectedPost.id,
-                ...bookingForm
-            });
+            await createBooking(bookingData);
             alert("Booking created successfully!");
             setShowBookingModal(false);
-            setBookingForm({
-                bookingDate: "",
-                contactEmail: user?.email || "",
-                contactPhone: "",
-                message: ""
-            });
             fetchMyBookings();
         } catch (error) {
             console.error("Booking failed:", error);
             alert("Failed to create booking");
+        } finally {
+            setIsSubmittingBooking(false);
         }
     };
 
@@ -789,20 +780,16 @@ export default function TravellerDashboard() {
                         ) : (
                             <div className="bookings-list">
                                 {bookings.map((booking) => (
-                                    <div key={booking.id} className="booking-card">
-                                        <h3>{booking.serviceTitle}</h3>
-                                        <p><strong>Date:</strong> {new Date(booking.bookingDate).toLocaleDateString()}</p>
-                                        <p><strong>Status:</strong> <span className={`status-badge ${booking.status.toLowerCase()}`}>{booking.status}</span></p>
-                                        <p><strong>Message:</strong> {booking.message}</p>
-                                        <p><strong>Booked on:</strong> {new Date(booking.createdAt).toLocaleDateString()}</p>
-                                        {booking.status === "PENDING" && (
-                                            <button 
-                                                className="btn btn-danger" 
-                                                onClick={() => handleCancelBooking(booking.id)}
-                                            >
-                                                Cancel Booking
-                                            </button>
-                                        )}
+                                    <div key={booking.id} className="booking-item">
+                                        <BookingDetailsCard
+                                            booking={booking}
+                                            isProvider={false}
+                                            onStatusChange={async () => {
+                                                // Traveler can't change status, but keep for compatibility
+                                                fetchMyBookings();
+                                            }}
+                                            onDeleteBooking={() => handleCancelBooking(booking.id)}
+                                        />
                                     </div>
                                 ))}
                             </div>
@@ -857,55 +844,16 @@ export default function TravellerDashboard() {
                 )}
 
                 {/* BOOKING MODAL */}
-                {showBookingModal && (
+                {showBookingModal && selectedPost && (
                     <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                            <h2>Book Service</h2>
-                            <form onSubmit={handleSubmitBooking}>
-                                <div className="form-group">
-                                    <label>Service:</label>
-                                    <input type="text" value={selectedPost?.title} disabled />
-                                </div>
-                                <div className="form-group">
-                                    <label>Booking Date*:</label>
-                                    <input 
-                                        type="date" 
-                                        required
-                                        value={bookingForm.bookingDate}
-                                        onChange={(e) => setBookingForm({...bookingForm, bookingDate: e.target.value})}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Email*:</label>
-                                    <input 
-                                        type="email" 
-                                        required
-                                        value={bookingForm.contactEmail}
-                                        onChange={(e) => setBookingForm({...bookingForm, contactEmail: e.target.value})}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Phone*:</label>
-                                    <input 
-                                        type="tel" 
-                                        required
-                                        value={bookingForm.contactPhone}
-                                        onChange={(e) => setBookingForm({...bookingForm, contactPhone: e.target.value})}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Message:</label>
-                                    <textarea 
-                                        rows="4"
-                                        value={bookingForm.message}
-                                        onChange={(e) => setBookingForm({...bookingForm, message: e.target.value})}
-                                    />
-                                </div>
-                                <div className="modal-actions">
-                                    <button type="submit" className="btn">Submit Booking</button>
-                                    <button type="button" className="btn btn-secondary" onClick={() => setShowBookingModal(false)}>Cancel</button>
-                                </div>
-                            </form>
+                            <CategoryBookingForm
+                                serviceId={selectedPost.id}
+                                category={selectedPost.category}
+                                onSubmit={handleSubmitBooking}
+                                onCancel={() => setShowBookingModal(false)}
+                                isLoading={isSubmittingBooking}
+                            />
                         </div>
                     </div>
                 )}

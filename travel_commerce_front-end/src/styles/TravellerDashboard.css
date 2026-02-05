@@ -1298,3 +1298,40 @@
 .posts-section.shrunk .post-card-media.single {
   height: 160px; /* Slightly more compact for the list view */
 }
+
+/* ===== UPDATED BOOKINGS LIST ===== */
+.bookings-section {
+  background: #f5f5fa;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+.bookings-section h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+}
+
+.bookings-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(550px, 1fr));
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .bookings-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.booking-item {
+  width: 100%;
+}
+
+.no-results-error {
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  padding: 2rem;
+}

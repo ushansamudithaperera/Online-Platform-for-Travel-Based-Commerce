@@ -7,6 +7,8 @@ import {
   getProviderServices,
   deleteService,
 } from "../../api/serviceApi";
+import { getProviderBookings, updateBookingStatus, deleteBooking } from "../../api/travellerApi";
+import BookingDetailsCard from "../../components/BookingDetailsCard";
 import ServiceFormModal from "../../components/ServiceFormModal";
 
 const backendBaseUrl =
@@ -23,11 +25,17 @@ const truncateTitle = (title) => {
 };
 
 export default function ProviderDashboard() {
+  const [activeTab, setActiveTab] = useState("services"); // services, bookings
   const [selectedPost, setSelectedPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [posts, setPosts] = useState([]);
+  
+  // Bookings state
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -67,11 +75,16 @@ export default function ProviderDashboard() {
   }, [selectedPost?.id]);
 
   useEffect(() => {
-    fetchProviderPosts();
-  }, []);
+    if (activeTab === "services") {
+      fetchProviderPosts();
+    } else if (activeTab === "bookings") {
+      fetchProviderBookings();
+    }
+  }, [activeTab]);
 
   const fetchProviderPosts = async () => {
     try {
+      setLoading(true);
       const response = await getProviderServices();
       const data = response.data || [];
       setPosts(data);
@@ -82,6 +95,52 @@ export default function ProviderDashboard() {
       console.error("Failed to fetch provider posts:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProviderBookings = async () => {
+    try {
+      setBookingsLoading(true);
+      const response = await getProviderBookings();
+      const data = response.data || [];
+      setBookings(data);
+      if (!selectedBooking && data.length > 0) {
+        setSelectedBooking(data[0]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
+
+  const handleBookingStatusChange = async (bookingId, newStatus) => {
+    try {
+      await updateBookingStatus(bookingId, newStatus);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
+      );
+      if (selectedBooking?.id === bookingId) {
+        setSelectedBooking({ ...selectedBooking, status: newStatus });
+      }
+      alert("Booking status updated!");
+    } catch (error) {
+      console.error("Failed to update booking status:", error);
+      alert("Error updating booking status");
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId) => {
+    if (window.confirm("Are you sure you want to delete this booking?")) {
+      try {
+        await deleteBooking(bookingId);
+        setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+        if (selectedBooking?.id === bookingId) setSelectedBooking(null);
+        alert("Booking deleted!");
+      } catch (error) {
+        console.error("Failed to delete booking:", error);
+        alert("Error deleting booking");
+      }
     }
   };
 
@@ -147,8 +206,26 @@ export default function ProviderDashboard() {
       <Navbar />
 
       <div className="provider-container">
-        {/* LEFT SIDE */}
-        <div className="provider-left">
+        {/* TABS */}
+        <div className="provider-tabs">
+          <button
+            className={`provider-tab-btn ${activeTab === "services" ? "active" : ""}`}
+            onClick={() => setActiveTab("services")}
+          >
+            Services
+          </button>
+          <button
+            className={`provider-tab-btn ${activeTab === "bookings" ? "active" : ""}`}
+            onClick={() => setActiveTab("bookings")}
+          >
+            Bookings ({bookings.length})
+          </button>
+        </div>
+
+        {/* SERVICES TAB */}
+        {activeTab === "services" && (
+          <>
+            <div className="provider-left">
           <div className="provider-header">
             <div>
               <h2>Provider Dashboard</h2>
@@ -428,7 +505,6 @@ export default function ProviderDashboard() {
           )}
         </div>
 
-        {/* RIGHT SIDE */}
         <div className="provider-right">
           <div className="services-header">
             <h3>My Services ({posts.length})</h3>
@@ -515,6 +591,52 @@ export default function ProviderDashboard() {
             )}
           </div>
         </div>
+            </>
+        )}
+
+        {/* BOOKINGS TAB */}
+        {activeTab === "bookings" && (
+          <div className="provider-bookings">
+            <div className="bookings-header">
+              <div>
+                <h2>Booking Requests & Confirmations</h2>
+                <p className="bookings-subtitle">
+                  Manage bookings from travellers. Set pricing details per booking,
+                  confirm/complete/cancel bookings, and communicate with guests.
+                </p>
+              </div>
+              <button
+                className="refresh-btn"
+                onClick={fetchProviderBookings}
+                title="Refresh bookings"
+              >
+                ↻
+              </button>
+            </div>
+
+            <div className="bookings-content">
+              {bookingsLoading ? (
+                <p className="loading-msg">Loading bookings...</p>
+              ) : bookings.length === 0 ? (
+                <div className="empty-state">
+                  <p>📭 No bookings yet. When travellers book your services, they'll appear here.</p>
+                </div>
+              ) : (
+                <div className="bookings-grid">
+                  {bookings.map((booking) => (
+                    <BookingDetailsCard
+                      key={booking.id}
+                      booking={booking}
+                      isProvider={true}
+                      onStatusChange={handleBookingStatusChange}
+                      onDeleteBooking={handleDeleteBooking}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* IMAGE LIGHTBOX */}

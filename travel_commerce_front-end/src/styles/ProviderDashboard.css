@@ -763,6 +763,132 @@
   text-decoration: underline;
 }
 
+/* ===== PROVIDER TABS ===== */
+.provider-tabs {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 30px;
+  margin: 0 0 8px;
+  background: transparent;
+}
+
+.provider-tab-btn {
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.provider-tab-btn:hover {
+  color: #1d4ed8;
+  border-color: #c7d2fe;
+}
+
+.provider-tab-btn.active {
+  color: #1d4ed8;
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+/* ===== PROVIDER BOOKINGS ===== */
+.provider-bookings {
+  padding: 0 30px 30px;
+}
+
+.bookings-header {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.bookings-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.bookings-subtitle {
+  font-size: 0.95rem;
+  color: #7f8c8d;
+  margin: 0.5rem 0 0;
+}
+
+.refresh-btn {
+  padding: 0.6rem 1rem;
+  background: #ecf0f1;
+  border: 1px solid #bdc3c7;
+  border-radius: 5px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 45px;
+  text-align: center;
+}
+
+.refresh-btn:hover {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+  transform: rotate(180deg);
+}
+
+.bookings-content {
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.loading-msg {
+  text-align: center;
+  color: #7f8c8d;
+  padding: 2rem;
+  font-size: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #7f8c8d;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.bookings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2rem;
+}
+
+@media (max-width: 1000px) {
+  .bookings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.booking-item {
+  width: 100%;
+}
+
 
 
 
@@ -772,5 +898,18 @@
     margin-top: 20px;
     grid-template-columns: 1fr;
     padding: 15px;
+  }
+
+  .provider-tabs {
+    padding: 0 15px;
+    justify-content: flex-start;
+  }
+
+  .bookings-header {
+    flex-direction: column;
+  }
+
+  .bookings-grid {
+    grid-template-columns: 1fr;
   }
 }

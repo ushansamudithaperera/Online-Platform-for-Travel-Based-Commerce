@@ -4,7 +4,11 @@ import api from "./axiosConfig";
 // Booking APIs
 export const createBooking = (bookingData) => api.post("/bookings", bookingData);
 export const getMyBookings = () => api.get("/bookings/my-bookings");
+export const getProviderBookings = () => api.get("/bookings/provider-bookings");
+export const updateBookingStatus = (bookingId, status) => 
+  api.put(`/bookings/${bookingId}/status`, { status });
 export const cancelBooking = (bookingId) => api.delete(`/bookings/${bookingId}`);
+export const deleteBooking = (bookingId) => api.delete(`/bookings/${bookingId}`);
 
 // Review APIs
 export const createReview = (reviewData) => api.post("/reviews", reviewData);
