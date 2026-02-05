@@ -393,18 +393,34 @@ export default function ProviderDashboard() {
 
                 <h4 className="about-heading">About this service</h4>
 
-                <div
-                  className={
-                    "post-description description-body" +
-                    (!showFullDescription && descriptionTooLong
-                      ? " clamped"
-                      : "")
-                  }
-                  dangerouslySetInnerHTML={{
-                    __html:
-                      descriptionHtml || "<p>No description provided yet.</p>",
-                  }}
-                />
+                <div className="post-description description-body">
+                  {/* PRICE DISPLAY - PROMINENT INLINE */}
+                  {hasPrice && (
+                    <div className="inline-price-display">
+                      <strong>💰 Price:</strong>{" "}
+                      <span className="price-highlight">
+                        {selectedPost.currency || "LKR"} {priceFromText}
+                        {priceFromText && priceToText && ` – ${priceToText}`}
+                      </span>
+                      {selectedPost.priceUnit && (
+                        <span className="price-unit-text"> {selectedPost.priceUnit}</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* DESCRIPTION CONTENT */}
+                  <div
+                    className={
+                      !showFullDescription && descriptionTooLong
+                        ? "description-content clamped"
+                        : "description-content"
+                    }
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        descriptionHtml || "<p>No description provided yet.</p>",
+                    }}
+                  />
+                </div>
 
                 {descriptionTooLong && (
                   <button

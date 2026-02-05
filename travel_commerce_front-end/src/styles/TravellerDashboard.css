@@ -500,6 +500,46 @@
   font-size: 16px;
 }
 
+/* ================================================
+   TRAVELLER INLINE PRICE DISPLAY
+   ================================================ */
+
+.traveller-inline-price {
+  margin: 16px 0;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fff9f0 0%, #fef3c7 100%);
+  border-left: 5px solid #fb923c;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.6;
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.12);
+}
+
+.traveller-inline-price strong {
+  color: #92400e;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.traveller-price-amount {
+  color: #d97706;
+  font-weight: 900;
+  font-size: 26px;
+  display: inline-block;
+  margin: 0 4px;
+}
+
+.traveller-price-unit {
+  color: #b45309;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* ================================================
+   END TRAVELLER INLINE PRICE
+   ================================================ */
+
+
 .close-btn {
   position: absolute;
   top: 15px;
@@ -1004,12 +1044,75 @@
   overflow: hidden;
 }
 
-.posts-section.list-view .post-card-description-preview {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
+/* ================================================
+   PRICE BANNER - PROMINENT PRICING DISPLAY
+   ================================================ */
+
+.post-card-price-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 12px 0;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+  border-left: 4px solid #fb923c;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(251, 146, 60, 0.15);
 }
+
+.price-currency {
+  font-size: 11px;
+  font-weight: 700;
+  color: #92400e;
+  text-transform: uppercase;
+}
+
+.price-amount-display {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.price-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: #d97706;
+  line-height: 1;
+}
+
+.price-separator {
+  font-size: 16px;
+  color: #fb923c;
+  margin: 0 2px;
+}
+
+.price-unit {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: lowercase;
+  margin-left: auto;
+  border: 1px solid #fde68a;
+}
+
+/* List view: make price banner span wider */
+.posts-section.list-view .post-card-price-banner {
+  margin: 8px 0 10px 0;
+  padding: 10px 14px;
+}
+
+.posts-section.list-view .price-value {
+  font-size: 24px;
+}
+
+/* ================================================
+   END PRICE BANNER
+   ================================================ */
+
+
 
 .post-card-footer {
   display: flex;

@@ -95,6 +95,37 @@ public class ServiceController {
             post.setCategory((String) serviceData.get("category"));
             post.setPlanId((String) serviceData.get("planId"));
             post.setPlanName((String) serviceData.get("planName"));
+            
+            // Pricing fields - handle both String and Number types
+            try {
+                Object priceFromObj = serviceData.get("priceFrom");
+                if (priceFromObj != null && !priceFromObj.toString().isEmpty()) {
+                    if (priceFromObj instanceof Number) {
+                        post.setPriceFrom(((Number) priceFromObj).doubleValue());
+                    } else {
+                        post.setPriceFrom(Double.parseDouble(priceFromObj.toString()));
+                    }
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid priceFrom value: {}", serviceData.get("priceFrom"));
+            }
+            
+            try {
+                Object priceToObj = serviceData.get("priceTo");
+                if (priceToObj != null && !priceToObj.toString().isEmpty()) {
+                    if (priceToObj instanceof Number) {
+                        post.setPriceTo(((Number) priceToObj).doubleValue());
+                    } else {
+                        post.setPriceTo(Double.parseDouble(priceToObj.toString()));
+                    }
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid priceTo value: {}", serviceData.get("priceTo"));
+            }
+            
+            post.setPriceUnit((String) serviceData.get("priceUnit"));
+            post.setCurrency((String) serviceData.get("currency"));
+            
             post.setProviderId(userId);
 
             ServicePost saved;
@@ -149,6 +180,12 @@ public class ServiceController {
         existing.setDistrict(updated.getDistrict());
         existing.setLocation(updated.getLocation());
         existing.setCategory(updated.getCategory());
+        
+        // Pricing updates
+        existing.setPriceFrom(updated.getPriceFrom());
+        existing.setPriceTo(updated.getPriceTo());
+        existing.setPriceUnit(updated.getPriceUnit());
+        existing.setCurrency(updated.getCurrency());
 
         // 🟢 FIX START: Update Status ONLY if Admin 🟢
         if (isAdmin && updated.getStatus() != null) {
@@ -196,6 +233,36 @@ public class ServiceController {
             existing.setDistrict((String) data.get("district"));
             existing.setLocation((String) data.get("location"));
             existing.setCategory((String) data.get("category"));
+            
+            // Pricing updates - handle both String and Number types
+            try {
+                Object priceFromObj = data.get("priceFrom");
+                if (priceFromObj != null && !priceFromObj.toString().isEmpty()) {
+                    if (priceFromObj instanceof Number) {
+                        existing.setPriceFrom(((Number) priceFromObj).doubleValue());
+                    } else {
+                        existing.setPriceFrom(Double.parseDouble(priceFromObj.toString()));
+                    }
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid priceFrom value: {}", data.get("priceFrom"));
+            }
+            
+            try {
+                Object priceToObj = data.get("priceTo");
+                if (priceToObj != null && !priceToObj.toString().isEmpty()) {
+                    if (priceToObj instanceof Number) {
+                        existing.setPriceTo(((Number) priceToObj).doubleValue());
+                    } else {
+                        existing.setPriceTo(Double.parseDouble(priceToObj.toString()));
+                    }
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid priceTo value: {}", data.get("priceTo"));
+            }
+            
+            existing.setPriceUnit((String) data.get("priceUnit"));
+            existing.setCurrency((String) data.get("currency"));
             
             // 🟢 FIX: Allow Admin to update status via Form Data too
             if (isAdmin && data.containsKey("status")) {

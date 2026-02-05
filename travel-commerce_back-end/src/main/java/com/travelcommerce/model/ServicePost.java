@@ -21,6 +21,13 @@ public class ServicePost {
     private List<String> images;
     private String planId;
     private String planName; // ADD THIS LINE
+    
+    // Pricing fields
+    private Double priceFrom;
+    private Double priceTo;
+    private String priceUnit;
+    private String currency;
+    
     private Status status = Status.PENDING;
     private Date createdAt = new Date();
 

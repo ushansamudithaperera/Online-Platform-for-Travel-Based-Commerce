@@ -581,6 +581,22 @@ export default function TravellerDashboard() {
                                         )}
                                     </div>
 
+                                    {/* PRICE DISPLAY - PROMINENT INLINE */}
+                                    {(selectedPost.priceFrom || selectedPost.priceTo) && (
+                                        <div className="traveller-inline-price">
+                                            <strong>💰 Price:</strong>{" "}
+                                            <span className="traveller-price-amount">
+                                                {selectedPost.currency || "LKR"}{" "}
+                                                {selectedPost.priceFrom ? Number(selectedPost.priceFrom).toLocaleString() : ""}
+                                                {selectedPost.priceFrom && selectedPost.priceTo && " – "}
+                                                {selectedPost.priceTo ? Number(selectedPost.priceTo).toLocaleString() : ""}
+                                            </span>
+                                            {selectedPost.priceUnit && (
+                                                <span className="traveller-price-unit"> {selectedPost.priceUnit}</span>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <div dangerouslySetInnerHTML={{ __html: selectedPost.description }} />
                                     <p><strong>District:</strong> {selectedPost.district}</p>
                                     <p><strong>Location:</strong> {selectedPost.location}</p>
@@ -720,6 +736,19 @@ export default function TravellerDashboard() {
                                                     <div className="post-card-header-row">
                                                         <h4 className="post-title">{p.title}</h4>
                                                     </div>
+
+                                                    {/* PRICE DISPLAY - PROMINENT */}
+                                                    {p.priceFrom || p.priceTo ? (
+                                                        <div className="post-card-price-banner">
+                                                            <span className="price-currency">{p.currency || "LKR"}</span>
+                                                            <div className="price-amount-display">
+                                                                {p.priceFrom && <span className="price-value">{Number(p.priceFrom).toLocaleString()}</span>}
+                                                                {p.priceFrom && p.priceTo && <span className="price-separator">–</span>}
+                                                                {p.priceTo && <span className="price-value">{Number(p.priceTo).toLocaleString()}</span>}
+                                                            </div>
+                                                            {p.priceUnit && <span className="price-unit">{p.priceUnit}</span>}
+                                                        </div>
+                                                    ) : null}
 
                                                     <div
                                                         className="post-card-description-preview"

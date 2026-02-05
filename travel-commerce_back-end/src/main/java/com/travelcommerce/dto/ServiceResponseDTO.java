@@ -23,6 +23,13 @@ public class ServiceResponseDTO {
     private List<String> images;
     private String planId;
     private String planName;
+    
+    // Pricing fields
+    private Double priceFrom;
+    private Double priceTo;
+    private String priceUnit;
+    private String currency;
+    
     private Status status;
     private Date createdAt;
 
@@ -43,6 +50,10 @@ public class ServiceResponseDTO {
                 post.getImages(),
                 post.getPlanId(),
                 post.getPlanName(),
+                post.getPriceFrom(),
+                post.getPriceTo(),
+                post.getPriceUnit(),
+                post.getCurrency(),
                 post.getStatus(),
                 post.getCreatedAt(),
                 post.getAverageRating(),

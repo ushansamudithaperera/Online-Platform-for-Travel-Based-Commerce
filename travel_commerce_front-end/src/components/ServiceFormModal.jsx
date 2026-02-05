@@ -73,6 +73,10 @@ export default function ServiceFormModal({
     district: "",
     location: "",
     category: "",
+    priceFrom: "",
+    priceTo: "",
+    priceUnit: "per person",
+    currency: "LKR",
   });
 
   // plan (used for photo limit & price; not editable in edit)
@@ -93,6 +97,10 @@ export default function ServiceFormModal({
       district: "",
       location: "",
       category: "",
+      priceFrom: "",
+      priceTo: "",
+      priceUnit: "per person",
+      currency: "LKR",
     });
     setSelectedPlan(PLANS[0]);
     setExistingImages([]);
@@ -115,6 +123,10 @@ export default function ServiceFormModal({
         district: initialService.district || "",
         location: initialService.location || "",
         category: initialService.category || "",
+        priceFrom: initialService.priceFrom || "",
+        priceTo: initialService.priceTo || "",
+        priceUnit: initialService.priceUnit || "per person",
+        currency: initialService.currency || "LKR",
       });
 
       if (initialService.planId) {
@@ -370,6 +382,74 @@ export default function ServiceFormModal({
                   onChange={handleInputChange}
                   placeholder="https://maps.google.com/..."
                 />
+              </div>
+
+              {/* PRICING SECTION */}
+              <div className="pricing-input-section">
+                <h4 className="pricing-section-header">💰 Pricing Information</h4>
+                <p className="pricing-hint-text">
+                  Set your service prices. These will be prominently displayed to travelers.
+                </p>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Currency</label>
+                    <select
+                      name="currency"
+                      value={serviceData.currency}
+                      onChange={handleInputChange}
+                    >
+                      <option value="LKR">LKR (Sri Lankan Rupee)</option>
+                      <option value="USD">USD (US Dollar)</option>
+                      <option value="EUR">EUR (Euro)</option>
+                      <option value="GBP">GBP (British Pound)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Price Unit</label>
+                    <select
+                      name="priceUnit"
+                      value={serviceData.priceUnit}
+                      onChange={handleInputChange}
+                    >
+                      <option value="per person">Per Person</option>
+                      <option value="per day">Per Day</option>
+                      <option value="per night">Per Night</option>
+                      <option value="per hour">Per Hour</option>
+                      <option value="per trip">Per Trip</option>
+                      <option value="per group">Per Group</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Price From</label>
+                    <input
+                      type="number"
+                      name="priceFrom"
+                      value={serviceData.priceFrom}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 5000"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Price To (Optional)</label>
+                    <input
+                      type="number"
+                      name="priceTo"
+                      value={serviceData.priceTo}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 10000"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
               </div>
 
               {isEdit && (

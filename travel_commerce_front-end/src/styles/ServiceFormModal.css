@@ -133,6 +133,54 @@
   min-height: 100px;
 }
 
+/* =============================================
+   PRICING INPUT SECTION
+   ============================================= */
+
+.pricing-input-section {
+  margin: 24px 0;
+  padding: 18px 16px;
+  background: linear-gradient(135deg, #fff9f0 0%, #fef3c7 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
+}
+
+.pricing-section-header {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.pricing-hint-text {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: #b45309;
+  font-weight: 500;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-row:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =============================================
+   END PRICING INPUT SECTION
+   ============================================= */
+
 /*update of red color mmessage*/
 /* Edit mode warning text */
 .edit-note {
