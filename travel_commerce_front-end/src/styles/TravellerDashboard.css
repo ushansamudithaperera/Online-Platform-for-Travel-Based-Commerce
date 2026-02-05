@@ -874,7 +874,7 @@
 /* Post card style */
 .post-card {
   background: #fff;
-  padding: 12px;
+  padding: 14px;
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -882,9 +882,11 @@
   border: 1px solid rgba(17, 24, 39, 0.06);
   overflow: hidden;
   height: 100%;
-  min-height: 320px;
+  min-height: 390px;
   align-self: start;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 .post-card:hover {
   transform: translateY(-4px);
@@ -967,25 +969,26 @@
 }
 
 .card-rating-badge {
-  position: absolute;
-  right: 10px;
-
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  z-index: 2;
-}
-
-/* Grid view: place badge at the bottom of the card */
-.posts-section:not(.list-view) .card-rating-badge {
-  top: auto;
-  bottom: 10px;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0 10px;
 }
 
 /* List view: keep badge at the top-right */
 .posts-section.list-view .card-rating-badge {
+  position: absolute;
   top: 10px;
+  right: 10px;
   bottom: auto;
+  z-index: 2;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  padding: 4px 8px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .heart-btn {
@@ -1018,6 +1021,13 @@
   background: rgba(225, 29, 72, 0.08);
 }
 
+/* Grid view: slightly smaller heart so it fits under price */
+.posts-section:not(.list-view) .heart-btn {
+  width: 30px;
+  height: 30px;
+  font-size: 15px;
+}
+
 .card-rating-number {
   font-size: 12px;
 }
@@ -1042,6 +1052,15 @@
   color: #4a5568;
   line-height: 1.5;
   overflow: hidden;
+}
+
+/* Show description in list view */
+.posts-section.list-view .post-card-description-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 14px;
 }
 
 /* ================================================
@@ -1098,6 +1117,35 @@
   border: 1px solid #fde68a;
 }
 
+/* Grid view: compact inline price */
+.posts-section:not(.list-view) .post-card-price-banner {
+  margin: 4px 0 6px 0;
+  padding: 4px 8px;
+  gap: 5px;
+  background: #fff7ed;
+  border-left: 3px solid #fb923c;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+.posts-section:not(.list-view) .price-currency {
+  font-size: 10px;
+}
+
+.posts-section:not(.list-view) .price-value {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.posts-section:not(.list-view) .price-separator {
+  font-size: 12px;
+}
+
+.posts-section:not(.list-view) .price-unit {
+  font-size: 9px;
+  padding: 2px 5px;
+}
+
 /* List view: make price banner span wider */
 .posts-section.list-view .post-card-price-banner {
   margin: 8px 0 10px 0;
@@ -1120,6 +1168,8 @@
   justify-content: space-between;
   gap: 10px;
   margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
 }
 
 .view-details-btn {
@@ -1184,17 +1234,18 @@
   border-radius: 12px;
   overflow: hidden;
   background: #0b0b0f;
-  height: 180px;
+  height: 200px;
+  flex-shrink: 0;
 }
 
 .post-card-media.single {
-  height: 180px;
+  height: 200px;
 }
 
 .post-card-media.collage {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 85px);
+  grid-template-rows: repeat(2, 95px);
   gap: 6px;
   padding: 6px;
   background: #fff;
@@ -1210,7 +1261,7 @@
 }
 
 .post-card-media.single .post-card-media-cell {
-  height: 170px;
+  height: 190px;
 }
 
 .post-card-media-image {
@@ -1234,7 +1285,10 @@
 }
 
 .post-card-content {
-  padding-top: 10px;
+  padding-top: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 

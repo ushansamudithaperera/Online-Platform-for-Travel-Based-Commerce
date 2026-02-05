@@ -23,6 +23,7 @@ import {
     FaCar,
     FaHotel,
     FaHiking,
+    FaUtensils,
     FaGlobeAsia,
 } from "react-icons/fa";
 
@@ -66,6 +67,7 @@ export default function TravellerDashboard() {
         { id: "driver", name: "Drivers", icon: FaCar },
         { id: "hotel", name: "Hotels", icon: FaHotel },
         { id: "experience", name: "Experience", icon: FaHiking },
+        { id: "restaurant", name: "Restaurants", icon: FaUtensils },
         { id: "all", name: "All", icon: FaGlobeAsia },
     ];
 
@@ -81,6 +83,18 @@ export default function TravellerDashboard() {
     };
 
     const selectedImages = selectedPost?.images || [];
+
+    const getSafeExternalUrl = (value) => {
+        if (!value) return null;
+        const text = String(value).trim();
+        try {
+            const url = new URL(text);
+            if (url.protocol === "http:" || url.protocol === "https:") return url.toString();
+            return null;
+        } catch {
+            return null;
+        }
+    };
 
     const goToPrevImage = () => {
         if (!selectedImages.length) return;
@@ -455,9 +469,31 @@ export default function TravellerDashboard() {
                                             onChange={(e) => setSelectedDistrict(e.target.value)}
                                         >
                                             <option value="all">All Districts</option>
+                                            <option value="Ampara">Ampara</option>
+                                            <option value="Anuradhapura">Anuradhapura</option>
+                                            <option value="Badulla">Badulla</option>
+                                            <option value="Batticaloa">Batticaloa</option>
                                             <option value="Colombo">Colombo</option>
-                                            <option value="Kandy">Kandy</option>
                                             <option value="Galle">Galle</option>
+                                            <option value="Gampaha">Gampaha</option>
+                                            <option value="Hambantota">Hambantota</option>
+                                            <option value="Jaffna">Jaffna</option>
+                                            <option value="Kalutara">Kalutara</option>
+                                            <option value="Kandy">Kandy</option>
+                                            <option value="Kegalle">Kegalle</option>
+                                            <option value="Kilinochchi">Kilinochchi</option>
+                                            <option value="Kurunegala">Kurunegala</option>
+                                            <option value="Mannar">Mannar</option>
+                                            <option value="Matale">Matale</option>
+                                            <option value="Matara">Matara</option>
+                                            <option value="Monaragala">Monaragala</option>
+                                            <option value="Mullaitivu">Mullaitivu</option>
+                                            <option value="Nuwara Eliya">Nuwara Eliya</option>
+                                            <option value="Polonnaruwa">Polonnaruwa</option>
+                                            <option value="Puttalam">Puttalam</option>
+                                            <option value="Ratnapura">Ratnapura</option>
+                                            <option value="Trincomalee">Trincomalee</option>
+                                            <option value="Vavuniya">Vavuniya</option>
                                         </select>
                                     </div>
                                 </div>
@@ -599,7 +635,22 @@ export default function TravellerDashboard() {
 
                                     <div dangerouslySetInnerHTML={{ __html: selectedPost.description }} />
                                     <p><strong>District:</strong> {selectedPost.district}</p>
-                                    <p><strong>Location:</strong> {selectedPost.location}</p>
+                                    <p>
+                                        <strong>Location:</strong>{" "}
+                                        {(() => {
+                                            const safeUrl = getSafeExternalUrl(selectedPost.location);
+                                            if (!safeUrl) return <span>{selectedPost.location || "—"}</span>;
+                                            return (
+                                                <a
+                                                    href={safeUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer noopener"
+                                                >
+                                                    {safeUrl}
+                                                </a>
+                                            );
+                                        })()}
+                                    </p>
                                     
                                     <button className="btn book-btn" onClick={handleBookService}>
                                         📅 Book This Service
@@ -691,17 +742,6 @@ export default function TravellerDashboard() {
                                                 className="post-card"
                                                 onClick={() => setSelectedPost(p)}
                                             >
-                                                <div className="card-rating-badge">
-                                                    {renderCardRating(ratingValue, reviewCount)}
-                                                    <button
-                                                        type="button"
-                                                        className={`heart-btn ${isLiked ? "active" : ""}`}
-                                                        aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
-                                                        onClick={(e) => handleToggleWishlist(e, serviceId)}
-                                                    >
-                                                        {isLiked ? "♥" : "♡"}
-                                                    </button>
-                                                </div>
                                                 <div
                                                     className={`post-card-media ${
                                                         renderImages.length <= 1 ? "single" : "collage"
@@ -749,6 +789,18 @@ export default function TravellerDashboard() {
                                                             {p.priceUnit && <span className="price-unit">{p.priceUnit}</span>}
                                                         </div>
                                                     ) : null}
+
+                                                    <div className="card-rating-badge">
+                                                        {renderCardRating(ratingValue, reviewCount)}
+                                                        <button
+                                                            type="button"
+                                                            className={`heart-btn ${isLiked ? "active" : ""}`}
+                                                            aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
+                                                            onClick={(e) => handleToggleWishlist(e, serviceId)}
+                                                        >
+                                                            {isLiked ? "♥" : "♡"}
+                                                        </button>
+                                                    </div>
 
                                                     <div
                                                         className="post-card-description-preview"

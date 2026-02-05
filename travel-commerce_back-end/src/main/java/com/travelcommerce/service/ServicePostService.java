@@ -5,9 +5,13 @@ import com.travelcommerce.repository.ServiceRepository;
 import com.travelcommerce.repository.ReviewRepository;
 import com.travelcommerce.model.Review;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +23,9 @@ public class ServicePostService {
 
     @Autowired
     private ReviewRepository reviewRepository;
+
+    @Value("${app.upload-dir:#{null}}")
+    private String configuredUploadDir;
     // ==================================================================================
     // 🟢 TEAMMATES' ORIGINAL CODE (DO NOT TOUCH - KEEPS APP WORKING)
     // ==================================================================================
@@ -84,11 +91,18 @@ public class ServicePostService {
     public List<String> uploadFiles(List<MultipartFile> files) {
         List<String> urls = new ArrayList<>();
 
-        String uploadDir = System.getProperty("user.dir") + "/uploads/";
-        java.io.File directory = new java.io.File(uploadDir);
+        // Use configured path, or fall back to <user.dir>/uploads
+        Path uploadDir;
+        if (configuredUploadDir != null && !configuredUploadDir.isBlank()) {
+            uploadDir = Paths.get(configuredUploadDir);
+        } else {
+            uploadDir = Paths.get(System.getProperty("user.dir"), "uploads");
+        }
 
-        if (!directory.exists()) {
-            directory.mkdirs();
+        try {
+            Files.createDirectories(uploadDir);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create uploads directory", e);
         }
 
         for (MultipartFile file : files) {
@@ -100,8 +114,8 @@ public class ServicePostService {
 
                 String fileName = System.currentTimeMillis() + "_" + safeFileName;
 
-                java.nio.file.Path path = java.nio.file.Paths.get(uploadDir + fileName);
-                java.nio.file.Files.copy(file.getInputStream(), path);
+                Path path = uploadDir.resolve(fileName);
+                Files.copy(file.getInputStream(), path);
 
                 String relativeUrl = "/uploads/" + fileName;
                 urls.add(relativeUrl);
