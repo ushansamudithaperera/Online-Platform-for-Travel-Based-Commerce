@@ -329,7 +329,7 @@ export default function ServiceFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="service-form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{isEdit ? "Edit Service" : "Create New Service"}</h2>
