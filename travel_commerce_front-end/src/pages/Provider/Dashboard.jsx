@@ -25,7 +25,7 @@ const truncateTitle = (title) => {
 };
 
 export default function ProviderDashboard() {
-  const [activeTab, setActiveTab] = useState("services"); // services, bookings
+  const [activeTab, setActiveTab] = useState("services"); // services, bookings, preview
   const [selectedPost, setSelectedPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,6 +36,10 @@ export default function ProviderDashboard() {
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+
+  // Preview (View as Traveller) state
+  const [previewSelectedPost, setPreviewSelectedPost] = useState(null);
+  const [previewImageIndex, setPreviewImageIndex] = useState(0);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -75,7 +79,7 @@ export default function ProviderDashboard() {
   }, [selectedPost?.id]);
 
   useEffect(() => {
-    if (activeTab === "services") {
+    if (activeTab === "services" || activeTab === "preview") {
       fetchProviderPosts();
     } else if (activeTab === "bookings") {
       fetchProviderBookings();
@@ -218,7 +222,13 @@ export default function ProviderDashboard() {
             className={`provider-tab-btn ${activeTab === "bookings" ? "active" : ""}`}
             onClick={() => setActiveTab("bookings")}
           >
-            Bookings ({bookings.length})
+            Bookings
+          </button>
+          <button
+            className={`provider-tab-btn ${activeTab === "preview" ? "active" : ""}`}
+            onClick={() => { setActiveTab("preview"); setPreviewSelectedPost(null); }}
+          >
+            View as Traveller
           </button>
         </div>
 
@@ -644,6 +654,195 @@ export default function ProviderDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* VIEW AS TRAVELLER TAB */}
+        {activeTab === "preview" && (
+          <div className="preview-traveller-section">
+            <div className="preview-header">
+              <h2>View as Traveller</h2>
+              <p className="preview-subtitle">
+                This is how your approved services appear to travellers browsing the platform.
+              </p>
+            </div>
+
+            {loading ? (
+              <p className="loading-msg">Loading your services...</p>
+            ) : (
+              (() => {
+                const approvedPosts = posts.filter(
+                  (p) => p.status === "APPROVED"
+                );
+                if (approvedPosts.length === 0) {
+                  return (
+                    <div className="preview-empty">
+                      <p>No approved services to preview. Services need admin approval before they appear to travellers.</p>
+                    </div>
+                  );
+                }
+
+                const previewImages = previewSelectedPost?.images?.filter(Boolean) || [];
+
+                return (
+                  <div className={`preview-main-content ${previewSelectedPost ? "show-two-column" : ""}`}>
+
+                    {/* LEFT: Detail view */}
+                    {previewSelectedPost && (
+                      <div className="preview-detail-pane">
+                        <button
+                          className="preview-close-btn"
+                          onClick={() => { setPreviewSelectedPost(null); setPreviewImageIndex(0); }}
+                        >
+                          ✕
+                        </button>
+                        <h2>{previewSelectedPost.title}</h2>
+
+                        {/* Image gallery */}
+                        <div className="preview-images">
+                          {previewImages.length > 0 ? (
+                            <>
+                              <div className="preview-image-main-wrapper">
+                                <img
+                                  src={getImageUrl(previewImages[previewImageIndex])}
+                                  alt={`${previewSelectedPost.title} - Image ${previewImageIndex + 1}`}
+                                  className="preview-main-image"
+                                />
+                                {previewImages.length > 1 && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="preview-gallery-nav prev"
+                                      onClick={() => setPreviewImageIndex((i) => i === 0 ? previewImages.length - 1 : i - 1)}
+                                    >‹</button>
+                                    <button
+                                      type="button"
+                                      className="preview-gallery-nav next"
+                                      onClick={() => setPreviewImageIndex((i) => i === previewImages.length - 1 ? 0 : i + 1)}
+                                    >›</button>
+                                  </>
+                                )}
+                                <div className="preview-image-badge">
+                                  {previewImageIndex + 1} / {previewImages.length}
+                                </div>
+                              </div>
+                              {previewImages.length > 1 && (
+                                <div className="preview-thumbnails">
+                                  {previewImages.map((img, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      className={`preview-thumb ${idx === previewImageIndex ? "active" : ""}`}
+                                      onClick={() => setPreviewImageIndex(idx)}
+                                    >
+                                      <img src={getImageUrl(img)} alt={`Thumb ${idx + 1}`} />
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="preview-no-image"><p>No images uploaded.</p></div>
+                          )}
+                        </div>
+
+                        {/* Price display */}
+                        {previewSelectedPost.priceFrom && (
+                          <div className="preview-inline-price">
+                            <strong>💰 Price:</strong>{" "}
+                            <span className="preview-price-amount">
+                              From {Number(previewSelectedPost.priceFrom).toLocaleString()} {previewSelectedPost.currency || "LKR"}
+                            </span>
+                            {previewSelectedPost.priceUnit && (
+                              <span className="preview-price-unit"> {previewSelectedPost.priceUnit}</span>
+                            )}
+                          </div>
+                        )}
+
+                        <div dangerouslySetInnerHTML={{ __html: previewSelectedPost.description }} />
+                        <p><strong>District:</strong> {previewSelectedPost.district}</p>
+                        <p>
+                          <strong>Location:</strong>{" "}
+                          {previewSelectedPost.location ? (
+                            <a href={previewSelectedPost.location} target="_blank" rel="noreferrer noopener">
+                              {previewSelectedPost.location}
+                            </a>
+                          ) : "—"}
+                        </p>
+
+                        <button className="preview-book-btn" disabled>
+                          📅 Book This Service
+                        </button>
+                        <p className="preview-note">Booking is disabled in preview mode.</p>
+                      </div>
+                    )}
+
+                    {/* RIGHT: Cards grid */}
+                    <div className={`preview-cards-grid ${previewSelectedPost ? "shrunk" : ""}`}>
+                      {approvedPosts.map((p) => {
+                        const cardImages = (p.images || []).filter(Boolean);
+                        const collageImages = cardImages.slice(0, 4);
+                        const remainingCount = Math.max(0, cardImages.length - collageImages.length);
+                        const ratingValue = p.averageRating ?? 0;
+                        const reviewCount = p.reviewCount ?? 0;
+                        const renderImages = collageImages.length ? collageImages : [null];
+
+                        return (
+                          <div
+                            key={p.id}
+                            className="preview-post-card"
+                            onClick={() => { setPreviewSelectedPost(p); setPreviewImageIndex(0); }}
+                          >
+                            <div className={`preview-card-media ${renderImages.length <= 1 ? "single" : "collage"}`}>
+                              {renderImages.map((img, idx) => {
+                                const isLastWithOverlay = remainingCount > 0 && idx === renderImages.length - 1;
+                                return (
+                                  <div key={idx} className="preview-card-media-cell">
+                                    <img
+                                      src={getImageUrl(img)}
+                                      alt={`${p.title} image ${idx + 1}`}
+                                      className="preview-card-media-image"
+                                      loading="lazy"
+                                    />
+                                    {isLastWithOverlay && (
+                                      <div className="preview-card-more-overlay">+{remainingCount}</div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="preview-card-content">
+                              <h4 className="preview-card-title">{p.title}</h4>
+
+                              {p.priceFrom && (
+                                <div className="preview-card-price-banner">
+                                  <span className="preview-price-from">
+                                    From {Number(p.priceFrom).toLocaleString()} {p.currency || "LKR"}
+                                  </span>
+                                  {p.priceUnit && <span className="preview-price-unit-badge">{p.priceUnit}</span>}
+                                </div>
+                              )}
+
+                              <div className="preview-card-rating">
+                                ⭐ {ratingValue > 0 ? ratingValue.toFixed(1) : "New"}{" "}
+                                <span className="preview-review-count">({reviewCount} reviews)</span>
+                              </div>
+
+                              <div className="preview-card-footer">
+                                <span className="preview-card-district">{p.district}</span>
+                                {p.category && <span className="preview-card-category">{p.category}</span>}
+                                <button type="button" className="preview-view-btn">View Details</button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
         )}
       </div>
