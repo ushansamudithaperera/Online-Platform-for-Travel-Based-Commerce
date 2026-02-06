@@ -1,0 +1,6 @@
+# Local runtime uploads (keep out of git/PRs)
+uploads/*
+!uploads/.gitkeep
+
+# Local scratch folder (if used)
+uploading\ images/
