@@ -31,24 +31,56 @@ const quillFormats = [
 // ✅ ADD THIS
 const TITLE_MAX_LENGTH = 50; // or 20 if you prefer the same as ProviderDashboard
 
+// Currency symbol map for inline display
+const CURRENCY_SYMBOLS = {
+  LKR: "Rs.",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+};
+
+// Minimum price floor per category (in base currency units)
+const MIN_PRICE_BY_CATEGORY = {
+  "Tour Guide": 100,
+  "Hotel": 500,
+  "Restaurant": 50,
+  "Experience": 200,
+  "Driver": 10,
+};
+
 // Category-specific price unit options
 const PRICE_UNITS_BY_CATEGORY = {
   "Tour Guide": [
-    { value: "per day", label: "Per Day" },
-    { value: "per hour", label: "Per Hour" },
     { value: "per person", label: "Per Person" },
     { value: "per group", label: "Per Group" },
+    { value: "per day", label: "Per Day" },
+    { value: "per half day", label: "Per Half Day" },
+    { value: "per hour", label: "Per Hour" },
   ],
   "Hotel": [
-    { value: "per day", label: "Per Day" },
     { value: "per night", label: "Per Night" },
+    { value: "per room per night", label: "Per Room / Night" },
   ],
-  "Restaurant": [], // no unit dropdown — minimum menu price
-  "Experience": [], // no unit dropdown — minimum package price
+  "Restaurant": [], // no unit dropdown — average meal cost
+  "Experience": [
+    { value: "per person", label: "Per Person" },
+    { value: "per group", label: "Per Group" },
+    { value: "per package", label: "Per Package" },
+  ],
   "Driver": [
     { value: "per km", label: "Per Km" },
+    { value: "per day", label: "Per Day" },
     { value: "per destination", label: "Per Destination" },
   ],
+};
+
+// Category-specific price field labels
+const PRICE_LABELS = {
+  "Tour Guide": { from: "Starting Rate", to: "Maximum Rate", placeholder: "e.g., 5,000" },
+  "Hotel": { from: "Starting Rate", to: "Highest Rate", placeholder: "e.g., 8,000" },
+  "Restaurant": { from: "Avg. Meal Cost", to: null, placeholder: "e.g., 1,500" },
+  "Experience": { from: "Starting Price", to: "Up To", placeholder: "e.g., 3,000" },
+  "Driver": { from: "Starting Fare", to: "Maximum Fare", placeholder: "e.g., 75" },
 };
 
 // same backend base URL logic as ProviderDashboard
@@ -187,7 +219,7 @@ export default function ServiceFormModal({
         setServiceData((prev) => ({ ...prev, priceUnit: units[0].value }));
       }
     } else {
-      // Restaurant / Experience — no unit needed
+      // Restaurant — no unit needed
       setServiceData((prev) => ({ ...prev, priceUnit: "" }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,6 +228,59 @@ export default function ServiceFormModal({
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setServiceData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle price input: strip non-numeric chars (except dot), store raw number
+  const handlePriceChange = (e) => {
+    const { name, value } = e.target;
+    // Allow only digits and one decimal point
+    const cleaned = value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+    setServiceData((prev) => ({ ...prev, [name]: cleaned }));
+  };
+
+  // Format a number string with thousand separators for display
+  const formatNumberDisplay = (val) => {
+    if (!val && val !== 0) return "";
+    const num = Number(val);
+    if (Number.isNaN(num)) return val;
+    // Split by decimal to preserve decimal part
+    const parts = String(val).split(".");
+    const intPart = Number(parts[0]).toLocaleString();
+    return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart;
+  };
+
+  // Build a live price preview string
+  const buildPricePreview = () => {
+    const cat = serviceData.category;
+    if (!cat || !serviceData.priceFrom) return null;
+    const symbol = CURRENCY_SYMBOLS[serviceData.currency] || serviceData.currency;
+    const from = formatNumberDisplay(serviceData.priceFrom);
+    const to = serviceData.priceTo ? formatNumberDisplay(serviceData.priceTo) : null;
+    const unit = serviceData.priceUnit ? ` ${serviceData.priceUnit}` : "";
+
+    if (to) {
+      return `${symbol} ${from} – ${to}${unit}`;
+    }
+    return `From ${symbol} ${from}${unit}`;
+  };
+
+  // Validate price fields  
+  const getPriceErrors = () => {
+    const errors = [];
+    const cat = serviceData.category;
+    if (!cat) return errors;
+
+    const from = Number(serviceData.priceFrom);
+    const to = serviceData.priceTo ? Number(serviceData.priceTo) : null;
+    const minFloor = MIN_PRICE_BY_CATEGORY[cat] || 0;
+
+    if (serviceData.priceFrom && from < minFloor) {
+      errors.push(`Minimum price for ${cat} is ${CURRENCY_SYMBOLS[serviceData.currency] || serviceData.currency} ${minFloor}`);
+    }
+    if (to !== null && from && to <= from) {
+      errors.push("Maximum price must be higher than the starting price");
+    }
+    return errors;
   };
 
   const handlePlanSelect = (plan) => {
@@ -254,6 +339,12 @@ export default function ServiceFormModal({
 
     if (!serviceData.title.trim() || !descPlain) {
       throw new Error("Title and description are required");
+    }
+
+    // Validate pricing
+    const priceErrors = getPriceErrors();
+    if (priceErrors.length > 0) {
+      throw new Error(priceErrors[0]);
     }
 
       // ------------- EDIT MODE -------------
@@ -454,7 +545,7 @@ export default function ServiceFormModal({
                   </p>
                 ) : (
                   <>
-                    {/* Currency — always shown */}
+                    {/* Currency & Price Unit row */}
                     <div className="form-row">
                       <div className="form-group">
                         <label>Currency</label>
@@ -473,7 +564,7 @@ export default function ServiceFormModal({
                       {/* Price Unit dropdown — only for categories that have units */}
                       {PRICE_UNITS_BY_CATEGORY[serviceData.category]?.length > 0 && (
                         <div className="form-group">
-                          <label>Price Unit</label>
+                          <label>Charging Method</label>
                           <select
                             name="priceUnit"
                             value={serviceData.priceUnit}
@@ -489,75 +580,102 @@ export default function ServiceFormModal({
                       )}
                     </div>
 
-                    {/* Price input row */}
+                    {/* Price input row with inline currency symbol */}
                     <div className="form-row">
                       <div className="form-group">
                         <label>
-                          {serviceData.category === "Restaurant"
-                            ? "Minimum Menu Price *"
-                            : serviceData.category === "Experience"
-                            ? "Minimum Package Price *"
-                            : "Price *"}
+                          {PRICE_LABELS[serviceData.category]?.from || "Price"} *
                         </label>
-                        <input
-                          type="number"
-                          name="priceFrom"
-                          value={serviceData.priceFrom}
-                          onChange={handleInputChange}
-                          placeholder={
-                            serviceData.category === "Restaurant"
-                              ? "e.g., 500 (lowest menu item)"
-                              : serviceData.category === "Experience"
-                              ? "e.g., 3000 (starting package)"
-                              : "e.g., 5000"
-                          }
-                          min="0"
-                          step="0.01"
-                          required
-                        />
+                        <div className="price-input-wrapper">
+                          <span className="price-currency-prefix">
+                            {CURRENCY_SYMBOLS[serviceData.currency] || serviceData.currency}
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            name="priceFrom"
+                            value={serviceData.priceFrom}
+                            onChange={handlePriceChange}
+                            placeholder={PRICE_LABELS[serviceData.category]?.placeholder || "e.g., 5,000"}
+                            className="price-input-field"
+                            required
+                          />
+                        </div>
+                        {serviceData.priceFrom && (
+                          <span className="price-formatted-hint">
+                            {formatNumberDisplay(serviceData.priceFrom)}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Price To — only for categories with unit dropdown */}
-                      {PRICE_UNITS_BY_CATEGORY[serviceData.category]?.length > 0 && (
+                      {/* Price To — available for categories with unit options */}
+                      {PRICE_LABELS[serviceData.category]?.to && (
                         <div className="form-group">
-                          <label>Price To (Optional)</label>
-                          <input
-                            type="number"
-                            name="priceTo"
-                            value={serviceData.priceTo}
-                            onChange={handleInputChange}
-                            placeholder="e.g., 10000"
-                            min="0"
-                            step="0.01"
-                          />
+                          <label>{PRICE_LABELS[serviceData.category].to} (Optional)</label>
+                          <div className="price-input-wrapper">
+                            <span className="price-currency-prefix">
+                              {CURRENCY_SYMBOLS[serviceData.currency] || serviceData.currency}
+                            </span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              name="priceTo"
+                              value={serviceData.priceTo}
+                              onChange={handlePriceChange}
+                              placeholder="e.g., 10,000"
+                              className="price-input-field"
+                            />
+                          </div>
+                          {serviceData.priceTo && (
+                            <span className="price-formatted-hint">
+                              {formatNumberDisplay(serviceData.priceTo)}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
 
+                    {/* Validation errors */}
+                    {getPriceErrors().length > 0 && (
+                      <div className="pricing-errors">
+                        {getPriceErrors().map((err, i) => (
+                          <p key={i} className="pricing-error-msg">⚠️ {err}</p>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* LIVE PRICE PREVIEW */}
+                    {buildPricePreview() && (
+                      <div className="pricing-live-preview">
+                        <span className="preview-label">Travellers will see:</span>
+                        <span className="preview-value">{buildPricePreview()}</span>
+                      </div>
+                    )}
+
                     {/* Helpful hint per category */}
                     {serviceData.category === "Restaurant" && (
                       <p className="pricing-category-hint">
-                        💡 This price represents the starting price of your menu. It will be displayed as <strong>"From {serviceData.priceFrom || 'XXX'} {serviceData.currency}"</strong>.
+                        💡 Enter the average cost of a meal at your restaurant.
                       </p>
                     )}
                     {serviceData.category === "Experience" && (
                       <p className="pricing-category-hint">
-                        💡 This price represents the minimum package price. It will be displayed as <strong>"From {serviceData.priceFrom || 'XXX'} {serviceData.currency}"</strong>.
+                        💡 Set the starting price and choose how you charge — per person, per group, or per package.
                       </p>
                     )}
                     {serviceData.category === "Tour Guide" && (
                       <p className="pricing-category-hint">
-                        💡 Set your rate and choose the unit that best fits your service style.
+                        💡 Set your rate and choose the charging method that fits your service style.
                       </p>
                     )}
                     {serviceData.category === "Hotel" && (
                       <p className="pricing-category-hint">
-                        💡 Set your room rate per day or per night.
+                        💡 Enter your room rate. Most hotels charge per night or per room per night.
                       </p>
                     )}
                     {serviceData.category === "Driver" && (
                       <p className="pricing-category-hint">
-                        💡 Set your fare per kilometer or per destination.
+                        💡 Set your fare — per km for metered trips, per day for full-day hire, or per destination for fixed routes.
                       </p>
                     )}
                   </>
