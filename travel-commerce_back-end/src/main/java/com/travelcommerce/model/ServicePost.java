@@ -20,7 +20,7 @@ public class ServicePost {
     private String category;
     private List<String> images;
     private String planId;
-    private String planName; // ADD THIS LINE
+    private String planName; 
     
     // Pricing fields
     private Double priceFrom;
