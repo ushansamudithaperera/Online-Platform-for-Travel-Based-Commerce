@@ -766,6 +766,7 @@
 /* ===== PROVIDER TABS ===== */
 .provider-tabs {
   grid-column: 1 / -1;
+  align-self: start;
   display: flex;
   gap: 10px;
   margin: 20px auto;
