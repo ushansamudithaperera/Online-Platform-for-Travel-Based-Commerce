@@ -3,6 +3,15 @@ import { useParams } from "react-router-dom";
 import { getServiceById } from "../../api/serviceApi"; // ✅ use servicesApi
 import Navbar from "../../components/Navbar";
 
+function formatPrice(service) {
+  const currency = service.currency || "LKR";
+  const price = service.priceFrom;
+  if (!price) return null;
+
+  const unit = service.priceUnit ? ` ${service.priceUnit}` : "";
+  return `From ${Number(price).toLocaleString()} ${currency}${unit}`;
+}
+
 export default function ServiceDetails() {
   const { id } = useParams();
   const [service, setService] = useState(null);
@@ -26,6 +35,8 @@ export default function ServiceDetails() {
     </>
   );
 
+  const priceDisplay = formatPrice(service);
+
   return (
     <>
       <Navbar />
@@ -33,7 +44,7 @@ export default function ServiceDetails() {
         <h2>{service.title}</h2>
         <p>{service.description}</p>
         <p><strong>Location:</strong> {service.location}</p>
-        <p><strong>Price:</strong> LKR {service.price}</p>
+        {priceDisplay && <p><strong>Price:</strong> {priceDisplay}</p>}
       </div>
     </>
   );

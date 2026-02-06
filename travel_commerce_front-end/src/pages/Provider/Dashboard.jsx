@@ -349,13 +349,7 @@ export default function ProviderDashboard() {
                   {hasPrice && (
                     <div className="price-highlight">
                       <span className="price-amount">
-                        {selectedPost.currency || "LKR"}{" "}
-                        {priceFromText}
-                        {priceToText && priceFromText
-                          ? ` – ${priceToText}`
-                          : !priceFromText && priceToText
-                          ? priceToText
-                          : ""}
+                        From {priceFromText} {selectedPost.currency || "LKR"}
                       </span>
                       {selectedPost.priceUnit && (
                         <span className="price-unit-chip">
@@ -399,8 +393,7 @@ export default function ProviderDashboard() {
                     <div className="inline-price-display">
                       <strong>💰 Price:</strong>{" "}
                       <span className="price-highlight">
-                        {selectedPost.currency || "LKR"} {priceFromText}
-                        {priceFromText && priceToText && ` – ${priceToText}`}
+                        From {priceFromText} {selectedPost.currency || "LKR"}
                       </span>
                       {selectedPost.priceUnit && (
                         <span className="price-unit-text"> {selectedPost.priceUnit}</span>

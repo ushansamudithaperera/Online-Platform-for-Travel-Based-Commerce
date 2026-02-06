@@ -31,6 +31,26 @@ const quillFormats = [
 // ✅ ADD THIS
 const TITLE_MAX_LENGTH = 50; // or 20 if you prefer the same as ProviderDashboard
 
+// Category-specific price unit options
+const PRICE_UNITS_BY_CATEGORY = {
+  "Tour Guide": [
+    { value: "per day", label: "Per Day" },
+    { value: "per hour", label: "Per Hour" },
+    { value: "per person", label: "Per Person" },
+    { value: "per group", label: "Per Group" },
+  ],
+  "Hotel": [
+    { value: "per day", label: "Per Day" },
+    { value: "per night", label: "Per Night" },
+  ],
+  "Restaurant": [], // no unit dropdown — minimum menu price
+  "Experience": [], // no unit dropdown — minimum package price
+  "Driver": [
+    { value: "per km", label: "Per Km" },
+    { value: "per destination", label: "Per Destination" },
+  ],
+};
+
 // same backend base URL logic as ProviderDashboard
 const backendBaseUrl = "http://localhost:8080";
 
@@ -154,6 +174,24 @@ export default function ServiceFormModal({
   const totalImagesCount = isEdit
     ? existingImages.length + photos.length
     : photos.length;
+
+  // When category changes, reset priceUnit to the first option for that category
+  useEffect(() => {
+    const cat = serviceData.category;
+    if (!cat) return;
+    const units = PRICE_UNITS_BY_CATEGORY[cat];
+    if (units && units.length > 0) {
+      // only reset if the current priceUnit is not valid for the new category
+      const valid = units.some((u) => u.value === serviceData.priceUnit);
+      if (!valid) {
+        setServiceData((prev) => ({ ...prev, priceUnit: units[0].value }));
+      }
+    } else {
+      // Restaurant / Experience — no unit needed
+      setServiceData((prev) => ({ ...prev, priceUnit: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceData.category]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -409,66 +447,121 @@ export default function ServiceFormModal({
                 <p className="pricing-hint-text">
                   Set your service prices. These will be prominently displayed to travelers.
                 </p>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Currency</label>
-                    <select
-                      name="currency"
-                      value={serviceData.currency}
-                      onChange={handleInputChange}
-                    >
-                      <option value="LKR">LKR (Sri Lankan Rupee)</option>
-                      <option value="USD">USD (US Dollar)</option>
-                      <option value="EUR">EUR (Euro)</option>
-                      <option value="GBP">GBP (British Pound)</option>
-                    </select>
-                  </div>
 
-                  <div className="form-group">
-                    <label>Price Unit</label>
-                    <select
-                      name="priceUnit"
-                      value={serviceData.priceUnit}
-                      onChange={handleInputChange}
-                    >
-                      <option value="per person">Per Person</option>
-                      <option value="per day">Per Day</option>
-                      <option value="per night">Per Night</option>
-                      <option value="per hour">Per Hour</option>
-                      <option value="per trip">Per Trip</option>
-                      <option value="per group">Per Group</option>
-                    </select>
-                  </div>
-                </div>
+                {!serviceData.category ? (
+                  <p className="pricing-select-category-msg">
+                    Please select a category above to configure pricing options.
+                  </p>
+                ) : (
+                  <>
+                    {/* Currency — always shown */}
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Currency</label>
+                        <select
+                          name="currency"
+                          value={serviceData.currency}
+                          onChange={handleInputChange}
+                        >
+                          <option value="LKR">LKR (Sri Lankan Rupee)</option>
+                          <option value="USD">USD (US Dollar)</option>
+                          <option value="EUR">EUR (Euro)</option>
+                          <option value="GBP">GBP (British Pound)</option>
+                        </select>
+                      </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Price From</label>
-                    <input
-                      type="number"
-                      name="priceFrom"
-                      value={serviceData.priceFrom}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 5000"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
+                      {/* Price Unit dropdown — only for categories that have units */}
+                      {PRICE_UNITS_BY_CATEGORY[serviceData.category]?.length > 0 && (
+                        <div className="form-group">
+                          <label>Price Unit</label>
+                          <select
+                            name="priceUnit"
+                            value={serviceData.priceUnit}
+                            onChange={handleInputChange}
+                          >
+                            {PRICE_UNITS_BY_CATEGORY[serviceData.category].map((u) => (
+                              <option key={u.value} value={u.value}>
+                                {u.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="form-group">
-                    <label>Price To (Optional)</label>
-                    <input
-                      type="number"
-                      name="priceTo"
-                      value={serviceData.priceTo}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 10000"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
+                    {/* Price input row */}
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>
+                          {serviceData.category === "Restaurant"
+                            ? "Minimum Menu Price *"
+                            : serviceData.category === "Experience"
+                            ? "Minimum Package Price *"
+                            : "Price *"}
+                        </label>
+                        <input
+                          type="number"
+                          name="priceFrom"
+                          value={serviceData.priceFrom}
+                          onChange={handleInputChange}
+                          placeholder={
+                            serviceData.category === "Restaurant"
+                              ? "e.g., 500 (lowest menu item)"
+                              : serviceData.category === "Experience"
+                              ? "e.g., 3000 (starting package)"
+                              : "e.g., 5000"
+                          }
+                          min="0"
+                          step="0.01"
+                          required
+                        />
+                      </div>
+
+                      {/* Price To — only for categories with unit dropdown */}
+                      {PRICE_UNITS_BY_CATEGORY[serviceData.category]?.length > 0 && (
+                        <div className="form-group">
+                          <label>Price To (Optional)</label>
+                          <input
+                            type="number"
+                            name="priceTo"
+                            value={serviceData.priceTo}
+                            onChange={handleInputChange}
+                            placeholder="e.g., 10000"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Helpful hint per category */}
+                    {serviceData.category === "Restaurant" && (
+                      <p className="pricing-category-hint">
+                        💡 This price represents the starting price of your menu. It will be displayed as <strong>"From {serviceData.priceFrom || 'XXX'} {serviceData.currency}"</strong>.
+                      </p>
+                    )}
+                    {serviceData.category === "Experience" && (
+                      <p className="pricing-category-hint">
+                        💡 This price represents the minimum package price. It will be displayed as <strong>"From {serviceData.priceFrom || 'XXX'} {serviceData.currency}"</strong>.
+                      </p>
+                    )}
+                    {serviceData.category === "Tour Guide" && (
+                      <p className="pricing-category-hint">
+                        💡 Set your rate and choose the unit that best fits your service style.
+                      </p>
+                    )}
+                    {serviceData.category === "Hotel" && (
+                      <p className="pricing-category-hint">
+                        💡 Set your room rate per day or per night.
+                      </p>
+                    )}
+                    {serviceData.category === "Driver" && (
+                      <p className="pricing-category-hint">
+                        💡 Set your fare per kilometer or per destination.
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
 
               {isEdit && (
