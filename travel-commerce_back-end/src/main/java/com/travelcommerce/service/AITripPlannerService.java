@@ -220,4 +220,79 @@ public class AITripPlannerService {
 
         return cleaned.substring(start, end + 1).trim();
     }
+
+    public List<Long> smartSearch(String searchQuery, List<Map<String, Object>> availablePosts) {
+        String trimmedQuery = searchQuery == null ? "" : searchQuery.trim();
+        if (trimmedQuery.isEmpty() || availablePosts == null || availablePosts.isEmpty()) {
+            System.out.println("Smart search - empty query or no posts available");
+            return new ArrayList<>();
+        }
+
+        String postsJson;
+        try {
+            postsJson = objectMapper.writeValueAsString(availablePosts);
+            System.out.println("Smart search - Posts JSON length: " + postsJson.length());
+        } catch (Exception e) {
+            System.err.println("Failed to serialize posts: " + e.getMessage());
+            throw new RuntimeException("Failed to serialize posts list", e);
+        }
+
+        String prompt = buildSmartSearchPrompt(postsJson, trimmedQuery);
+        System.out.println("Smart search - Calling AI with prompt length: " + prompt.length());
+
+        String rawText;
+        try {
+            if ("openai".equalsIgnoreCase(provider)) {
+                rawText = callOpenAi(prompt);
+            } else {
+                rawText = callGemini(prompt);
+            }
+            System.out.println("Smart search - AI response: " + rawText);
+        } catch (Exception e) {
+            System.err.println("AI call failed: " + e.getMessage());
+            throw new RuntimeException("AI service call failed", e);
+        }
+
+        try {
+            // Extract JSON array of IDs
+            String jsonArray = extractJsonArray(rawText);
+            System.out.println("Smart search - Extracted JSON: " + jsonArray);
+            
+            JsonNode node = objectMapper.readTree(jsonArray);
+            List<Long> matchedIds = new ArrayList<>();
+            if (node.isArray()) {
+                for (JsonNode idNode : node) {
+                    if (idNode.isNumber()) {
+                        matchedIds.add(idNode.asLong());
+                    }
+                }
+            }
+            System.out.println("Smart search - Final matched IDs: " + matchedIds);
+            return matchedIds;
+        } catch (Exception e) {
+            System.err.println("Failed to parse AI response: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("AI response was not valid JSON array of IDs", e);
+        }
+    }
+
+    private String buildSmartSearchPrompt(String postsJson, String searchQuery) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are a semantic search assistant for a travel service platform.\n\n");
+        sb.append("User's search query: \"").append(searchQuery).append("\"\n\n");
+        sb.append("Available services (JSON array with id, title, description, category, district, location, etc.):\n");
+        sb.append(postsJson).append("\n\n");
+        sb.append("TASK: Analyze the user's query semantically and return a JSON array of service IDs that match.\n");
+        sb.append("Consider:\n");
+        sb.append("- Synonyms (e.g., 'beach' matches coastal districts, 'accommodation' matches hotels)\n");
+        sb.append("- Intent (e.g., 'romantic getaway' matches hotels and restaurants)\n");
+        sb.append("- Context (e.g., 'adventure' matches experiences, tour guides, drivers)\n");
+        sb.append("- Location variations (e.g., 'south coast' matches Galle, Matara, Hambantota)\n");
+        sb.append("- Category understanding (e.g., 'places to stay' matches hotels)\n\n");
+        sb.append("Return ONLY a JSON array of matching service IDs, ordered by relevance (most relevant first).\n");
+        sb.append("Example: [15, 23, 8, 42]\n\n");
+        sb.append("If no services match, return an empty array: []\n");
+        sb.append("Return ONLY the JSON array, nothing else.");
+        return sb.toString();
+    }
 }
