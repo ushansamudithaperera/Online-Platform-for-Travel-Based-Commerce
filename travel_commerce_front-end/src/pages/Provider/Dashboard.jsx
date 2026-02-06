@@ -363,7 +363,7 @@ export default function ProviderDashboard() {
                       </span>
                       {selectedPost.priceUnit && (
                         <span className="price-unit-chip">
-                          {selectedPost.priceUnit}
+                          {" "}{selectedPost.priceUnit}
                         </span>
                       )}
                     </div>
@@ -820,7 +820,7 @@ export default function ProviderDashboard() {
                                   <span className="preview-price-from">
                                     From {Number(p.priceFrom).toLocaleString()} {p.currency || "LKR"}
                                   </span>
-                                  {p.priceUnit && <span className="preview-price-unit-badge">{p.priceUnit}</span>}
+                                  {p.priceUnit && <span className="preview-price-unit-badge">{" "}{p.priceUnit}</span>}
                                 </div>
                               )}
 
