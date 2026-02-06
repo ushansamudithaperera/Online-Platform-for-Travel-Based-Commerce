@@ -68,7 +68,7 @@ public class AITripPlannerService {
             throw new RuntimeException("Failed to serialize services list", e);
         }
 
-        String prompt = buildPrompt(servicesJson, trimmedQuery, days);
+        String prompt = buildPrompt(servicesJson, trimmedQuery, days, !summaries.isEmpty());
 
         String rawText;
         if ("openai".equalsIgnoreCase(provider)) {
@@ -85,13 +85,31 @@ public class AITripPlannerService {
         }
     }
 
-    private String buildPrompt(String servicesJson, String userQuery, int numDays) {
-        return "Here is a list of available services: " + servicesJson + "\n" +
-                "The user wants: '" + userQuery + "'.\n" +
-                "Create a " + numDays + "-day itinerary using ONLY these services.\n" +
-                "Return the response as raw JSON with structure: " +
-                "[{ day: 1, activities: [{ time: '10:00', serviceId: '...', note: '...' }] }].\n" +
-                "Return ONLY the JSON array (no markdown, no explanation).";
+    private String buildPrompt(String servicesJson, String userQuery, int numDays, boolean hasServices) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are a Sri Lanka travel planning assistant for the TravelCommerce platform.\n");
+        sb.append("The user wants: '").append(userQuery).append("'.\n");
+        sb.append("Create a ").append(numDays).append("-day itinerary.\n\n");
+
+        if (hasServices) {
+            sb.append("Here are the available services on our platform (with id, title, category, district, pricing, description):\n");
+            sb.append(servicesJson).append("\n\n");
+            sb.append("RULES:\n");
+            sb.append("- Use services from the list above where relevant. Reference them by their 'id' in the 'serviceId' field.\n");
+            sb.append("- If no service fits a particular activity, set serviceId to empty string and write a helpful note.\n");
+            sb.append("- Include the service title in the 'serviceName' field when referencing a service.\n");
+        } else {
+            sb.append("NOTE: There are currently no listed services on the platform.\n");
+            sb.append("- Create a general Sri Lanka travel itinerary based on popular destinations.\n");
+            sb.append("- Set serviceId and serviceName to empty strings for all activities.\n");
+            sb.append("- Write detailed notes with place names, tips, and suggestions.\n");
+        }
+
+        sb.append("\nReturn ONLY a raw JSON array (no markdown, no explanation) with this exact structure:\n");
+        sb.append("[{ \"day\": 1, \"title\": \"Day title\", \"activities\": [{ \"time\": \"09:00\", \"serviceId\": \"...\", \"serviceName\": \"...\", \"note\": \"Description of the activity\", \"category\": \"Hotel|Tour Guide|Restaurant|Experience|Driver\" }] }]\n");
+        sb.append("Make sure each day has 3-6 activities with realistic times. Include meals, transport, and sightseeing.");
+
+        return sb.toString();
     }
 
     private String callGemini(String prompt) {
