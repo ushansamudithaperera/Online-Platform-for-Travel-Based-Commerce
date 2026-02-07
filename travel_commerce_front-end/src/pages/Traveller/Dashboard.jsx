@@ -68,6 +68,7 @@ export default function TravellerDashboard() {
     const [searchTerm, setSearchTerm] = useState("");
     const [aiSearching, setAiSearching] = useState(false);
     const [aiFilteredIds, setAiFilteredIds] = useState(null);
+    const [aiSearchMessage, setAiSearchMessage] = useState(""); // Feedback message for AI search
     const [useAiSearch, setUseAiSearch] = useState(true); // Toggle for AI search 
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [selectedDistrict, setSelectedDistrict] = useState("all");
@@ -398,6 +399,7 @@ export default function TravellerDashboard() {
             setSearch("");
             setSearchTerm("");
             setAiFilteredIds(null);
+            setAiSearchMessage("");
             setSelectedCategory("all");
             setSelectedDistrict("all");
             setPriceMin("");
@@ -430,6 +432,7 @@ export default function TravellerDashboard() {
         // Try AI-powered search first if enabled
         if (useAiSearch) {
             setAiSearching(true);
+            setAiSearchMessage("");
             try {
                 // Prepare simplified post data for AI
                 const simplifiedPosts = posts.map(p => ({
@@ -457,18 +460,21 @@ export default function TravellerDashboard() {
                     console.log('AI matched IDs:', matchedIds);
                     setAiFilteredIds(new Set(matchedIds));
                     setSearch(""); // Clear keyword search when using AI
+                    setAiSearchMessage("");
                 } else {
-                    console.log('No AI results, showing all posts');
-                    // No AI results - show all posts
-                    setSearch("");
+                    console.log('No AI results, falling back to keyword search');
+                    // No AI results - fall back to keyword search
+                    setSearch(trimmed.toLowerCase());
                     setAiFilteredIds(null);
+                    setAiSearchMessage("No AI matches found — showing keyword results instead.");
                 }
             } catch (error) {
                 console.error("AI search failed:", error);
                 console.error("Error details:", error.response?.data || error.message);
-                // On error, show all posts
-                setSearch("");
+                // On error, fall back to keyword search
+                setSearch(trimmed.toLowerCase());
                 setAiFilteredIds(null);
+                setAiSearchMessage("AI search unavailable — showing keyword results instead.");
             } finally {
                 setAiSearching(false);
             }
@@ -485,12 +491,14 @@ export default function TravellerDashboard() {
         setSearch("");
         setAiFilteredIds(null);
         setSearchTerm("");
+        setAiSearchMessage("");
     };
 
     const handleResetFilters = () => {
         setSearchTerm("");
         setSearch("");
         setAiFilteredIds(null);
+        setAiSearchMessage("");
         setSelectedCategory("all");
         setSelectedDistrict("all");
         setPriceMin("");
@@ -792,6 +800,11 @@ export default function TravellerDashboard() {
                                     {aiFilteredIds && (
                                         <div className="search-mode-badge">
                                             🤖 AI-powered results ({aiFilteredIds.size} matches)
+                                        </div>
+                                    )}
+                                    {aiSearchMessage && (
+                                        <div className="search-mode-badge" style={{ color: '#b45309' }}>
+                                            ⚠️ {aiSearchMessage}
                                         </div>
                                     )}
                                     {!useAiSearch && searchTerm && (
