@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
@@ -6,6 +7,7 @@ import axios from "axios";
 
 export default function Feedback() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -15,6 +17,7 @@ export default function Feedback() {
     });
     const [status, setStatus] = useState({ type: "", message: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -23,6 +26,9 @@ export default function Feedback() {
                 name: user.fullname || user.name || "",
                 email: user.email || ""
             }));
+            setShowLoginPrompt(false);
+        } else {
+            setShowLoginPrompt(true);
         }
     }, [user]);
 
@@ -32,6 +38,11 @@ export default function Feedback() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!user) {
+            setShowLoginPrompt(true);
+            return;
+        }
+
         setIsSubmitting(true);
         setStatus({ type: "", message: "" });
 
@@ -68,11 +79,55 @@ export default function Feedback() {
     };
 
     return (
-        <div className="feedback-page d-flex flex-column min-vh-100">
+        <div className="feedback-page d-flex flex-column min-vh-100 position-relative">
             <Navbar />
 
-            <div className="flex-grow-1 bg-light py-5">
-                <div className="container">
+            {/* Login Prompt Overlay */}
+            {showLoginPrompt && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                    style={{
+                        zIndex: 2000,
+                        backgroundColor: "rgba(255, 255, 255, 0.85)",
+                        backdropFilter: "blur(12px)",
+                        transition: "all 0.3s ease"
+                    }}
+                >
+                    <div className="card border-0 shadow-lg text-center p-4 rounded-4 animate__animated animate__fadeInUp" style={{ maxWidth: "420px", width: "90%" }}>
+                        <div className="mb-3">
+                            <i className="bi bi-person-lock" style={{ fontSize: "3rem", color: "#2a004f" }}></i>
+                        </div>
+                        <h3 className="fw-bold mb-2">Login Required</h3>
+                        <p className="text-muted mb-4 small">
+                            Please sign in to your account to share your feedback with us. It helps us provide better support.
+                        </p>
+                        <div className="d-grid gap-2">
+                            <button
+                                className="btn btn-lg text-white rounded-pill shadow-sm py-2 fs-6"
+                                style={{ backgroundColor: "#2a004f", border: "none" }}
+                                onClick={() => navigate("/login")}
+                            >
+                                Login Now
+                            </button>
+                            <button
+                                className="btn btn-outline-secondary rounded-pill py-2 fs-6"
+                                onClick={() => navigate("/register")}
+                            >
+                                Create an Account
+                            </button>
+                            <button
+                                className="btn btn-sm btn-link text-decoration-none text-muted mt-2"
+                                onClick={() => navigate("/")}
+                            >
+                                Not now, go back home
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={`flex-grow-1 bg-light py-5 ${showLoginPrompt ? 'overflow-hidden' : ''}`} style={showLoginPrompt ? { maxHeight: '100vh' } : {}}>
+                <div className="container" style={showLoginPrompt ? { filter: 'blur(4px)', pointerEvents: 'none' } : {}}>
                     <div className="row justify-content-center">
                         <div className="col-lg-8">
                             <div className="text-center mb-5">
@@ -105,7 +160,7 @@ export default function Feedback() {
                                                     onChange={handleChange}
                                                     placeholder="Your Name"
                                                     required
-                                                    disabled={!!user} // Disable if user is logged in
+                                                    disabled={!!user}
                                                     readOnly={!!user}
                                                 />
                                             </div>
@@ -122,7 +177,7 @@ export default function Feedback() {
                                                     onChange={handleChange}
                                                     placeholder="name@example.com"
                                                     required
-                                                    disabled={!!user} // Disable if user is logged in
+                                                    disabled={!!user}
                                                     readOnly={!!user}
                                                 />
                                             </div>

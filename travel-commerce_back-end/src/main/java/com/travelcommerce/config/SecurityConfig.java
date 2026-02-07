@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/ai/smart-search").permitAll()
 
                         // Public feedback
-                        .requestMatchers("/api/feedback").permitAll()
+                        .requestMatchers("/api/feedback", "/api/feedback/testimonials").permitAll()
 
                         // Admin area
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")

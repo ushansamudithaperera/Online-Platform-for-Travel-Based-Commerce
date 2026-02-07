@@ -63,4 +63,18 @@ public class FeedbackController {
         List<Feedback> feedbacks = feedbackRepository.findAll();
         return ResponseEntity.ok(feedbacks);
     }
+
+    @GetMapping("/testimonials")
+    public ResponseEntity<?> getTestimonials() {
+        // Return latest high-rated feedback for About Us page (Public)
+        List<Feedback> feedbacks = feedbackRepository.findAll();
+        // Simple filtering for now: 4-5 stars, limit to 6
+        List<Feedback> testimonials = feedbacks.stream()
+                .filter(f -> f.getRating() >= 4)
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .limit(6)
+                .toList();
+
+        return ResponseEntity.ok(testimonials);
+    }
 }
