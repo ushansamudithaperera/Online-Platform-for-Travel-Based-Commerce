@@ -301,6 +301,13 @@ public class AITripPlannerService {
             return new ArrayList<>();
         }
 
+        // Extract explicit constraints from the query
+        String requiredDistrict = detectDistrict(trimmedQuery.toLowerCase());
+        String requiredCategory = detectCategory(trimmedQuery.toLowerCase());
+        System.out.println("Smart search - Query: '" + trimmedQuery + "'");
+        System.out.println("Smart search - Detected district: '" + requiredDistrict + "'");
+        System.out.println("Smart search - Detected category: '" + requiredCategory + "'");
+
         String postsJson;
         try {
             postsJson = objectMapper.writeValueAsString(availablePosts);
@@ -337,11 +344,17 @@ public class AITripPlannerService {
                 for (JsonNode idNode : node) {
                     if (idNode.isNumber()) {
                         matchedIds.add(idNode.asLong());
+                    } else if (idNode.isTextual()) {
+                        try {
+                            matchedIds.add(Long.parseLong(idNode.asText().trim()));
+                        } catch (NumberFormatException ignore) {
+                        }
                     }
                 }
             }
-            System.out.println("Smart search - Final matched IDs: " + matchedIds);
-            return matchedIds;
+            List<Long> constrained = applyConstraints(matchedIds, availablePosts, requiredDistrict, requiredCategory);
+            System.out.println("Smart search - Final matched IDs after constraints: " + constrained);
+            return constrained;
         } catch (Exception e) {
             System.err.println("Failed to parse AI response: " + e.getMessage());
             e.printStackTrace();
@@ -349,23 +362,135 @@ public class AITripPlannerService {
         }
     }
 
+    // Heuristic: detect district from query text by substring match
+    private String detectDistrict(String queryLower) {
+        String[] districts = {
+                "colombo","gampaha","kalutara","kandy","matale","nuwara eliya","galle","matara","hambantota",
+                "jaffna","kilinochchi","mannar","vavuniya","mullaitivu","batticaloa","ampara","trincomalee",
+                "kurunegala","puttalam","anuradhapura","polonnaruwa","badulla","monaragala","ratnapura","kegalle"
+        };
+        for (String d : districts) {
+            if (queryLower.contains(d)) return d;
+        }
+        return "";
+    }
+
+    // Heuristic: detect category from query (returns normalized snake_case key)
+    private String detectCategory(String queryLower) {
+        if (queryLower.contains("restaurant") || queryLower.contains("restuarent") || queryLower.contains("restraurent")
+                || queryLower.contains("food") || queryLower.contains("dine") || queryLower.contains("coffee")
+                || queryLower.contains("coffie") || queryLower.contains("cafe")) {
+            return "restaurant";
+        }
+        if (queryLower.contains("hotel") || queryLower.contains("stay") || queryLower.contains("resort")
+                || queryLower.contains("room") || queryLower.contains("accommodation") || queryLower.contains("accomodation")) {
+            return "hotel";
+        }
+        if (queryLower.contains("driver") || queryLower.contains("taxi") || queryLower.contains("cab")
+                || queryLower.contains("transport") || queryLower.contains("van") || queryLower.contains("pickup")
+                || queryLower.contains("ride")) {
+            return "driver";
+        }
+        if (queryLower.contains("guide") || queryLower.contains("tour") || queryLower.contains("excursion")
+                || queryLower.contains("sightseeing") || queryLower.contains("sight seeing")) {
+            return "tour_guide";
+        }
+        if (queryLower.contains("experience") || queryLower.contains("workshop") || queryLower.contains("activity")
+                || queryLower.contains("class") || queryLower.contains("lesson")) {
+            return "experience";
+        }
+        return "";
+    }
+
+    /**
+     * Enforce detected constraints on AI-returned IDs using the availablePosts payload.
+     * Uses case-insensitive district matching and normalized category keys.
+     */
+    private List<Long> applyConstraints(List<Long> aiIds, List<Map<String, Object>> posts,
+                                       String requiredDistrict, String requiredCategory) {
+        System.out.println("applyConstraints - AI returned " + aiIds.size() + " IDs: " + aiIds);
+        System.out.println("applyConstraints - Required district: '" + requiredDistrict + "', Required category: '" + requiredCategory + "'");
+        
+        if ((requiredDistrict.isEmpty() && requiredCategory.isEmpty()) || aiIds.isEmpty()) {
+            System.out.println("applyConstraints - No constraints to enforce or no IDs, returning all AI results");
+            return aiIds; // nothing to enforce
+        }
+
+        // Build a lookup of id -> (district, category) with normalization
+        Map<Long, Map<String, String>> lookup = new HashMap<>();
+        for (Map<String, Object> p : posts) {
+            Long id = parseId(p.get("id"));
+            if (id == null) continue;
+            String district = p.get("district") != null ? p.get("district").toString().trim().toLowerCase() : "";
+            String category = p.get("category") != null ? normalizeCategory(p.get("category").toString()) : "";
+            lookup.put(id, Map.of("district", district, "category", category));
+        }
+
+        List<Long> filtered = new ArrayList<>();
+        for (Long id : aiIds) {
+            Map<String, String> meta = lookup.get(id);
+            if (meta == null) {
+                System.out.println("applyConstraints - ID " + id + ": NOT FOUND in posts, skipping");
+                continue;
+            }
+            
+            String serviceDistrict = meta.get("district");
+            String serviceCategory = meta.get("category");
+            
+            boolean districtMatch = requiredDistrict.isEmpty() || serviceDistrict.equals(requiredDistrict);
+            boolean categoryMatch = requiredCategory.isEmpty() || serviceCategory.equals(requiredCategory);
+            
+            System.out.println("applyConstraints - ID " + id + ": district='" + serviceDistrict + "' (match=" + districtMatch + 
+                             "), category='" + serviceCategory + "' (match=" + categoryMatch + ")");
+            
+            if (!districtMatch || !categoryMatch) {
+                System.out.println("applyConstraints - ID " + id + ": FILTERED OUT");
+                continue;
+            }
+            
+            filtered.add(id);
+            System.out.println("applyConstraints - ID " + id + ": KEPT");
+        }
+        
+        System.out.println("applyConstraints - Final filtered count: " + filtered.size());
+        return filtered;
+    }
+
+    /**
+     * Normalize category name to snake_case key format (e.g., "Tour Guide" -> "tour_guide").
+     */
+    private String normalizeCategory(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return "";
+        String normalized = raw.trim().toLowerCase().replace(" ", "_");
+        System.out.println("normalizeCategory: '" + raw + "' -> '" + normalized + "'");
+        return normalized;
+    }
+
+    private Long parseId(Object raw) {
+        if (raw == null) return null;
+        if (raw instanceof Number) return ((Number) raw).longValue();
+        try {
+            return Long.parseLong(raw.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     private String buildSmartSearchPrompt(String postsJson, String searchQuery) {
         StringBuilder sb = new StringBuilder();
-        sb.append("You are a semantic search assistant for a travel service platform.\n\n");
+        sb.append("You are a semantic search assistant for the TravelCommerce platform.\n\n");
         sb.append("User's search query: \"").append(searchQuery).append("\"\n\n");
         sb.append("Available services (JSON array with id, title, description, category, district, location, etc.):\n");
         sb.append(postsJson).append("\n\n");
-        sb.append("TASK: Analyze the user's query semantically and return a JSON array of service IDs that match.\n");
+        sb.append("TASK: Analyze the query semantically and return service IDs that might match the user's intent.\n");
         sb.append("Consider:\n");
-        sb.append("- Synonyms (e.g., 'beach' matches coastal districts, 'accommodation' matches hotels)\n");
-        sb.append("- Intent (e.g., 'romantic getaway' matches hotels and restaurants)\n");
-        sb.append("- Context (e.g., 'adventure' matches experiences, tour guides, drivers)\n");
-        sb.append("- Location variations (e.g., 'south coast' matches Galle, Matara, Hambantota)\n");
-        sb.append("- Category understanding (e.g., 'places to stay' matches hotels)\n\n");
-        sb.append("Return ONLY a JSON array of matching service IDs, ordered by relevance (most relevant first).\n");
-        sb.append("Example: [15, 23, 8, 42]\n\n");
-        sb.append("If no services match, return an empty array: []\n");
-        sb.append("Return ONLY the JSON array, nothing else.");
+        sb.append("- Location/District: If mentioned, prioritize services in that location\n");
+        sb.append("- Category: restaurant, hotel, driver, tour guide, experience\n");
+        sb.append("- Keywords in title and description\n");
+        sb.append("- Synonyms: 'coffee/cafe' relates to restaurant, 'stay/accommodation' to hotel, 'taxi/transport' to driver, etc.\n\n");
+        sb.append("Return a JSON array of service IDs that could match, ordered by relevance.\n");
+        sb.append("Format: [15, 23, 8] or [] if no matches.\n");
+        sb.append("Output ONLY the JSON array, nothing else.");
         return sb.toString();
     }
 }
