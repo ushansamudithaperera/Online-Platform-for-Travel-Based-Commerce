@@ -105,7 +105,7 @@ public class BookingController {
         return ResponseEntity.ok(new ApiResponse(true, "Status updated", Map.of("booking", booking)));
     }
 
-    // Cancel booking (for travellers)
+    // Cancel/Delete booking (for travellers or providers)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> cancelBooking(@PathVariable String id, Authentication auth) {
         if (auth == null) {
@@ -119,11 +119,15 @@ public class BookingController {
             return ResponseEntity.status(404).body(new ApiResponse(false, "Booking not found", null));
         }
 
-        if (!booking.getTravellerId().equals(userId)) {
-            return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to cancel this booking", null));
+        // Allow both the traveller who created the booking AND the provider who owns the service
+        boolean isTraveller = userId.equals(booking.getTravellerId());
+        boolean isProvider = userId.equals(booking.getProviderId());
+
+        if (!isTraveller && !isProvider) {
+            return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to delete this booking", null));
         }
 
         bookingRepository.deleteById(id);
-        return ResponseEntity.ok(new ApiResponse(true, "Booking cancelled", null));
+        return ResponseEntity.ok(new ApiResponse(true, "Booking deleted", null));
     }
 }
