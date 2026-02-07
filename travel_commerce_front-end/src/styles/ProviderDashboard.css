@@ -991,16 +991,21 @@
 
 /* ===== VIEW AS TRAVELLER (PREVIEW) ===== */
 .preview-traveller-section {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  grid-column: 1 / -1;
 }
 
 .preview-header {
-  margin-bottom: 32px;
+  margin-bottom: 36px;
+  width: 100%;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
   border-radius: 16px;
-  padding: 28px 32px;
+  padding: 32px 36px;
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(99, 102, 241, 0.25);
@@ -1064,21 +1069,23 @@
 /* Two-column layout */
 .preview-main-content {
   display: block;
+  width: 100%;
 }
 
 .preview-main-content.show-two-column {
   display: flex;
-  gap: 36px;
+  gap: 44px;
+  width: 100%;
 }
 
 /* Detail pane (left) */
 .preview-detail-pane {
-  flex: 1;
-  min-width: 0;
+  flex: 1.5;
+  min-width: 420px;
   background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 28px 32px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   position: relative;
   max-height: 85vh;
   overflow-y: auto;
@@ -1240,7 +1247,8 @@
 .preview-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  gap: 24px;
+  width: 100%;
 }
 
 .preview-cards-grid.shrunk {
@@ -1248,6 +1256,7 @@
   min-width: 320px;
   max-height: 85vh;
   overflow-y: auto;
+  padding-right: 4px;
 }
 
 /* Post card */
