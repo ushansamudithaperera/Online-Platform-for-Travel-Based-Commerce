@@ -463,18 +463,18 @@ export default function TravellerDashboard() {
                     setAiSearchMessage("");
                 } else {
                     console.log('No AI results, falling back to keyword search');
-                    // No AI results - fall back to keyword search
+                    // No AI results - fall back to keyword search silently
                     setSearch(trimmed.toLowerCase());
                     setAiFilteredIds(null);
-                    setAiSearchMessage("No AI matches found — showing keyword results instead.");
+                    setAiSearchMessage("");
                 }
             } catch (error) {
                 console.error("AI search failed:", error);
                 console.error("Error details:", error.response?.data || error.message);
-                // On error, fall back to keyword search
+                // On error, fall back to keyword search silently
                 setSearch(trimmed.toLowerCase());
                 setAiFilteredIds(null);
-                setAiSearchMessage("AI search unavailable — showing keyword results instead.");
+                setAiSearchMessage("");
             } finally {
                 setAiSearching(false);
             }
@@ -802,9 +802,9 @@ export default function TravellerDashboard() {
                                             🤖 AI-powered results ({aiFilteredIds.size} matches)
                                         </div>
                                     )}
-                                    {aiSearchMessage && (
-                                        <div className="search-mode-badge" style={{ color: '#b45309' }}>
-                                            ⚠️ {aiSearchMessage}
+                                    {!aiFilteredIds && search && useAiSearch && (
+                                        <div className="search-mode-badge">
+                                            🔍 Showing keyword results for "{searchTerm}"
                                         </div>
                                     )}
                                     {!useAiSearch && searchTerm && (
@@ -1106,9 +1106,17 @@ export default function TravellerDashboard() {
                                 {loading ? (
                                     <p style={{ padding: '20px' }}>Loading services...</p>
                                 ) : visiblePosts.length === 0 ? (
-                                    <p className="no-results-error">
-                                        {activeTab === "favorites" ? "No favorites yet." : "😔 No services found."}
-                                    </p>
+                                    <div className="no-results-error">
+                                        <div className="no-results-icon">{activeTab === "favorites" ? "💔" : "🔍"}</div>
+                                        <h3 className="no-results-title">
+                                            {activeTab === "favorites" ? "No favorites yet" : "No services found"}
+                                        </h3>
+                                        <p className="no-results-subtitle">
+                                            {activeTab === "favorites"
+                                                ? "Start exploring and save services you love!"
+                                                : "Try adjusting your search or filters to find what you're looking for."}
+                                        </p>
+                                    </div>
                                 ) : (
                                     visiblePosts.map((p) => {
                                         const serviceId = p?.id || p?._id;
