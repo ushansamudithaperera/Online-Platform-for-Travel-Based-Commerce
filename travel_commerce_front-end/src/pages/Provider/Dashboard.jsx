@@ -367,9 +367,35 @@ export default function ProviderDashboard() {
                   >
                     {selectedPost.status || "PENDING"}
                   </span>
+                  {/* 🟢 NEW: Admin Warning Message for Banned Posts */}
+                  {selectedPost.status === 'BANNED' && selectedPost.adminMessage && (
+                    <div style={{
+                      margin: '15px 0',
+                      padding: '12px',
+                      backgroundColor: '#fff5f5',
+                      borderLeft: '4px solid #e53e3e',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'start',
+                      gap: '10px'
+                    }}>
+                      <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                      <div>
+                        <strong style={{ color: '#c53030', display: 'block', marginBottom: '4px' }}>
+                          Action Required
+                        </strong>
+                        <p style={{ margin: 0, color: '#2d3748', fontSize: '0.9rem' }}>
+                          {selectedPost.adminMessage}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {/* 🟢 END OF WARNING BOX 🟢 */}
                 </div>
+                
 
                 {/* INFO STRIP: price + rating preview + booking preview */}
+
                 <div className="info-strip">
                   {hasPrice && (
                     <div className="price-highlight">

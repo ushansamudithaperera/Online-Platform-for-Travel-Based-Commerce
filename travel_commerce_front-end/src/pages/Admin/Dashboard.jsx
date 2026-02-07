@@ -235,8 +235,60 @@ export default function AdminDashboard() {
         );
     };
 
+    // const renderPostManagement = () => {
+    //     const filteredPosts = filterData(posts, ['title', 'category', 'providerId']);
+    //     return (
+    //         <div className="table-container">
+    //             <h3>Manage Services ({filteredPosts.length})</h3>
+    //             {renderSearchBar("Search by title or category...")}
+    //             <table>
+    //                 <thead><tr><th>Service</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
+    //                 <tbody>
+    //                     {filteredPosts.map(post => (
+    //                         <tr key={post.id}>
+    //                             <td>
+    //                                 <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+    //                                     <img src={post.images?.[0] || "/placeholder.png"} alt="img" style={{width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover'}}/>
+    //                                     <span style={{fontWeight: '500'}}>{post.title}</span>
+    //                                 </div>
+    //                             </td>
+    //                             <td>{post.category}</td>
+    //                             <td>
+    //                                 <span className={`status-badge ${post.status?.toLowerCase() || 'pending'}`}
+    //                                       style={{
+    //                                           padding: '4px 10px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold',
+    //                                           background: post.status === 'ACTIVE' ? '#c6f6d5' : post.status === 'BANNED' ? '#fed7d7' : '#feebc8',
+    //                                           color: post.status === 'ACTIVE' ? '#22543d' : post.status === 'BANNED' ? '#822727' : '#744210'
+    //                                       }}>
+    //                                     {post.status || 'PENDING'}
+    //                                 </span>
+    //                             </td>
+    //                             <td style={{display: 'flex', gap: '5px'}}>
+    //                                 <button onClick={() => handlePostAction(post.id, 'approve')} disabled={post.status === 'ACTIVE'} className="btn small" style={{background: '#48bb78', opacity: post.status === 'ACTIVE' ? 0.5 : 1}} title="Approve">✅</button>
+    //                                 <button onClick={() => handlePostAction(post.id, 'reject')} disabled={post.status === 'BANNED'} className="btn small" style={{background: '#ecc94b', opacity: post.status === 'BANNED' ? 0.5 : 1}} title="Reject">⚠️</button>
+    //                                 <button onClick={() => handlePostAction(post.id, 'delete')} className="btn small" style={{background: '#e53e3e'}} title="Delete">🗑</button>
+    //                             </td>
+    //                         </tr>
+    //                     ))}
+    //                 </tbody>
+    //             </table>
+    //         </div>
+    //     );
+    // };
+
+    // above is old renderPostManagement function working fine, below is updated with reject with reason broken image fixed
+
     const renderPostManagement = () => {
         const filteredPosts = filterData(posts, ['title', 'category', 'providerId']);
+        
+        // 🟢 FIX 1: Helper to get correct image URL
+        const getImageUrl = (imagePath) => {
+            if (!imagePath) return "/placeholder.png";
+            if (imagePath.startsWith("http")) return imagePath; // Already full URL
+            // Point to Spring Boot Backend 'uploads' folder
+            return `http://localhost:8080/uploads/${imagePath}`; 
+        };
+
         return (
             <div className="table-container">
                 <h3>Manage Services ({filteredPosts.length})</h3>
@@ -248,7 +300,13 @@ export default function AdminDashboard() {
                             <tr key={post.id}>
                                 <td>
                                     <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-                                        <img src={post.images?.[0] || "/placeholder.png"} alt="img" style={{width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover'}}/>
+                                        {/* 🟢 FIX 1: Use getImageUrl helper */}
+                                        <img 
+                                            src={getImageUrl(post.images?.[0])} 
+                                            onError={(e) => {e.target.src = "/placeholder.png"}} // Fallback if broken
+                                            alt="service" 
+                                            style={{width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover'}}
+                                        />
                                         <span style={{fontWeight: '500'}}>{post.title}</span>
                                     </div>
                                 </td>
@@ -265,7 +323,21 @@ export default function AdminDashboard() {
                                 </td>
                                 <td style={{display: 'flex', gap: '5px'}}>
                                     <button onClick={() => handlePostAction(post.id, 'approve')} disabled={post.status === 'ACTIVE'} className="btn small" style={{background: '#48bb78', opacity: post.status === 'ACTIVE' ? 0.5 : 1}} title="Approve">✅</button>
-                                    <button onClick={() => handlePostAction(post.id, 'reject')} disabled={post.status === 'BANNED'} className="btn small" style={{background: '#ecc94b', opacity: post.status === 'BANNED' ? 0.5 : 1}} title="Reject">⚠️</button>
+                                    
+                                    {/* 🟢 FIX 2: REJECT WITH REASON */}
+                                    <button 
+                                        onClick={() => {
+                                            const reason = window.prompt("Why are you banning this post? (e.g. 'Invalid Price')");
+                                            if (reason) handlePostAction(post.id, 'reject', reason);
+                                        }} 
+                                        disabled={post.status === 'BANNED'} 
+                                        className="btn small" 
+                                        style={{background: '#ecc94b', opacity: post.status === 'BANNED' ? 0.5 : 1}} 
+                                        title="Reject"
+                                    >
+                                        ⚠️
+                                    </button>
+                                    
                                     <button onClick={() => handlePostAction(post.id, 'delete')} className="btn small" style={{background: '#e53e3e'}} title="Delete">🗑</button>
                                 </td>
                             </tr>

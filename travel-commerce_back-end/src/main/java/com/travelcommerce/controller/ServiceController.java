@@ -324,12 +324,25 @@ public class ServiceController {
         // Offerings updates (provider edit)
         existing.setServiceOfferings(updated.getServiceOfferings());
 
-        // 🟢 FIX START: Update Status ONLY if Admin 🟢
+        // 🟢 FIX START: Update Status ONLY if Admin OLD 🟢
+        // if (isAdmin && updated.getStatus() != null) {
+        //     logger.info("Admin updating status of post {} to {}", id, updated.getStatus());
+        //     existing.setStatus(updated.getStatus());
+        // }
+        // 🟢 FIX END OLD
+        
+        // 🟢 FIX START: Update Status ONLY if Admin NEW 🟢
         if (isAdmin && updated.getStatus() != null) {
             logger.info("Admin updating status of post {} to {}", id, updated.getStatus());
             existing.setStatus(updated.getStatus());
+            
+            // 🟢 NEW: Save the Rejection Reason/Warning 🟢
+            if (updated.getAdminMessage() != null) {
+                existing.setAdminMessage(updated.getAdminMessage());
+            }
         }
-        // 🟢 FIX END
+        // 🟢 FIX END NEW
+
 
         ServicePost saved = servicePostService.update(existing);
         return ResponseEntity.ok(saved);

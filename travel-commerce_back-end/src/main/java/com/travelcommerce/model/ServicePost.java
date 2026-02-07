@@ -46,4 +46,15 @@ public class ServicePost {
 
     @Transient
     private Long reviewCount;
+
+    // 🟢 NEW: Stores the Admin's warning message
+    private String adminMessage;
+
+    // ... existing getters/setters ...
+
+    // 🟢 Add Getter and Setter for adminMessage
+    public String getAdminMessage() { return adminMessage; }
+    public void setAdminMessage(String adminMessage) { this.adminMessage = adminMessage; }
+
 }
+
