@@ -1,7 +1,6 @@
 // src/components/BookingDetailsCard.jsx
 import React, { useState } from "react";
 import { getBookingConfig } from "../config/bookingCategoryConfig";
-import ServicePricingPanel from "./ServicePricingPanel";
 import "../styles/BookingDetailsCard.css";
 
 export default function BookingDetailsCard({
@@ -10,7 +9,6 @@ export default function BookingDetailsCard({
   onStatusChange,
   onDeleteBooking,
 }) {
-  const [showPricingPanel, setShowPricingPanel] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const config = getBookingConfig(booking.category);
 
@@ -43,13 +41,19 @@ export default function BookingDetailsCard({
 
   const renderDynamicFields = () => {
     return config.fields.map((field) => {
-      const value = booking[field.name];
+      const value = booking.bookingDetails?.[field.name] ?? booking[field.name];
       if (!value) return null;
+
+      // Format date fields nicely
+      let displayValue = value;
+      if (field.type === "date" && value) {
+        displayValue = formatDate(value);
+      }
 
       return (
         <div key={field.name} className="detail-row">
           <span className="detail-label">{field.label}:</span>
-          <span className="detail-value">{value}</span>
+          <span className="detail-value">{displayValue}</span>
         </div>
       );
     });
@@ -108,49 +112,6 @@ export default function BookingDetailsCard({
           </div>
         )}
       </div>
-
-      {/* Pricing Information (Provider View) */}
-      {isProvider && !showPricingPanel && (
-        <div className="pricing-info-section">
-          <div className="pricing-header">
-            <h5>💰 Pricing Information</h5>
-            <button
-              className="btn-small"
-              onClick={() => setShowPricingPanel(true)}
-            >
-              ✏️ Set Pricing
-            </button>
-          </div>
-
-          {booking.pricingDetails ? (
-            <div className="pricing-details">
-              {Object.entries(booking.pricingDetails).map(([key, value]) => (
-                <div key={key} className="pricing-row">
-                  <span className="pricing-label">{key.replace(/([A-Z])/g, " $1")}:</span>
-                  <span className="pricing-value">Rs {value || "Not Set"}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="no-pricing">No pricing set yet. Click "Set Pricing" to add details.</p>
-          )}
-        </div>
-      )}
-
-      {/* Pricing Panel */}
-      {showPricingPanel && (
-        <ServicePricingPanel
-          serviceId={booking.serviceId}
-          category={booking.category}
-          existingPricing={booking.pricingDetails}
-          onSave={() => {
-            setShowPricingPanel(false);
-            // Optionally refresh booking details here
-          }}
-          onCancel={() => setShowPricingPanel(false)}
-          isLoading={isUpdating}
-        />
-      )}
 
       {/* Actions (Provider View) */}
       {isProvider && (
