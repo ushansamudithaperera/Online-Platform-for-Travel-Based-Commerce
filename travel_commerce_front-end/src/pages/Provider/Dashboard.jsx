@@ -678,7 +678,7 @@ export default function ProviderDashboard() {
             <div className="preview-header">
               <h2>View as Traveller</h2>
               <p className="preview-subtitle">
-                This is how your approved services appear to travellers browsing the platform.
+                This is how your services appear to travellers browsing the platform.
               </p>
             </div>
 
@@ -686,13 +686,11 @@ export default function ProviderDashboard() {
               <p className="loading-msg">Loading your services...</p>
             ) : (
               (() => {
-                const approvedPosts = posts.filter(
-                  (p) => p.status === "ACTIVE"
-                );
+                const approvedPosts = posts;
                 if (approvedPosts.length === 0) {
                   return (
                     <div className="preview-empty">
-                      <p>No approved services to preview. Services need admin approval before they appear to travellers.</p>
+                      <p>No services to preview. Create a service to see how it appears to travellers.</p>
                     </div>
                   );
                 }
@@ -829,6 +827,20 @@ export default function ProviderDashboard() {
 
                             <div className="preview-card-content">
                               <h4 className="preview-card-title">{p.title}</h4>
+                              {p.status && p.status !== "ACTIVE" && (
+                                <span style={{
+                                  display: "inline-block",
+                                  fontSize: "0.7rem",
+                                  padding: "2px 8px",
+                                  borderRadius: "12px",
+                                  marginBottom: "6px",
+                                  fontWeight: 600,
+                                  color: p.status === "PENDING" ? "#b45309" : "#dc2626",
+                                  backgroundColor: p.status === "PENDING" ? "#fef3c7" : "#fee2e2",
+                                }}>
+                                  {p.status === "PENDING" ? "⏳ Pending Approval" : p.status}
+                                </span>
+                              )}
 
                               {p.priceFrom && (
                                 <div className="preview-card-price-banner">
