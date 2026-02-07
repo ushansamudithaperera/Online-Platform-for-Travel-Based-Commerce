@@ -6,15 +6,18 @@ import com.travelcommerce.model.Role;
 import com.travelcommerce.service.ServicePostService;
 import com.travelcommerce.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +33,50 @@ public class ServiceController {
     @Autowired private ServicePostService servicePostService;
     @Autowired private UserRepository userRepository;
     @Autowired private ObjectMapper objectMapper;
+
+    private static String validateAndCleanWhatsappNumber(String raw) {
+        if (raw == null) return null;
+
+        String value = raw.trim();
+        if (value.isEmpty()) return null;
+        if (value.matches(".*[A-Za-z].*")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "WhatsApp number must not contain letters");
+        }
+
+        int plusIndex = value.indexOf('+');
+        if (plusIndex > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "WhatsApp number: '+' must be at the beginning");
+        }
+
+        // Remove common separators. Keep only digits for downstream use.
+        String compact = value.replaceAll("[\\s()\\-\\.]", "");
+        boolean hasPlus = compact.startsWith("+");
+        String digits = compact.replaceAll("\\D", "");
+
+        // Support 00 prefix (international) by stripping.
+        if (!hasPlus && digits.startsWith("00")) {
+            digits = digits.substring(2);
+        }
+
+        // Support Sri Lanka local format 0XXXXXXXXX -> 94XXXXXXXXX
+        if (digits.length() == 10 && digits.startsWith("0")) {
+            digits = "94" + digits.substring(1);
+        }
+
+        if (digits.length() < 8 || digits.length() > 15) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "WhatsApp number must have 8 to 15 digits");
+        }
+
+        if (digits.startsWith("0")) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Please include country code (e.g., +94...) or use 0XXXXXXXXX for Sri Lanka"
+            );
+        }
+
+        // Persist trimmed original to keep the provider's formatting.
+        return value;
+    }
 
     // ==================================================================================
     // 🟢 TEAMMATES' ORIGINAL ENDPOINTS (DO NOT TOUCH)
@@ -126,6 +173,26 @@ public class ServiceController {
             post.setPriceUnit((String) serviceData.get("priceUnit"));
             post.setCurrency((String) serviceData.get("currency"));
             
+            // External booking URL (optional)
+            post.setExternalBookingUrl((String) serviceData.get("externalBookingUrl"));
+
+            // Provider WhatsApp number (optional)
+            post.setWhatsappNumber(validateAndCleanWhatsappNumber((String) serviceData.get("whatsappNumber")));
+
+            // Provider offerings (optional)
+            try {
+                Object offeringsObj = serviceData.get("serviceOfferings");
+                if (offeringsObj != null) {
+                    Map<String, List<String>> offerings = objectMapper.convertValue(
+                            offeringsObj,
+                            new TypeReference<Map<String, List<String>>>() {}
+                    );
+                    post.setServiceOfferings(offerings);
+                }
+            } catch (Exception ex) {
+                logger.warn("Unable to parse serviceOfferings for create: {}", ex.getMessage());
+            }
+            
             post.setProviderId(userId);
 
             ServicePost saved;
@@ -186,6 +253,13 @@ public class ServiceController {
         existing.setPriceTo(updated.getPriceTo());
         existing.setPriceUnit(updated.getPriceUnit());
         existing.setCurrency(updated.getCurrency());
+
+        // Optional external booking / WhatsApp contact
+        existing.setExternalBookingUrl(updated.getExternalBookingUrl());
+        existing.setWhatsappNumber(validateAndCleanWhatsappNumber(updated.getWhatsappNumber()));
+
+        // Offerings updates (provider edit)
+        existing.setServiceOfferings(updated.getServiceOfferings());
 
         // 🟢 FIX START: Update Status ONLY if Admin 🟢
         if (isAdmin && updated.getStatus() != null) {
@@ -263,6 +337,30 @@ public class ServiceController {
             
             existing.setPriceUnit((String) data.get("priceUnit"));
             existing.setCurrency((String) data.get("currency"));
+
+            // Optional external booking / WhatsApp contact
+            if (data.containsKey("externalBookingUrl")) {
+                existing.setExternalBookingUrl((String) data.get("externalBookingUrl"));
+            }
+            if (data.containsKey("whatsappNumber")) {
+                existing.setWhatsappNumber(validateAndCleanWhatsappNumber((String) data.get("whatsappNumber")));
+            }
+
+            // Provider offerings (optional)
+            try {
+                if (data.containsKey("serviceOfferings")) {
+                    Object offeringsObj = data.get("serviceOfferings");
+                    Map<String, List<String>> offerings = offeringsObj == null
+                            ? null
+                            : objectMapper.convertValue(
+                                    offeringsObj,
+                                    new TypeReference<Map<String, List<String>>>() {}
+                            );
+                    existing.setServiceOfferings(offerings);
+                }
+            } catch (Exception ex) {
+                logger.warn("Unable to parse serviceOfferings for update {}: {}", id, ex.getMessage());
+            }
             
             // 🟢 FIX: Allow Admin to update status via Form Data too
             if (isAdmin && data.containsKey("status")) {

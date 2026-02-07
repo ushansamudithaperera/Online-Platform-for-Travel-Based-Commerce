@@ -21,6 +21,8 @@ public class Booking {
     private Map<String, Object> pricingDetails; // Pricing info set by provider
     private Date bookingDate;
     private String status = "PENDING"; // PENDING, CONFIRMED, CANCELLED, COMPLETED
+    // When true, booking is hidden from traveller's "My Bookings" view (provider still sees it)
+    private boolean hiddenByTraveller = false;
     private String contactEmail;
     private String contactPhone;
     private String message;

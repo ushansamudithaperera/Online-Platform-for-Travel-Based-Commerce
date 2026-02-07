@@ -9,6 +9,9 @@ export default function BookingDetailsCard({
   isProvider = false,
   onStatusChange,
   onDeleteBooking,
+  onCancelBooking,
+  onViewPost,
+  onRemoveBooking,
 }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const config = getBookingConfig(booking.category);
@@ -35,6 +38,16 @@ export default function BookingDetailsCard({
       } finally {
         setIsUpdating(false);
       }
+    }
+  };
+
+  const handleCancelAsTraveller = async () => {
+    if (!onCancelBooking) return;
+    setIsUpdating(true);
+    try {
+      await onCancelBooking(booking.id);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -145,6 +158,46 @@ export default function BookingDetailsCard({
           >
             Delete Booking
           </button>
+        </div>
+      )}
+
+      {/* Actions (Traveller View) */}
+      {!isProvider && (onViewPost || onCancelBooking || onRemoveBooking) && (
+        <div className="actions-section">
+          <div className="traveller-actions">
+            {onViewPost && booking.serviceId && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => onViewPost(booking.serviceId)}
+                disabled={isUpdating}
+              >
+                View Original Post
+              </button>
+            )}
+
+            {onCancelBooking && String(booking.status).toUpperCase() === "PENDING" && (
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleCancelAsTraveller}
+                disabled={isUpdating}
+              >
+                Cancel Booking
+              </button>
+            )}
+
+            {onRemoveBooking && ["CANCELLED", "COMPLETED"].includes(String(booking.status).toUpperCase()) && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => onRemoveBooking(booking.id)}
+                disabled={isUpdating}
+              >
+                Remove
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
