@@ -56,6 +56,9 @@ public class SecurityConfig {
                 // Public reviews for any service
                 .requestMatchers("/api/reviews/service/*").permitAll()
 
+                // Public AI search
+                .requestMatchers("/api/ai/smart-search").permitAll()
+
                 // Admin area
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
 

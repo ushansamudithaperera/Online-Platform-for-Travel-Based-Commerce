@@ -4,9 +4,38 @@ import "../../styles/TravellerDashboard.css";
 import Footer from "../../components/Footer";
 import { getAllServices, getServiceById } from "../../api/serviceApi"; 
 import { getWishlist, getWishlistIds, toggleWishlist } from "../../api/wishlistApi";
+import { aiSmartSearch } from "../../api/aiTripPlannerApi";
 import TripPlanner from "../../components/TripPlanner";
 import CategoryBookingForm from "../../components/CategoryBookingForm";
 import BookingDetailsCard from "../../components/BookingDetailsCard";
+import { getBookingConfig, getCategoryKey } from "../../config/bookingCategoryConfig";
+import { SRI_LANKA_DISTRICTS, normalizeDistrict } from "../../config/sriLankaDistricts";
+
+// Category-specific price unit options (same as ServiceFormModal)
+const PRICE_UNITS_BY_CATEGORY = {
+  tour_guide: [
+    { value: "per person", label: "Per Person" },
+    { value: "per group", label: "Per Group" },
+    { value: "per day", label: "Per Day" },
+    { value: "per half day", label: "Per Half Day" },
+    { value: "per hour", label: "Per Hour" },
+  ],
+  hotel: [
+    { value: "per night", label: "Per Night" },
+    { value: "per room per night", label: "Per Room / Night" },
+  ],
+  restaurant: [],
+  experience: [
+    { value: "per person", label: "Per Person" },
+    { value: "per group", label: "Per Group" },
+    { value: "per package", label: "Per Package" },
+  ],
+  driver: [
+    { value: "per km", label: "Per Km" },
+    { value: "per day", label: "Per Day" },
+    { value: "per destination", label: "Per Destination" },
+  ],
+};
 import { 
     createBooking, 
     getMyBookings, 
@@ -34,9 +63,16 @@ export default function TravellerDashboard() {
     const [activeTab, setActiveTab] = useState("services"); // services, favorites, tripPlanner, bookings, reviews
     
     const [search, setSearch] = useState("");
-    const [searchTerm, setSearchTerm] = useState(""); 
+    const [searchTerm, setSearchTerm] = useState("");
+    const [aiSearching, setAiSearching] = useState(false);
+    const [aiFilteredIds, setAiFilteredIds] = useState(null);
+    const [useAiSearch, setUseAiSearch] = useState(true); // Toggle for AI search 
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [selectedDistrict, setSelectedDistrict] = useState("all");
+    const [priceMin, setPriceMin] = useState("");
+    const [priceMax, setPriceMax] = useState("");
+    const [priceUnit, setPriceUnit] = useState("all");
+    const [sortBy, setSortBy] = useState("recommended");
     const [selectedPost, setSelectedPost] = useState(null);
     const [loading, setLoading] = useState(true); 
     const [posts, setPosts] = useState([]);
@@ -150,6 +186,26 @@ export default function TravellerDashboard() {
     useEffect(() => {
         setActiveImageIndex(0);
     }, [selectedPost?.id]);
+
+    // Keep priceUnit compatible with the selected category
+    useEffect(() => {
+        if (selectedCategory === "all") {
+            setPriceUnit("all");
+            return;
+        }
+
+        const key = getCategoryKey(selectedCategory);
+        const units = PRICE_UNITS_BY_CATEGORY[key] || [];
+
+        if (!units.length) {
+            setPriceUnit("all");
+            return;
+        }
+
+        if (priceUnit === "all") return;
+        const stillValid = units.some((u) => String(u.value) === String(priceUnit));
+        if (!stillValid) setPriceUnit("all");
+    }, [selectedCategory]);
 
     async function fetchAllServices() {
         try {
@@ -286,8 +342,84 @@ export default function TravellerDashboard() {
         }
     };
 
-    const handleSearch = () => {
-        setSearch(searchTerm.toLowerCase());
+    const handleSearch = async () => {
+        const trimmed = String(searchTerm || "").trim();
+        if (!trimmed) {
+            setSearch("");
+            setAiFilteredIds(null);
+            return;
+        }
+
+        // Try AI-powered search first if enabled
+        if (useAiSearch) {
+            setAiSearching(true);
+            try {
+                // Prepare simplified post data for AI
+                const simplifiedPosts = posts.map(p => ({
+                    id: p.id,
+                    title: p.title,
+                    description: toPlainText(p.description),
+                    category: p.category,
+                    district: p.district,
+                    location: p.location,
+                    price: p.price,
+                    priceUnit: p.priceUnit
+                }));
+
+                console.log('Sending AI search request:', { searchQuery: trimmed, postsCount: simplifiedPosts.length });
+                
+                const response = await aiSmartSearch({
+                    searchQuery: trimmed,
+                    availablePosts: simplifiedPosts
+                });
+
+                console.log('AI search response:', response?.data);
+
+                const matchedIds = response?.data?.matchedPostIds || [];
+                if (Array.isArray(matchedIds) && matchedIds.length > 0) {
+                    console.log('AI matched IDs:', matchedIds);
+                    setAiFilteredIds(new Set(matchedIds));
+                    setSearch(""); // Clear keyword search when using AI
+                } else {
+                    console.log('No AI results, showing all posts');
+                    // No AI results - show all posts
+                    setSearch("");
+                    setAiFilteredIds(null);
+                }
+            } catch (error) {
+                console.error("AI search failed:", error);
+                console.error("Error details:", error.response?.data || error.message);
+                // On error, show all posts
+                setSearch("");
+                setAiFilteredIds(null);
+            } finally {
+                setAiSearching(false);
+            }
+        } else {
+            // Use traditional keyword search
+            setSearch(trimmed.toLowerCase());
+            setAiFilteredIds(null);
+        }
+    };
+
+    const handleToggleSearchMode = () => {
+        setUseAiSearch(!useAiSearch);
+        // Clear search results when switching modes
+        setSearch("");
+        setAiFilteredIds(null);
+        setSearchTerm("");
+    };
+
+    const handleResetFilters = () => {
+        setSearchTerm("");
+        setSearch("");
+        setAiFilteredIds(null);
+        setSelectedCategory("all");
+        setSelectedDistrict("all");
+        setPriceMin("");
+        setPriceMax("");
+        setPriceUnit("all");
+        setSortBy("recommended");
     };
 
     const wishlistIdSet = new Set(wishlistIds);
@@ -379,20 +511,125 @@ export default function TravellerDashboard() {
         );
     };
 
-    // Filtering Logic (Case-Insensitive Search & Category Match)
-    const filteredPosts = posts
-        .filter((p) => (search ? p.title.toLowerCase().includes(search) : true))
-        .filter((p) => (
-            selectedCategory === "all" 
-            ? true 
-            : p.category.toLowerCase().replace(/ /g, '_') === selectedCategory.toLowerCase() 
-        ))
-        .filter((p) => (selectedDistrict === "all" ? true : p.district === selectedDistrict));
+    const parseMoney = (value) => {
+        if (value === null || value === undefined) return null;
+        const text = String(value).trim();
+        if (text === "") return null;
+        const n = Number(text);
+        return Number.isFinite(n) ? n : null;
+    };
 
-    const visiblePosts = activeTab === "favorites" ? favoritePosts : filteredPosts;
+    const matchesPriceRange = (post, minValue, maxValue) => {
+        const from = parseMoney(post?.priceFrom);
+        const to = parseMoney(post?.priceTo);
+
+        // If the service has no price info, keep it unless user actively filters by price.
+        if (from === null && to === null) {
+            return minValue === null && maxValue === null;
+        }
+
+        const serviceMin = from !== null ? from : to;
+        const serviceMax = to !== null ? to : from;
+
+        if (minValue !== null && serviceMax !== null && serviceMax < minValue) return false;
+        if (maxValue !== null && serviceMin !== null && serviceMin > maxValue) return false;
+        return true;
+    };
+
+    const query = String(search || "").trim().toLowerCase();
+    const minBudget = parseMoney(priceMin);
+    const maxBudget = parseMoney(priceMax);
+
+    // Filtering Logic - AI-powered semantic search OR keyword search
+    const filteredPosts = posts
+        .filter((p) => {
+            // If AI search is active, filter by matched IDs
+            if (aiFilteredIds) {
+                return aiFilteredIds.has(p.id);
+            }
+            // If no search query, show all posts
+            if (!query) return true;
+            // Use traditional keyword search
+            const haystack = [
+                p?.title,
+                toPlainText(p?.description),
+                p?.district,
+                p?.location,
+                p?.category,
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+            return haystack.includes(query);
+        })
+        .filter((p) => {
+            if (selectedCategory === "all") return true;
+            return getCategoryKey(p?.category) === getCategoryKey(selectedCategory);
+        })
+        .filter((p) =>
+            selectedDistrict === "all"
+                ? true
+                : normalizeDistrict(p?.district) === normalizeDistrict(selectedDistrict)
+        )
+        .filter((p) => matchesPriceRange(p, minBudget, maxBudget))
+        .filter((p) => {
+            if (priceUnit === "all") return true;
+            return String(p?.priceUnit || "").toLowerCase() === String(priceUnit || "").toLowerCase();
+        });
+
+    const sortedFilteredPosts = [...filteredPosts].sort((a, b) => {
+        if (sortBy === "newest") {
+            return new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime();
+        }
+        if (sortBy === "rating") {
+            const ar = Number(a?.averageRating ?? a?.rating ?? 0);
+            const br = Number(b?.averageRating ?? b?.rating ?? 0);
+            return br - ar;
+        }
+        if (sortBy === "priceLow") {
+            const aMin = parseMoney(a?.priceFrom) ?? parseMoney(a?.priceTo) ?? Number.POSITIVE_INFINITY;
+            const bMin = parseMoney(b?.priceFrom) ?? parseMoney(b?.priceTo) ?? Number.POSITIVE_INFINITY;
+            return aMin - bMin;
+        }
+        if (sortBy === "priceHigh") {
+            const aMax = parseMoney(a?.priceTo) ?? parseMoney(a?.priceFrom) ?? Number.NEGATIVE_INFINITY;
+            const bMax = parseMoney(b?.priceTo) ?? parseMoney(b?.priceFrom) ?? Number.NEGATIVE_INFINITY;
+            return bMax - aMax;
+        }
+        return 0; // recommended (keep server order)
+    });
+
+    const visiblePosts = activeTab === "favorites" ? favoritePosts : sortedFilteredPosts;
 
     // Hybrid layout: list view when searching/filtering and no selection
-    const isListView = activeTab === "services" && !selectedPost && (searchTerm.trim() !== "" || selectedCategory !== "all");
+    const isAnyFilterActive =
+        String(search || "").trim() !== "" ||
+        selectedCategory !== "all" ||
+        selectedDistrict !== "all" ||
+        String(priceMin).trim() !== "" ||
+        String(priceMax).trim() !== "" ||
+        priceUnit !== "all" ||
+        sortBy !== "recommended";
+
+    const isListView = activeTab === "services" && !selectedPost && isAnyFilterActive;
+
+    const bookingHintConfig = selectedCategory !== "all" ? getBookingConfig(selectedCategory) : null;
+    const bookingRequiredLabels = bookingHintConfig
+        ? bookingHintConfig.fields.filter((f) => f.required).map((f) => f.label)
+        : [];
+
+    const districtsFromPosts = Array.from(
+        new Set((Array.isArray(posts) ? posts : []).map((p) => String(p?.district || "").trim()).filter(Boolean))
+    );
+    const knownDistrictsLower = new Set(SRI_LANKA_DISTRICTS.map((d) => normalizeDistrict(d)));
+    const extraDistricts = districtsFromPosts
+        .filter((d) => !knownDistrictsLower.has(normalizeDistrict(d)))
+        .sort((a, b) => a.localeCompare(b));
+    const availableDistricts = [...SRI_LANKA_DISTRICTS, ...extraDistricts];
+
+    // Get price unit options for currently selected category
+    const categoryKey = selectedCategory === "all" ? null : getCategoryKey(selectedCategory);
+    const availablePriceUnits = categoryKey ? (PRICE_UNITS_BY_CATEGORY[categoryKey] || []) : [];
 
     return (
         <>
@@ -438,64 +675,152 @@ export default function TravellerDashboard() {
                     <>
                         {activeTab === "services" && (
                             <>
-                                {/* SEARCH BAR */}
-                                <div className="search-section">
-                                    <div className="search-input-wrapper"> 
-                                        <input
-                                            className="search-input"
-                                            type="text"
-                                            placeholder="Search services"
-                                            value={searchTerm} 
-                                            onChange={(e) => setSearchTerm(e.target.value)} 
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handleSearch();
+                                {/* SEARCH BAR - SEPARATE SECTION */}
+                                <div className="traveller-search-section">
+                                    <div className="search-controls-wrapper">
+                                        <div className="search-input-wrapper">
+                                            <input
+                                                className="search-input"
+                                                type="text"
+                                                placeholder={useAiSearch 
+                                                    ? "Try: 'beachside hotels', 'romantic dinner spots', 'adventure activities'..." 
+                                                    : "Search by title, district, location, category..."
                                                 }
-                                            }}
-                                        />
-                                        <button className="search-icon-btn" onClick={handleSearch}>
-                                            🔍 
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        handleSearch();
+                                                    }
+                                                }}
+                                            />
+                                            <button 
+                                                className="search-icon-btn" 
+                                                onClick={handleSearch}
+                                                disabled={aiSearching}
+                                            >
+                                                {aiSearching ? "🤖 Searching..." : (useAiSearch ? "🤖 AI Search" : "🔍 Search")}
+                                            </button>
+                                        </div>
+                                        <button 
+                                            className="ai-toggle-btn"
+                                            onClick={handleToggleSearchMode}
+                                            title={useAiSearch ? "Switch to keyword search" : "Switch to AI search"}
+                                        >
+                                            {useAiSearch ? "⚡ AI" : "📝 Keywords"}
                                         </button>
                                     </div>
+                                    {aiFilteredIds && (
+                                        <div className="search-mode-badge">
+                                            🤖 AI-powered results ({aiFilteredIds.size} matches)
+                                        </div>
+                                    )}
+                                    {!useAiSearch && searchTerm && (
+                                        <div className="search-mode-badge">
+                                            📝 Keyword search active
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* DISTRICT FILTER */}
-                                <div className="filter-bar">
-                                    <div className="filter-card">
-                                        <div className="filter-card-label">District</div>
-                                        <select
-                                            className="filter-select"
-                                            value={selectedDistrict}
-                                            onChange={(e) => setSelectedDistrict(e.target.value)}
+                                {/* FILTERS */}
+                                <div className="traveller-filters">
+                                    <div className="traveller-filters-row">
+                                        <div className="filter-card filter-card-wide">
+                                            <div className="filter-card-label">District</div>
+                                            <select
+                                                className="filter-select"
+                                                value={selectedDistrict}
+                                                onChange={(e) => setSelectedDistrict(e.target.value)}
+                                            >
+                                                <option value="all">All Districts</option>
+                                                {availableDistricts.map((d) => (
+                                                    <option key={d} value={d}>
+                                                        {d}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {availablePriceUnits.length > 0 && (
+                                            <div className="filter-card filter-card-wide">
+                                                <div className="filter-card-label">Price Unit</div>
+                                                <select
+                                                    className="filter-select"
+                                                    value={priceUnit}
+                                                    onChange={(e) => setPriceUnit(e.target.value)}
+                                                >
+                                                    <option value="all">All Units</option>
+                                                    {availablePriceUnits.map((unit) => (
+                                                        <option key={unit.value} value={unit.value}>
+                                                            {unit.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        <div className="filter-card filter-card-wide">
+                                            <div className="filter-card-label">Sort</div>
+                                            <select
+                                                className="filter-select"
+                                                value={sortBy}
+                                                onChange={(e) => setSortBy(e.target.value)}
+                                            >
+                                                <option value="recommended">Recommended</option>
+                                                <option value="newest">Newest</option>
+                                                <option value="rating">Top rated</option>
+                                                <option value="priceLow">Price: Low → High</option>
+                                                <option value="priceHigh">Price: High → Low</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="filter-card filter-card-price">
+                                            <div className="filter-card-label">Budget (LKR)</div>
+                                            <div className="budget-inputs">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    inputMode="numeric"
+                                                    className="budget-input"
+                                                    placeholder="Min"
+                                                    value={priceMin}
+                                                    onChange={(e) => setPriceMin(e.target.value)}
+                                                />
+                                                <span className="budget-sep">–</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    inputMode="numeric"
+                                                    className="budget-input"
+                                                    placeholder="Max"
+                                                    value={priceMax}
+                                                    onChange={(e) => setPriceMax(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            className="filters-reset-btn"
+                                            onClick={handleResetFilters}
+                                            disabled={!isAnyFilterActive}
                                         >
-                                            <option value="all">All Districts</option>
-                                            <option value="Ampara">Ampara</option>
-                                            <option value="Anuradhapura">Anuradhapura</option>
-                                            <option value="Badulla">Badulla</option>
-                                            <option value="Batticaloa">Batticaloa</option>
-                                            <option value="Colombo">Colombo</option>
-                                            <option value="Galle">Galle</option>
-                                            <option value="Gampaha">Gampaha</option>
-                                            <option value="Hambantota">Hambantota</option>
-                                            <option value="Jaffna">Jaffna</option>
-                                            <option value="Kalutara">Kalutara</option>
-                                            <option value="Kandy">Kandy</option>
-                                            <option value="Kegalle">Kegalle</option>
-                                            <option value="Kilinochchi">Kilinochchi</option>
-                                            <option value="Kurunegala">Kurunegala</option>
-                                            <option value="Mannar">Mannar</option>
-                                            <option value="Matale">Matale</option>
-                                            <option value="Matara">Matara</option>
-                                            <option value="Monaragala">Monaragala</option>
-                                            <option value="Mullaitivu">Mullaitivu</option>
-                                            <option value="Nuwara Eliya">Nuwara Eliya</option>
-                                            <option value="Polonnaruwa">Polonnaruwa</option>
-                                            <option value="Puttalam">Puttalam</option>
-                                            <option value="Ratnapura">Ratnapura</option>
-                                            <option value="Trincomalee">Trincomalee</option>
-                                            <option value="Vavuniya">Vavuniya</option>
-                                        </select>
+                                            Reset
+                                        </button>
                                     </div>
+
+                                    {bookingRequiredLabels.length > 0 && (
+                                        <div className="booking-hint-bar" role="note">
+                                            <div className="booking-hint-title">Booking required:</div>
+                                            <div className="booking-hint-chips">
+                                                {bookingRequiredLabels.map((label) => (
+                                                    <span key={label} className="booking-hint-chip">
+                                                        {label}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* CATEGORY SECTION */}
@@ -929,7 +1254,7 @@ export default function TravellerDashboard() {
                     <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                             <CategoryBookingForm
-                                serviceId={selectedPost.id}
+                                serviceId={selectedPost.id || selectedPost._id}
                                 category={selectedPost.category}
                                 onSubmit={handleSubmitBooking}
                                 onCancel={() => setShowBookingModal(false)}

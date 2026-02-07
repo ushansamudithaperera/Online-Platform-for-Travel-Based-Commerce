@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "../../api/axiosConfig"; 
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { SRI_LANKA_DISTRICTS } from "../../config/sriLankaDistricts";
 
 export default function AddService() {
     const { user } = useAuth();
@@ -104,7 +105,20 @@ export default function AddService() {
                 <div className="row">
                     <div className="col-md-6 mb-3">
                         <label className="form-label">District</label>
-                        <input type="text" name="district" className="form-control" required onChange={handleChange} />
+                        <select
+                            name="district"
+                            className="form-select"
+                            required
+                            value={formData.district}
+                            onChange={handleChange}
+                        >
+                            <option value="">Select District</option>
+                            {SRI_LANKA_DISTRICTS.map((d) => (
+                                <option key={d} value={d}>
+                                    {d}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="col-md-6 mb-3">
                         <label className="form-label">Exact Location</label>

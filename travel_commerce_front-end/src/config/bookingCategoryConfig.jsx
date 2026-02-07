@@ -92,11 +92,39 @@ export const BOOKING_CATEGORIES = {
   }
 };
 
+const CATEGORY_ALIASES = {
+  guide: "tour_guide",
+  tourguide: "tour_guide",
+  tour_guides: "tour_guide",
+  "tour guide": "tour_guide",
+  "tour guides": "tour_guide",
+
+  drivers: "driver",
+  hotels: "hotel",
+  experiences: "experience",
+  restaurants: "restaurant",
+};
+
+export const normalizeCategoryKey = (categoryName) => {
+  const raw = String(categoryName || "").trim();
+  if (!raw) return "experience";
+
+  const normalized = raw.toLowerCase().replace(/\s+/g, " ");
+  const underscored = normalized.replace(/\s+/g, "_");
+
+  // Prefer exact matches against aliases (handles inputs like "Guide")
+  return (
+    CATEGORY_ALIASES[normalized] ||
+    CATEGORY_ALIASES[underscored] ||
+    underscored
+  );
+};
+
 export const getBookingConfig = (category) => {
-  const normalizedCategory = category?.toLowerCase().replace(/\s+/g, '_').trim();
-  return BOOKING_CATEGORIES[normalizedCategory] || BOOKING_CATEGORIES.experience;
+  const categoryKey = normalizeCategoryKey(category);
+  return BOOKING_CATEGORIES[categoryKey] || BOOKING_CATEGORIES.experience;
 };
 
 export const getCategoryKey = (categoryName) => {
-  return categoryName?.toLowerCase().replace(/\s+/g, '_').trim();
+  return normalizeCategoryKey(categoryName);
 };
