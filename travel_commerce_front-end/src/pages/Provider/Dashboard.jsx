@@ -672,7 +672,7 @@ export default function ProviderDashboard() {
             ) : (
               (() => {
                 const approvedPosts = posts.filter(
-                  (p) => p.status === "APPROVED"
+                  (p) => p.status === "ACTIVE"
                 );
                 if (approvedPosts.length === 0) {
                   return (
