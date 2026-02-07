@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import { useToast } from "../../context/ToastContext";
 
 export default function Contact() {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -16,7 +18,7 @@ export default function Contact() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert("Message sent! (Demo Only)");
+        toast.success("Message sent successfully!");
         setFormData({ name: "", email: "", role: "Traveller", message: "" });
     };
 

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import { useToast } from "../../context/ToastContext";
 
 export default function Feedback() {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -17,7 +19,7 @@ export default function Feedback() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert("Thank you for your feedback! (Demo Only)");
+        toast.success("Thank you for your feedback!");
         setFormData({ name: "", email: "", type: "Suggestion", rating: "5", message: "" });
     };
 

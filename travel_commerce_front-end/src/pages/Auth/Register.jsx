@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import authApi from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import Toast from "../../components/Toast";          // <-- NEW
 import "../../styles/Login.css";
 
 export default function Register() {
@@ -18,8 +18,7 @@ export default function Register() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Toast state
-  const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  const toast = useToast();
 
   const [countryCodes, setCountryCodes] = useState([]);
   const [telephone, setTelephone] = useState({ code: "", number: "" });
@@ -61,33 +60,22 @@ export default function Register() {
 
       if (res.data?.success) {
         // ✔ SHOW SUCCESS TOAST
-        setToast({
-          show: true,
-          type: "success",
-          message: "Registration successful! Redirecting...",
-        });
+        toast.success("Registration successful! Redirecting...");
 
         setTimeout(() => {
           nav("/login");
         }, 1500);
 
       } else {
-        setToast({
-          show: true,
-          type: "error",
-          message: "Registration failed",
-        });
+        toast.error("Registration failed");
       }
 
     } catch (error) {
-      setToast({
-        show: true,
-        type: "error",
-        message:
-          error?.response?.data?.message ||
+      toast.error(
+        error?.response?.data?.message ||
           error?.response?.data?.error ||
-          "Registration failed",
-      });
+          "Registration failed"
+      );
     }
 
     setLoading(false);
@@ -131,15 +119,6 @@ export default function Register() {
   return (
     <>
       <Navbar />
-
-      {/* TOAST */}
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
-      )}
 
       <div className="main-content">
         <div className="container page login-container">

@@ -6,6 +6,7 @@ import "../../styles/AdminDashboard.css";
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
+    const toast = useToast();
     const [activeTab, setActiveTab] = useState("overview");
     
     // Data State
@@ -65,7 +66,13 @@ export default function AdminDashboard() {
 
     // --- ACTION HANDLERS ---
     const handlePostAction = async (postId, action) => {
-        if (!window.confirm(`Are you sure you want to ${action} this post?`)) return;
+        const confirmed = await toast.confirm({
+            title: `${action.charAt(0).toUpperCase() + action.slice(1)} Post`,
+            message: `Are you sure you want to ${action} this post?`,
+            type: action === 'delete' ? 'danger' : 'warning',
+            confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+        });
+        if (!confirmed) return;
 
         const postToUpdate = posts.find(p => p.id === postId);
         const token = localStorage.getItem("token");
@@ -86,37 +93,57 @@ export default function AdminDashboard() {
             if (res.ok) {
                 if (action === 'delete') {
                     setPosts(prev => prev.filter(p => p.id !== postId));
+                    toast.success("Post deleted successfully");
                 } else {
                     setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: JSON.parse(body).status } : p));
+                    toast.success(`Post ${action}d successfully`);
                 }
-            } else { alert("Action failed"); }
-        } catch (err) { alert("Network error"); }
+            } else { toast.error("Action failed"); }
+        } catch (err) { toast.error("Network error"); }
     };
 
     const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Remove this user permanently?")) return;
+        const confirmed = await toast.confirm({
+            title: "Remove User",
+            message: "Remove this user permanently? This cannot be undone.",
+            type: "danger",
+            confirmText: "Remove",
+        });
+        if (!confirmed) return;
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) setUsers(prev => prev.filter(u => u.id !== userId));
-            else alert("Failed to remove user");
-        } catch (err) { alert("Network error"); }
+            if (res.ok) {
+                setUsers(prev => prev.filter(u => u.id !== userId));
+                toast.success("User removed successfully");
+            }
+            else toast.error("Failed to remove user");
+        } catch (err) { toast.error("Network error"); }
     };
 
     const handleDeleteReview = async (reviewId) => {
-        if (!window.confirm("Delete this review?")) return;
+        const confirmed = await toast.confirm({
+            title: "Delete Review",
+            message: "Are you sure you want to delete this review?",
+            type: "danger",
+            confirmText: "Delete",
+        });
+        if (!confirmed) return;
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:8080/api/reviews/${reviewId}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) setReviews(prev => prev.filter(r => r.id !== reviewId));
-            else alert("Failed to delete review");
-        } catch (err) { alert("Network error"); }
+            if (res.ok) {
+                setReviews(prev => prev.filter(r => r.id !== reviewId));
+                toast.success("Review deleted successfully");
+            }
+            else toast.error("Failed to delete review");
+        } catch (err) { toast.error("Network error"); }
     };
 
     // --- HELPER: SEARCH FILTER ---

@@ -10,6 +10,7 @@ import {
 import { getProviderBookings, updateBookingStatus, deleteBooking } from "../../api/travellerApi";
 import BookingDetailsCard from "../../components/BookingDetailsCard";
 import ServiceFormModal from "../../components/ServiceFormModal";
+import { useToast } from "../../context/ToastContext";
 
 const backendBaseUrl =
   import.meta.env.VITE_API_BASE?.replace("/api", "") || "http://localhost:8080";
@@ -25,6 +26,7 @@ const truncateTitle = (title) => {
 };
 
 export default function ProviderDashboard() {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("services"); // services, bookings, preview
   const [selectedPost, setSelectedPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,36 +129,49 @@ export default function ProviderDashboard() {
       if (selectedBooking?.id === bookingId) {
         setSelectedBooking({ ...selectedBooking, status: newStatus });
       }
-      alert("Booking status updated!");
+      toast.success("Booking status updated!");
     } catch (error) {
       console.error("Failed to update booking status:", error);
-      alert("Error updating booking status");
+      toast.error("Error updating booking status");
     }
   };
 
   const handleDeleteBooking = async (bookingId) => {
-    if (window.confirm("Are you sure you want to delete this booking?")) {
+    const confirmed = await toast.confirm({
+      title: "Delete Booking",
+      message: "Are you sure you want to delete this booking?",
+      type: "danger",
+      confirmText: "Delete",
+    });
+    if (confirmed) {
       try {
         await deleteBooking(bookingId);
         setBookings((prev) => prev.filter((b) => b.id !== bookingId));
         if (selectedBooking?.id === bookingId) setSelectedBooking(null);
-        alert("Booking deleted!");
+        toast.success("Booking deleted!");
       } catch (error) {
         console.error("Failed to delete booking:", error);
-        alert("Error deleting booking");
+        toast.error("Error deleting booking");
       }
     }
   };
 
   const handleDelete = async (postId) => {
-    if (window.confirm("Are you sure you want to delete this service?")) {
+    const confirmed = await toast.confirm({
+      title: "Delete Service",
+      message: "Are you sure you want to delete this service?",
+      type: "danger",
+      confirmText: "Delete",
+    });
+    if (confirmed) {
       try {
         await deleteService(postId);
         setPosts((prev) => prev.filter((p) => p.id !== postId));
         if (selectedPost?.id === postId) setSelectedPost(null);
+        toast.success("Service deleted!");
       } catch (error) {
         console.error("Delete failed:", error);
-        alert("Error deleting service");
+        toast.error("Error deleting service");
       }
     }
   };

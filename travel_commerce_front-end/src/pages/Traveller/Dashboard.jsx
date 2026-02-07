@@ -49,6 +49,7 @@ import {
     updateBookingStatus 
 } from "../../api/travellerApi";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import {
     FaUmbrellaBeach,
     FaCar,
@@ -62,6 +63,7 @@ const backendBaseUrl = import.meta.env.VITE_API_BASE?.replace('/api', '') || "ht
 
 export default function TravellerDashboard() {
     const { user } = useAuth();
+    const toast = useToast();
     const [activeTab, setActiveTab] = useState("services"); // services, favorites, tripPlanner, bookings, reviews
     
     const [search, setSearch] = useState("");
@@ -309,26 +311,32 @@ export default function TravellerDashboard() {
         setIsSubmittingBooking(true);
         try {
             await createBooking(bookingData);
-            alert("Booking created successfully!");
+            toast.success("Booking created successfully!");
             setShowBookingModal(false);
             fetchMyBookings();
         } catch (error) {
             console.error("Booking failed:", error);
-            alert("Failed to create booking");
+            toast.error("Failed to create booking");
         } finally {
             setIsSubmittingBooking(false);
         }
     };
 
     const handleCancelBooking = async (bookingId) => {
-        if (window.confirm("Are you sure you want to cancel this booking?")) {
+        const confirmed = await toast.confirm({
+            title: "Cancel Booking",
+            message: "Are you sure you want to cancel this booking?",
+            type: "warning",
+            confirmText: "Yes, Cancel",
+        });
+        if (confirmed) {
             try {
                 await cancelBooking(bookingId);
-                alert("Booking cancelled");
+                toast.success("Booking cancelled");
                 fetchMyBookings();
             } catch (error) {
                 console.error("Cancel failed:", error);
-                alert("Failed to cancel booking");
+                toast.error("Failed to cancel booking");
             }
         }
     };
@@ -340,25 +348,31 @@ export default function TravellerDashboard() {
                 serviceId: selectedPost.id,
                 ...reviewForm
             });
-            alert("Review submitted successfully!");
+            toast.success("Review submitted successfully!");
             setShowReviewModal(false);
             setReviewForm({ rating: 5, comment: "" });
             fetchServiceReviews(selectedPost.id);
         } catch (error) {
             console.error("Review submission failed:", error);
-            alert("Failed to submit review");
+            toast.error("Failed to submit review");
         }
     };
 
     const handleDeleteReview = async (reviewId) => {
-        if (window.confirm("Are you sure you want to delete this review?")) {
+        const confirmed = await toast.confirm({
+            title: "Delete Review",
+            message: "Are you sure you want to delete this review?",
+            type: "danger",
+            confirmText: "Delete",
+        });
+        if (confirmed) {
             try {
                 await deleteReview(reviewId);
-                alert("Review deleted");
+                toast.success("Review deleted");
                 fetchMyReviews();
             } catch (error) {
                 console.error("Delete failed:", error);
-                alert("Failed to delete review");
+                toast.error("Failed to delete review");
             }
         }
     };
@@ -380,12 +394,12 @@ export default function TravellerDashboard() {
         e.preventDefault();
         try {
             await updateReview(reviewId, editReviewForm);
-            alert("Review updated successfully!");
+            toast.success("Review updated successfully!");
             setEditingReviewId(null);
             fetchMyReviews();
         } catch (error) {
             console.error("Update failed:", error);
-            alert("Failed to update review");
+            toast.error("Failed to update review");
         }
     };
 
@@ -417,7 +431,7 @@ export default function TravellerDashboard() {
             fetchServiceReviews(serviceId);
         } catch (error) {
             console.error("Failed to load service:", error);
-            alert("Failed to load service post");
+            toast.error("Failed to load service post");
         }
     };
 

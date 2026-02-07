@@ -16,7 +16,6 @@ import TravellerDashboard from "./pages/Traveller/Dashboard";
 import ProviderDashboard from "./pages/Provider/Dashboard";
 import AdminLogin from "./pages/Admin/AdminLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
-import Toast from "./components/Toast";
 
 // Payment Flow Components (updated)
 import CheckoutPage from "./components/CheckoutPage.jsx";     

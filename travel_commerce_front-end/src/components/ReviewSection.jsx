@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createReply, deleteReview, updateReview } from '../api/travellerApi';
+import { useToast } from '../context/ToastContext';
 import '../styles/ReviewSection.css';
 
 const ReviewSection = ({ reviews, serviceId, onReviewsUpdate, currentUserId }) => {
@@ -51,6 +52,7 @@ const ReviewItem = ({ review, serviceId, onReviewsUpdate, currentUserId, depth }
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(review.comment);
     const [editRating, setEditRating] = useState(review.rating || 5);
+    const toast = useToast();
 
     const INITIAL_REPLIES_SHOWN = 3;
 
@@ -87,20 +89,26 @@ const ReviewItem = ({ review, serviceId, onReviewsUpdate, currentUserId, depth }
             onReviewsUpdate(serviceId);
         } catch (error) {
             console.error('Failed to submit reply:', error);
-            alert('Failed to submit reply');
+            toast.error('Failed to submit reply');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this comment?')) {
+        const confirmed = await toast.confirm({
+            title: 'Delete Comment',
+            message: 'Are you sure you want to delete this comment?',
+            type: 'danger',
+            confirmText: 'Delete',
+        });
+        if (confirmed) {
             try {
                 await deleteReview(review.id);
                 onReviewsUpdate(serviceId);
             } catch (error) {
                 console.error('Failed to delete:', error);
-                alert('Failed to delete comment');
+                toast.error('Failed to delete comment');
             }
         }
     };
@@ -116,7 +124,7 @@ const ReviewItem = ({ review, serviceId, onReviewsUpdate, currentUserId, depth }
             onReviewsUpdate(serviceId);
         } catch (error) {
             console.error('Failed to update:', error);
-            alert('Failed to update comment');
+            toast.error('Failed to update comment');
         } finally {
             setIsSubmitting(false);
         }

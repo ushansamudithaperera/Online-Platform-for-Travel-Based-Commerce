@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { useToast } from "../context/ToastContext";
 import "../styles/PaymentFlow.css";
 
 export default function PhotoUploadPage() {
   const nav = useNavigate();
   const location = useLocation();
+  const toast = useToast();
 
   // ---- GET DATA FROM PREVIOUS STEP ----
   const { postData, selectedPlan } = location.state || {};
@@ -43,7 +45,7 @@ export default function PhotoUploadPage() {
   // ---- CONTINUE TO PAYMENT ----
   function goToCheckout() {
     if (photos.length === 0) {
-      alert("Please upload at least one photo.");
+      toast.warning("Please upload at least one photo.");
       return;
     }
 

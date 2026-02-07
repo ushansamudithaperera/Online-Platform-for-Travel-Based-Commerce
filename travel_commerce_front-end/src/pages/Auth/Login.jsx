@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import authApi from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import Toast from "../../components/Toast";   // <-- Toast added
 import "../../styles/Login.css";
 
 export default function Login() {
@@ -13,15 +13,9 @@ export default function Login() {
   const [role, setRole] = useState("traveller");
   const [loading, setLoading] = useState(false);
 
-  // Toast State
-  const [toast, setToast] = useState(null);
-
+  const toast = useToast();
   const { login } = useAuth();
   const nav = useNavigate();
-
-  function showToast(message, type = "success") {
-    setToast({ message, type });
-  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -34,7 +28,7 @@ export default function Login() {
       login(user, token);
 
       // SUCCESS TOAST
-      showToast("Login successful!", "success");
+      toast.success("Login successful!");
 
       // Redirect after slight delay
       setTimeout(() => {
@@ -43,9 +37,8 @@ export default function Login() {
       }, 800);
 
     } catch (error) {
-      showToast(
-        error?.response?.data?.message || "Login failed",
-        "error"
+      toast.error(
+        error?.response?.data?.message || "Login failed"
       );
     }
 
@@ -55,15 +48,6 @@ export default function Login() {
   return (
     <>
       <Navbar />
-
-      {/* TOAST DISPLAY */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
 
       <div className="main-content">
         <div className="container page login-container">

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import axios from "../../api/axiosConfig"; 
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import { SRI_LANKA_DISTRICTS } from "../../config/sriLankaDistricts";
 
 export default function AddService() {
     const { user } = useAuth();
+    const toast = useToast();
     const navigate = useNavigate();
    
     
@@ -61,7 +63,7 @@ export default function AddService() {
             // Note: Axios automatically sets 'Content-Type': 'multipart/form-data' when sending FormData
             await axios.post("/services", data);
             
-            alert("Service Created Successfully!");
+            toast.success("Service Created Successfully!");
             navigate("/provider/dashboard"); // Redirect back to dashboard
 
         } catch (err) {

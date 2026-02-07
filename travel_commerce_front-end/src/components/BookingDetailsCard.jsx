@@ -1,6 +1,7 @@
 // src/components/BookingDetailsCard.jsx
 import React, { useState } from "react";
 import { getBookingConfig } from "../config/bookingCategoryConfig";
+import { useToast } from "../context/ToastContext";
 import "../styles/BookingDetailsCard.css";
 
 export default function BookingDetailsCard({
@@ -11,6 +12,7 @@ export default function BookingDetailsCard({
 }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const config = getBookingConfig(booking.category);
+  const toast = useToast();
 
   const statusColors = {
     PENDING: "#FFA500",
@@ -20,7 +22,13 @@ export default function BookingDetailsCard({
   };
 
   const handleStatusChange = async (newStatus) => {
-    if (window.confirm(`Change booking status to ${newStatus}?`)) {
+    const confirmed = await toast.confirm({
+      title: "Update Status",
+      message: `Change booking status to ${newStatus}?`,
+      type: "warning",
+      confirmText: "Update",
+    });
+    if (confirmed) {
       setIsUpdating(true);
       try {
         await onStatusChange(booking.id, newStatus);
