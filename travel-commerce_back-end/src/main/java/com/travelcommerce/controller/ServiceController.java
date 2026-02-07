@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
+import com.travelcommerce.repository.ServiceRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,8 @@ public class ServiceController {
     @Autowired private ServicePostService servicePostService;
     @Autowired private UserRepository userRepository;
     @Autowired private ObjectMapper objectMapper;
+
+    @Autowired private ServiceRepository serviceRepository;
 
     private static String validateAndCleanWhatsappNumber(String raw) {
         if (raw == null) return null;
@@ -83,9 +86,25 @@ public class ServiceController {
     // ==================================================================================
 
     // GET /api/services (Used by Admin Dashboard to see EVERYTHING)
+    // @GetMapping
+    // public ResponseEntity<List<ServicePost>> all() {
+    //     return ResponseEntity.ok(servicePostService.findAll());
+    // }
+
     @GetMapping
-    public ResponseEntity<List<ServicePost>> all() {
-        return ResponseEntity.ok(servicePostService.findAll());
+    public ResponseEntity<List<ServicePost>> getAllServices(@RequestParam(required = false) String mode) {
+        try {
+            if ("admin".equals(mode)) {
+                // Admin sees EVERYTHING
+                return ResponseEntity.ok(serviceRepository.findAll());
+            } else {
+                // Public only sees ACTIVE
+                return ResponseEntity.ok(serviceRepository.findByStatus("ACTIVE"));
+            }
+        } catch (Exception e) {
+            logger.error("Error fetching services", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // 🟢 NEW: Public Endpoint for Travellers (Only shows APPROVED posts)
