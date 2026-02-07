@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -63,11 +66,100 @@ public class ReviewController {
         return ResponseEntity.ok(reviewRepository.findAll());
     }
 
-    // Get reviews for a service (public)
+    // Get reviews for a service (public) - Returns nested structure
     @GetMapping("/service/{serviceId}")
     public ResponseEntity<List<Review>> getServiceReviews(@PathVariable String serviceId) {
-        List<Review> reviews = reviewRepository.findByServiceId(serviceId);
-        return ResponseEntity.ok(reviews);
+        // Get all reviews for this service
+        List<Review> allReviews = reviewRepository.findByServiceId(serviceId);
+        
+        // Build nested structure
+        Map<String, Review> reviewMap = new HashMap<>();
+        List<Review> topLevelReviews = new ArrayList<>();
+        
+        // First, organize all reviews by ID
+        for (Review review : allReviews) {
+            reviewMap.put(review.getId(), review);
+            review.setReplies(new ArrayList<>()); // Initialize replies list
+        }
+        
+        // Then, build the tree structure
+        for (Review review : allReviews) {
+            if (review.getParentReviewId() == null || review.getParentReviewId().isEmpty()) {
+                // Top-level review
+                topLevelReviews.add(review);
+            } else {
+                // Reply - add to parent's replies list
+                Review parent = reviewMap.get(review.getParentReviewId());
+                if (parent != null) {
+                    parent.getReplies().add(review);
+                }
+            }
+        }
+        
+        return ResponseEntity.ok(topLevelReviews);
+    }
+    
+    // Create a reply to a review
+    @PostMapping("/{parentReviewId}/reply")
+    public ResponseEntity<?> createReply(
+            @PathVariable String parentReviewId,
+            @RequestBody Review reply,
+            Authentication auth) {
+        if (auth == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+
+        String userId = auth.getName();
+        User user = userRepository.findById(userId).orElse(null);
+        
+        if (user == null) {
+            return ResponseEntity.status(404).body(new ApiResponse(false, "User not found", null));
+        }
+        
+        // Verify parent review exists
+        Review parentReview = reviewRepository.findById(parentReviewId).orElse(null);
+        if (parentReview == null) {
+            return ResponseEntity.status(404).body(new ApiResponse(false, "Parent review not found", null));
+        }
+
+        reply.setTravellerId(userId);
+        reply.setTravellerName(user.getFullname());
+        reply.setParentReviewId(parentReviewId);
+        reply.setServiceId(parentReview.getServiceId()); // Inherit service ID from parent
+        reply.setRating(0); // Replies don't have ratings
+
+        Review saved = reviewRepository.save(reply);
+        return ResponseEntity.ok(new ApiResponse(true, "Reply submitted successfully", Map.of("reply", saved)));
+    }
+    
+    // Update/Edit review
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateReview(@PathVariable String id, @RequestBody Review updatedReview, Authentication auth) {
+        if (auth == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+
+        String userId = auth.getName();
+        Review existingReview = reviewRepository.findById(id).orElse(null);
+        
+        if (existingReview == null) {
+            return ResponseEntity.status(404).body(new ApiResponse(false, "Review not found", null));
+        }
+
+        // Only the owner can edit their review
+        if (!existingReview.getTravellerId().equals(userId)) {
+            return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to edit this review", null));
+        }
+
+        // Update only editable fields
+        existingReview.setComment(updatedReview.getComment());
+        if (existingReview.getParentReviewId() == null || existingReview.getParentReviewId().isEmpty()) {
+            // Only top-level reviews can have ratings
+            existingReview.setRating(updatedReview.getRating());
+        }
+
+        Review saved = reviewRepository.save(existingReview);
+        return ResponseEntity.ok(new ApiResponse(true, "Review updated successfully", Map.of("review", saved)));
     }
 
     // Get traveller's reviews
@@ -82,7 +174,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
-    // Delete review
+    // Delete review (and all its replies)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteReview(@PathVariable String id, Authentication auth) {
         if (auth == null) {
@@ -105,6 +197,14 @@ public class ReviewController {
 
         if (!isOwner && !isAdmin) {
             return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to delete this review", null));
+        }
+
+        // If this is a top-level review, also delete all its replies
+        if (review.getParentReviewId() == null || review.getParentReviewId().isEmpty()) {
+            List<Review> replies = reviewRepository.findByParentReviewId(id);
+            for (Review reply : replies) {
+                reviewRepository.deleteById(reply.getId());
+            }
         }
 
         reviewRepository.deleteById(id);
