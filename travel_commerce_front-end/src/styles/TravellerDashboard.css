@@ -2212,11 +2212,23 @@
   width: 100%;
 }
 
-.no-results-error {
+.bookings-section > .no-results-error,
+.my-reviews-section > .no-results-error {
+  display: block;
   text-align: center;
   color: #7f8c8d;
   font-size: 1.1rem;
   padding: 2rem;
+  border: none;
+  background: none;
+  box-shadow: none;
+  max-width: none;
+  margin: 0;
+}
+
+.bookings-section > .no-results-error::before,
+.my-reviews-section > .no-results-error::before {
+  display: none;
 }
 
 /* ===== MY REVIEWS COMPACT SECTION ===== */
