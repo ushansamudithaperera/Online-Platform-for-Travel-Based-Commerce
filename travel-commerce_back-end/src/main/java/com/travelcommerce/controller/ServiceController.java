@@ -23,6 +23,7 @@ import com.travelcommerce.repository.ServiceRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 
 @RestController
 @RequestMapping("/api/services")
@@ -91,21 +92,64 @@ public class ServiceController {
     //     return ResponseEntity.ok(servicePostService.findAll());
     // }
 
+    // @GetMapping
+    // public ResponseEntity<List<ServicePost>> getAllServices(@RequestParam(required = false) String mode) {
+    //     try {
+    //         if ("admin".equals(mode)) {
+    //             // Admin sees EVERYTHING
+    //             return ResponseEntity.ok(serviceRepository.findAll());
+    //         } else {
+    //             // Public only sees ACTIVE
+    //             return ResponseEntity.ok(serviceRepository.findByStatus("ACTIVE"));
+    //         }
+    //     } catch (Exception e) {
+    //         logger.error("Error fetching services", e);
+    //         return ResponseEntity.internalServerError().build();
+    //     }
+    // }
+
+//=================
+// 🟢 HELPER: Determines Priority (1 = Highest, 99 = Lowest)
+    // We use keyword matching so it works even if plan names change slightly.
+    private int getPlanPriority(String planName) {
+        if (planName == null) return 99; // No plan = Lowest priority
+        String lower = planName.toLowerCase();
+        
+        if (lower.contains("premium")) return 1;   // 🥇 Premium Spotlight
+        if (lower.contains("featured")) return 2;  // 🥈 Featured Visibility
+        if (lower.contains("standard")) return 3;  // 🥉 Standard Listing
+        
+        return 99; // Any other plan or free tier
+    }
+
+    // GET /api/services
+    // 🟢 UPDATED: Fetches posts and sorts them by Plan Priority (Gold > Silver > Bronze)
     @GetMapping
     public ResponseEntity<List<ServicePost>> getAllServices(@RequestParam(required = false) String mode) {
         try {
+            List<ServicePost> posts;
+
+            // 1. Fetch Data based on mode
             if ("admin".equals(mode)) {
-                // Admin sees EVERYTHING
-                return ResponseEntity.ok(serviceRepository.findAll());
+                // Admin sees EVERYTHING (Active, Pending, Banned)
+                posts = serviceRepository.findAll();
             } else {
-                // Public only sees ACTIVE
-                return ResponseEntity.ok(serviceRepository.findByStatus("ACTIVE"));
+                // Public only sees ACTIVE posts
+                posts = serviceRepository.findByStatus("ACTIVE");
             }
+
+            // 2. 🟢 SORTING LOGIC:
+            // Sorts the list so "Premium" is at index 0, "Featured" at index 1, etc.
+            posts.sort(Comparator.comparingInt((ServicePost p) -> getPlanPriority(p.getPlanName())));
+
+            return ResponseEntity.ok(posts);
         } catch (Exception e) {
             logger.error("Error fetching services", e);
             return ResponseEntity.internalServerError().build();
         }
     }
+
+//==============
 
     // 🟢 NEW: Public Endpoint for Travellers (Only shows APPROVED posts)
     // This is the one you will use in the Traveller Dashboard frontend.
@@ -445,7 +489,7 @@ public class ServiceController {
 
 
 //----===-----------------------------------------------------------------------------------------------------------------------------------
-//belo is the correct code abive is the version 2
+//below is the correct code abive is the version 2
 
 
 // package com.travelcommerce.controller;
