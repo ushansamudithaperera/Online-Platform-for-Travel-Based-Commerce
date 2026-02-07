@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
 
 export default function Feedback() {
-    const toast = useToast();
+    const { user } = useAuth();
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -12,15 +13,58 @@ export default function Feedback() {
         rating: "5",
         message: ""
     });
+    const [status, setStatus] = useState({ type: "", message: "" });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.fullname || user.name || "",
+                email: user.email || ""
+            }));
+        }
+    }, [user]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        toast.success("Thank you for your feedback!");
-        setFormData({ name: "", email: "", type: "Suggestion", rating: "5", message: "" });
+        setIsSubmitting(true);
+        setStatus({ type: "", message: "" });
+
+        try {
+            const token = localStorage.getItem("token");
+            const headers = {
+                "Content-Type": "application/json"
+            };
+
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            const response = await axios.post("http://localhost:8080/api/feedback", formData, { headers });
+
+            setStatus({ type: "success", message: "Thank you for your feedback!" });
+            // Reset form but keep user details if logged in
+            setFormData({
+                name: user ? (user.fullname || user.name || "") : "",
+                email: user ? (user.email || "") : "",
+                type: "Suggestion",
+                rating: "5",
+                message: ""
+            });
+        } catch (error) {
+            console.error("Feedback error:", error);
+            setStatus({
+                type: "error",
+                message: error.response?.data?.message || "Something went wrong. Please try again."
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -40,6 +84,12 @@ export default function Feedback() {
 
                             <div className="card border-0 shadow-lg rounded-4 overflow-hidden">
                                 <div className="card-body p-5">
+                                    {status.message && (
+                                        <div className={`alert alert-${status.type === 'success' ? 'success' : 'danger'} mb-4`} role="alert">
+                                            {status.message}
+                                        </div>
+                                    )}
+
                                     <form onSubmit={handleSubmit}>
                                         <div className="row g-3">
 
@@ -55,6 +105,8 @@ export default function Feedback() {
                                                     onChange={handleChange}
                                                     placeholder="Your Name"
                                                     required
+                                                    disabled={!!user} // Disable if user is logged in
+                                                    readOnly={!!user}
                                                 />
                                             </div>
 
@@ -70,6 +122,8 @@ export default function Feedback() {
                                                     onChange={handleChange}
                                                     placeholder="name@example.com"
                                                     required
+                                                    disabled={!!user} // Disable if user is logged in
+                                                    readOnly={!!user}
                                                 />
                                             </div>
 
@@ -129,8 +183,9 @@ export default function Feedback() {
                                                     type="submit"
                                                     className="btn btn-lg text-white rounded-pill px-5 shadow-sm"
                                                     style={{ backgroundColor: "#2a004f" }}
+                                                    disabled={isSubmitting}
                                                 >
-                                                    Submit Feedback
+                                                    {isSubmitting ? "Submitting..." : "Submit Feedback"}
                                                 </button>
                                             </div>
 

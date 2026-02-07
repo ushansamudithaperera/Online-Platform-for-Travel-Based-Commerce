@@ -39,32 +39,34 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
 
-                // Allow images for <img> without JWT
-                .requestMatchers("/uploads/**").permitAll()
+                        // Allow images for <img> without JWT
+                        .requestMatchers("/uploads/**").permitAll()
 
-                // Public auth endpoints
-                .requestMatchers("/api/auth/**").permitAll()
+                        // Public auth endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
 
-                // Public services listing and single service
-                .requestMatchers("/api/services", "/api/services/*").permitAll()
+                        // Public services listing and single service
+                        .requestMatchers("/api/services", "/api/services/*").permitAll()
 
-                // Public reviews for any service
-                .requestMatchers("/api/reviews/service/*").permitAll()
+                        // Public reviews for any service
+                        .requestMatchers("/api/reviews/service/*").permitAll()
 
-                // Public AI search
-                .requestMatchers("/api/ai/smart-search").permitAll()
+                        // Public AI search
+                        .requestMatchers("/api/ai/smart-search").permitAll()
 
-                // Admin area
-                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                        // Public feedback
+                        .requestMatchers("/api/feedback").permitAll()
 
-                // Everything else requires authentication
-                .anyRequest().authenticated()
-            );
+                        // Admin area
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+
+                        // Everything else requires authentication
+                        .anyRequest().authenticated());
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

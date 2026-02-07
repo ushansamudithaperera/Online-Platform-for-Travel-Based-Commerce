@@ -1,0 +1,19 @@
+package com.travelcommerce.model;
+
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.Date;
+
+@Data
+@Document(collection = "feedbacks")
+public class Feedback {
+    @Id
+    private String id;
+    private String name;
+    private String email;
+    private String type;
+    private int rating;
+    private String message;
+    private Date createdAt = new Date();
+}
