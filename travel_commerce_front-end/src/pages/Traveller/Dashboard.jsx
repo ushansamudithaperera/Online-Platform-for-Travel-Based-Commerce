@@ -8,6 +8,7 @@ import { aiSmartSearch } from "../../api/aiTripPlannerApi";
 import TripPlanner from "../../components/TripPlanner";
 import CategoryBookingForm from "../../components/CategoryBookingForm";
 import BookingDetailsCard from "../../components/BookingDetailsCard";
+import ReviewSection from "../../components/ReviewSection";
 import { getBookingConfig, getCategoryKey } from "../../config/bookingCategoryConfig";
 import { SRI_LANKA_DISTRICTS, normalizeDistrict } from "../../config/sriLankaDistricts";
 
@@ -44,6 +45,7 @@ import {
     getServiceReviews,
     getMyReviews,
     deleteReview,
+    updateReview,
     updateBookingStatus 
 } from "../../api/travellerApi";
 import { useAuth } from "../../context/AuthContext";
@@ -74,6 +76,7 @@ export default function TravellerDashboard() {
     const [priceUnit, setPriceUnit] = useState("all");
     const [sortBy, setSortBy] = useState("recommended");
     const [selectedPost, setSelectedPost] = useState(null);
+    const [viewingSinglePost, setViewingSinglePost] = useState(null); // Track if viewing from My Reviews
     const [loading, setLoading] = useState(true); 
     const [posts, setPosts] = useState([]);
 
@@ -94,6 +97,11 @@ export default function TravellerDashboard() {
     const [serviceReviews, setServiceReviews] = useState([]);
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [reviewForm, setReviewForm] = useState({
+        rating: 5,
+        comment: ""
+    });
+    const [editingReviewId, setEditingReviewId] = useState(null);
+    const [editReviewForm, setEditReviewForm] = useState({
         rating: 5,
         comment: ""
     }); 
@@ -159,9 +167,21 @@ export default function TravellerDashboard() {
         if (activeTab === "bookings") fetchMyBookings();
         if (activeTab === "reviews") fetchMyReviews();
 
-        // avoid carrying a selection across tabs
-        setSelectedPost(null);
+        // avoid carrying a selection across tabs (except when viewing from My Reviews)
+        if (activeTab !== "services") {
+            setSelectedPost(null);
+            setViewingSinglePost(null);
+        }
     }, [activeTab]); 
+
+    // Clear viewingSinglePost when user manually changes filters or search
+    useEffect(() => {
+        if (viewingSinglePost && (searchTerm || selectedCategory !== "all" || selectedDistrict !== "all" || 
+            priceMin || priceMax || priceUnit !== "all" || sortBy !== "recommended")) {
+            // User is manually filtering, clear the single post view
+            setViewingSinglePost(null);
+        }
+    }, [searchTerm, selectedCategory, selectedDistrict, priceMin, priceMax, priceUnit, sortBy]);
 
     useEffect(() => {
         if (selectedPost && (activeTab === "services" || activeTab === "favorites")) {
@@ -339,6 +359,63 @@ export default function TravellerDashboard() {
                 console.error("Delete failed:", error);
                 alert("Failed to delete review");
             }
+        }
+    };
+
+    const handleStartEditReview = (review) => {
+        setEditingReviewId(review.id);
+        setEditReviewForm({
+            rating: review.rating,
+            comment: review.comment
+        });
+    };
+
+    const handleCancelEditReview = () => {
+        setEditingReviewId(null);
+        setEditReviewForm({ rating: 5, comment: "" });
+    };
+
+    const handleUpdateReview = async (e, reviewId) => {
+        e.preventDefault();
+        try {
+            await updateReview(reviewId, editReviewForm);
+            alert("Review updated successfully!");
+            setEditingReviewId(null);
+            fetchMyReviews();
+        } catch (error) {
+            console.error("Update failed:", error);
+            alert("Failed to update review");
+        }
+    };
+
+    const handleViewServicePost = async (serviceId) => {
+        try {
+            // Fetch the service details
+            const response = await getServiceById(serviceId);
+            const service = response.data;
+            
+            // Clear all filters and search
+            setSearch("");
+            setSearchTerm("");
+            setAiFilteredIds(null);
+            setSelectedCategory("all");
+            setSelectedDistrict("all");
+            setPriceMin("");
+            setPriceMax("");
+            setPriceUnit("all");
+            
+            // Set viewing single post mode
+            setViewingSinglePost(serviceId);
+            
+            // Switch to services tab and select the post
+            setActiveTab("services");
+            setSelectedPost(service);
+            
+            // Fetch reviews for the service
+            fetchServiceReviews(serviceId);
+        } catch (error) {
+            console.error("Failed to load service:", error);
+            alert("Failed to load service post");
         }
     };
 
@@ -599,7 +676,9 @@ export default function TravellerDashboard() {
         return 0; // recommended (keep server order)
     });
 
-    const visiblePosts = activeTab === "favorites" ? favoritePosts : sortedFilteredPosts;
+    const visiblePosts = activeTab === "favorites" ? favoritePosts : 
+                         viewingSinglePost ? sortedFilteredPosts.filter(p => (p.id || p._id) === viewingSinglePost) :
+                         sortedFilteredPosts;
 
     // Hybrid layout: list view when searching/filtering and no selection
     const isAnyFilterActive =
@@ -869,6 +948,7 @@ export default function TravellerDashboard() {
                                         className="close-btn"
                                         onClick={() => {
                                             setSelectedPost(null);
+                                            setViewingSinglePost(null);
                                             setActiveImageIndex(0);
                                         }}
                                     >
@@ -981,60 +1061,30 @@ export default function TravellerDashboard() {
                                         📅 Book This Service
                                     </button>
 
-                                    {/* Reviews Section */}
-                                    <div className="review-section review-section-modern">
-                                        <div className="review-header review-header-modern">
-                                            <div className="review-header-left">
-                                                <div className="review-title-row">
-                                                    <h3 className="review-title">Reviews</h3>
-                                                    <span className="review-count-badge">{serviceReviews.length}</span>
-                                                </div>
-                                                <p className="review-subtitle">
-                                                    Real experiences from travellers
-                                                </p>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="review-primary-btn"
-                                                onClick={() => setShowReviewModal(true)}
-                                            >
-                                                Write review
-                                            </button>
-                                        </div>
-                                        
-                                        {serviceReviews.length === 0 ? (
-                                            <div className="review-empty">
-                                                <p className="review-empty-title">No reviews yet</p>
-                                                <p className="review-empty-subtitle">
-                                                    Be the first to share your experience.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <div className="reviews-list review-grid">
-                                                {serviceReviews.map((review) => (
-                                                    <div key={review.id} className="review-card-modern">
-                                                        <div className="review-card-top">
-                                                            <div className="review-avatar" aria-hidden="true">
-                                                                {getInitials(review.travellerName)}
-                                                            </div>
-                                                            <div className="review-meta">
-                                                                <div className="review-name">
-                                                                    {review.travellerName || "Traveller"}
-                                                                </div>
-                                                                <div className="review-date">
-                                                                    {new Date(review.createdAt).toLocaleDateString()}
-                                                                </div>
-                                                            </div>
-                                                            <div className="review-rating">
-                                                                {renderStars(review.rating)}
-                                                            </div>
-                                                        </div>
-                                                        <p className="review-comment">{review.comment}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
+                                    {/* Write Review Button */}
+                                    <button
+                                        className="btn write-review-btn"
+                                        onClick={() => setShowReviewModal(true)}
+                                        style={{
+                                            marginTop: '16px',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        ✍️ Write a Review
+                                    </button>
+
+                                    {/* Reviews Section - New Component */}
+                                    <ReviewSection
+                                        reviews={serviceReviews}
+                                        serviceId={selectedPost.id}
+                                        onReviewsUpdate={fetchServiceReviews}
+                                        currentUserId={user?.id}
+                                    />
                                 </div>
                             )}
 
@@ -1205,7 +1255,7 @@ export default function TravellerDashboard() {
 
                 {/* REVIEWS TAB */}
                 {activeTab === "reviews" && (
-                    <div className="reviews-section">
+                    <div className="my-reviews-section">
                         <h2>My Reviews</h2>
                         {loading ? (
                             <p>Loading reviews...</p>
@@ -1214,34 +1264,81 @@ export default function TravellerDashboard() {
                         ) : (
                             <div className="my-reviews-list">
                                 {myReviews.map((review) => (
-                                    <div key={review.id} className="review-card-modern">
-                                        <div className="review-card-top">
-                                            <div className="review-avatar" aria-hidden="true">
-                                                {getInitials(user?.name || user?.email || "Traveller")}
-                                            </div>
-                                            <div className="review-meta">
-                                                <div className="review-name">My review</div>
-                                                <div className="review-date">
-                                                    {new Date(review.createdAt).toLocaleDateString()}
+                                    <div key={review.id} className="my-review-card-compact">
+                                        {editingReviewId === review.id ? (
+                                            <form className="review-edit-form-compact" onSubmit={(e) => handleUpdateReview(e, review.id)}>
+                                                <div className="edit-header">
+                                                    <h4>Edit Review</h4>
                                                 </div>
-                                            </div>
-                                            <div className="review-rating">
-                                                {renderStars(review.rating)}
-                                            </div>
-                                        </div>
-                                        <div className="review-pill-row">
-                                            <span className="review-pill">Service: {review.serviceId}</span>
-                                        </div>
-                                        <p className="review-comment">{review.comment}</p>
-                                        <div className="review-actions">
-                                            <button
-                                                type="button"
-                                                className="review-danger-btn"
-                                                onClick={() => handleDeleteReview(review.id)}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
+                                                <div className="edit-rating-row">
+                                                    <label>Rating:</label>
+                                                    <select 
+                                                        value={editReviewForm.rating} 
+                                                        onChange={(e) => setEditReviewForm({ ...editReviewForm, rating: Number(e.target.value) })}
+                                                        className="edit-rating-select"
+                                                    >
+                                                        <option value={5}>⭐⭐⭐⭐⭐ Excellent</option>
+                                                        <option value={4}>⭐⭐⭐⭐ Good</option>
+                                                        <option value={3}>⭐⭐⭐ Average</option>
+                                                        <option value={2}>⭐⭐ Poor</option>
+                                                        <option value={1}>⭐ Terrible</option>
+                                                    </select>
+                                                </div>
+                                                <textarea
+                                                    className="edit-comment-input"
+                                                    value={editReviewForm.comment}
+                                                    onChange={(e) => setEditReviewForm({ ...editReviewForm, comment: e.target.value })}
+                                                    placeholder="Write your review..."
+                                                    rows={3}
+                                                    required
+                                                />
+                                                <div className="edit-actions">
+                                                    <button type="button" className="btn-cancel-compact" onClick={handleCancelEditReview}>
+                                                        Cancel
+                                                    </button>
+                                                    <button type="submit" className="btn-save-compact">
+                                                        Save Changes
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        ) : (
+                                            <>
+                                                <div className="review-compact-header">
+                                                    <div className="review-stars-compact">
+                                                        {renderStars(review.rating)}
+                                                    </div>
+                                                    <div className="review-date-compact">
+                                                        {new Date(review.createdAt).toLocaleDateString()}
+                                                    </div>
+                                                </div>
+                                                <p className="review-comment-compact">{review.comment}</p>
+                                                <div className="review-compact-actions">
+                                                    <button
+                                                        className="btn-view-post-compact"
+                                                        onClick={() => handleViewServicePost(review.serviceId)}
+                                                        title="View Service Post"
+                                                    >
+                                                        📌 View Post
+                                                    </button>
+                                                    <div className="review-action-icons">
+                                                        <button
+                                                            className="icon-btn-compact edit-icon"
+                                                            onClick={() => handleStartEditReview(review)}
+                                                            title="Edit review"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                        <button
+                                                            className="icon-btn-compact delete-icon"
+                                                            onClick={() => handleDeleteReview(review.id)}
+                                                            title="Delete review"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                             </div>

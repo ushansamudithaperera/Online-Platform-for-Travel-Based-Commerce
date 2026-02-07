@@ -15,3 +15,5 @@ export const createReview = (reviewData) => api.post("/reviews", reviewData);
 export const getServiceReviews = (serviceId) => api.get(`/reviews/service/${serviceId}`);
 export const getMyReviews = () => api.get("/reviews/my-reviews");
 export const deleteReview = (reviewId) => api.delete(`/reviews/${reviewId}`);
+export const createReply = (parentReviewId, replyData) => api.post(`/reviews/${parentReviewId}/reply`, replyData);
+export const updateReview = (reviewId, reviewData) => api.put(`/reviews/${reviewId}`, reviewData);
