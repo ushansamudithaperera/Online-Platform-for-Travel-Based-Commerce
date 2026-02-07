@@ -532,7 +532,7 @@ export default function TravellerDashboard() {
             try {
                 // Prepare simplified post data for AI
                 const simplifiedPosts = posts.map(p => ({
-                    id: p.id,
+                    id: Number(p.id) || p.id, // Ensure numeric ID for backend
                     title: p.title,
                     description: toPlainText(p.description),
                     category: p.category,
@@ -542,7 +542,10 @@ export default function TravellerDashboard() {
                     priceUnit: p.priceUnit
                 }));
 
-                console.log('Sending AI search request:', { searchQuery: trimmed, postsCount: simplifiedPosts.length });
+                console.log('=== AI SEARCH DEBUG ===');
+                console.log('Search query:', trimmed);
+                console.log('Total posts:', simplifiedPosts.length);
+                console.log('Sample post categories:', simplifiedPosts.slice(0, 3).map(p => ({ id: p.id, cat: p.category, dist: p.district })));
                 
                 const response = await aiSmartSearch({
                     searchQuery: trimmed,
@@ -552,11 +555,18 @@ export default function TravellerDashboard() {
                 console.log('AI search response:', response?.data);
 
                 const matchedIds = response?.data?.matchedPostIds || [];
+                console.log('Matched IDs count:', matchedIds.length);
+                console.log('Matched IDs:', matchedIds);
+                console.log('Matched IDs types:', matchedIds.slice(0, 3).map(id => ({ id, type: typeof id })));
+                console.log('Sample post IDs:', posts.slice(0, 3).map(p => ({ id: p.id, type: typeof p.id })));
+                
                 if (Array.isArray(matchedIds) && matchedIds.length > 0) {
-                    console.log('AI matched IDs:', matchedIds);
-                    setAiFilteredIds(new Set(matchedIds));
+                    // Ensure ID types match - convert to strings for comparison if needed
+                    const idsAsStrings = matchedIds.map(id => String(id));
+                    setAiFilteredIds(new Set(idsAsStrings));
                     setSearch(""); // Clear keyword search when using AI
                     setAiSearchMessage("");
+                    console.log('AI search SET with', idsAsStrings.length, 'results');
                 } else {
                     console.log('No AI results, falling back to keyword search');
                     // No AI results - fall back to keyword search silently
@@ -717,7 +727,8 @@ export default function TravellerDashboard() {
         return true;
     };
 
-    const query = String(search || "").trim().toLowerCase();
+    // If AI isn't used, fall back to live keyword input so users see instant filtering
+    const query = String(search || (!useAiSearch ? searchTerm : "")).trim().toLowerCase();
 
     // Common stop words to ignore during keyword search
     const STOP_WORDS = new Set([
@@ -758,15 +769,17 @@ export default function TravellerDashboard() {
     // Filtering Logic - AI-powered semantic search OR keyword search
     const filteredPosts = posts
         .filter((p) => {
-            // If AI search is active, filter by matched IDs
+            // If AI search is active, filter by matched IDs only
             if (aiFilteredIds) {
-                return aiFilteredIds.has(p.id);
+                const matched = aiFilteredIds.has(String(p.id));
+                if (!matched) {
+                    console.log('Post filtered out by AI:', p.id, p.title?.substring(0, 30));
+                }
+                return matched;
             }
-            // If no meaningful search keywords, show all posts
+            // Keyword search: show all if no keywords, otherwise match ANY keyword (OR logic)
             if (searchKeywords.length === 0) return true;
-            // Build a case-insensitive haystack from all searchable fields
             const haystack = buildHaystack(p);
-            // Match if ANY meaningful keyword is found in the haystack
             return searchKeywords.some((kw) => haystack.includes(kw));
         })
         .filter((p) => {
