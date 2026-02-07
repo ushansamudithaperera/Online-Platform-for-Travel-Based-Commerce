@@ -636,8 +636,42 @@ export default function TravellerDashboard() {
     };
 
     const query = String(search || "").trim().toLowerCase();
+
+    // Common stop words to ignore during keyword search
+    const STOP_WORDS = new Set([
+        "i", "me", "my", "we", "our", "you", "your", "he", "she", "it", "they",
+        "a", "an", "the", "this", "that", "these", "those",
+        "is", "am", "are", "was", "were", "be", "been", "being",
+        "do", "does", "did", "have", "has", "had", "having",
+        "will", "would", "shall", "should", "can", "could", "may", "might",
+        "to", "of", "in", "on", "at", "by", "for", "with", "from", "up", "about",
+        "into", "through", "during", "before", "after", "above", "below", "between",
+        "and", "but", "or", "nor", "not", "no", "so", "if", "then", "than",
+        "go", "going", "went", "gone", "get", "got", "need", "want", "like",
+        "just", "also", "very", "really", "much", "more", "most", "some", "any",
+        "all", "both", "each", "every", "other", "such", "only",
+        "there", "here", "where", "when", "how", "what", "which", "who", "whom",
+        "its", "his", "her", "their", "ours", "yours", "him", "them", "us",
+        "has", "had", "let", "make", "made", "see", "look", "find",
+    ]);
+
+    // Split query into meaningful keywords: remove stop words and very short words
+    const searchKeywords = query
+        ? query
+              .split(/\s+/)
+              .map((kw) => kw.replace(/[^a-z0-9]/g, "")) // strip punctuation
+              .filter((kw) => kw.length >= 2 && !STOP_WORDS.has(kw))
+          : [];
+
     const minBudget = parseMoney(priceMin);
     const maxBudget = parseMoney(priceMax);
+
+    // Build haystack once per post for search matching
+    const buildHaystack = (p) =>
+        [p?.title, toPlainText(p?.description), p?.district, p?.location, p?.category]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
 
     // Filtering Logic - AI-powered semantic search OR keyword search
     const filteredPosts = posts
@@ -646,20 +680,12 @@ export default function TravellerDashboard() {
             if (aiFilteredIds) {
                 return aiFilteredIds.has(p.id);
             }
-            // If no search query, show all posts
-            if (!query) return true;
-            // Use traditional keyword search
-            const haystack = [
-                p?.title,
-                toPlainText(p?.description),
-                p?.district,
-                p?.location,
-                p?.category,
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-            return haystack.includes(query);
+            // If no meaningful search keywords, show all posts
+            if (searchKeywords.length === 0) return true;
+            // Build a case-insensitive haystack from all searchable fields
+            const haystack = buildHaystack(p);
+            // Match if ANY meaningful keyword is found in the haystack
+            return searchKeywords.some((kw) => haystack.includes(kw));
         })
         .filter((p) => {
             if (selectedCategory === "all") return true;
@@ -675,6 +701,13 @@ export default function TravellerDashboard() {
             if (priceUnit === "all") return true;
             return String(p?.priceUnit || "").toLowerCase() === String(priceUnit || "").toLowerCase();
         });
+
+    // Helper: count how many search keywords match a post (for relevance ranking)
+    const getKeywordMatchCount = (post) => {
+        if (searchKeywords.length === 0) return 0;
+        const haystack = buildHaystack(post);
+        return searchKeywords.filter((kw) => haystack.includes(kw)).length;
+    };
 
     const sortedFilteredPosts = [...filteredPosts].sort((a, b) => {
         if (sortBy === "newest") {
@@ -694,6 +727,10 @@ export default function TravellerDashboard() {
             const aMax = parseMoney(a?.priceTo) ?? parseMoney(a?.priceFrom) ?? Number.NEGATIVE_INFINITY;
             const bMax = parseMoney(b?.priceTo) ?? parseMoney(b?.priceFrom) ?? Number.NEGATIVE_INFINITY;
             return bMax - aMax;
+        }
+        // Default "recommended": if there's an active keyword search, sort by relevance
+        if (searchKeywords.length > 0) {
+            return getKeywordMatchCount(b) - getKeywordMatchCount(a);
         }
         return 0; // recommended (keep server order)
     });
