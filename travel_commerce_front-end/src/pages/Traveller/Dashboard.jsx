@@ -41,6 +41,7 @@ import {
     createBooking, 
     getMyBookings, 
     cancelBooking, 
+    hideBooking,
     createReview, 
     getServiceReviews,
     getMyReviews,
@@ -57,6 +58,7 @@ import {
     FaHiking,
     FaUtensils,
     FaGlobeAsia,
+    FaWhatsapp,
 } from "react-icons/fa";
 
 const backendBaseUrl = import.meta.env.VITE_API_BASE?.replace('/api', '') || "http://localhost:8080";
@@ -304,7 +306,47 @@ export default function TravellerDashboard() {
     }
 
     const handleBookService = () => {
-        setShowBookingModal(true);
+        // Check if the service has an external booking URL
+        if (selectedPost?.externalBookingUrl) {
+            // Redirect to external booking site
+            window.open(selectedPost.externalBookingUrl, '_blank', 'noopener,noreferrer');
+            toast.info("Redirecting to provider's booking site...");
+        } else {
+            // Show internal booking modal
+            setShowBookingModal(true);
+        }
+    };
+
+    const buildWhatsappUrl = (rawNumber) => {
+        const raw = String(rawNumber || "").trim();
+        if (!raw) return null;
+
+        // Keep digits only for wa.me
+        let digits = raw.replace(/\D/g, "");
+        if (!digits) return null;
+
+        // Support international 00 prefix
+        if (digits.startsWith("00")) {
+            digits = digits.slice(2);
+        }
+
+        // Sri Lanka-friendly normalization
+        if (digits.length === 10 && digits.startsWith("0")) {
+            digits = "94" + digits.slice(1);
+        }
+
+        // Basic length sanity
+        if (digits.length < 8 || digits.length > 15) return null;
+        return `https://wa.me/${digits}`;
+    };
+
+    const handleWhatsappChat = () => {
+        const url = buildWhatsappUrl(selectedPost?.whatsappNumber);
+        if (!url) {
+            toast.error("WhatsApp number is missing or invalid");
+            return;
+        }
+        window.open(url, "_blank", "noopener,noreferrer");
     };
 
     const handleSubmitBooking = async (bookingData) => {
@@ -322,22 +364,54 @@ export default function TravellerDashboard() {
         }
     };
 
-    const handleCancelBooking = async (bookingId) => {
+    const handleCancelBooking = async (booking) => {
+        if (!booking) return;
+        if (String(booking.status).toUpperCase() !== "PENDING") {
+            toast.error("Only pending bookings can be cancelled");
+            return;
+        }
+
         const confirmed = await toast.confirm({
             title: "Cancel Booking",
             message: "Are you sure you want to cancel this booking?",
             type: "warning",
             confirmText: "Yes, Cancel",
         });
-        if (confirmed) {
-            try {
-                await cancelBooking(bookingId);
-                toast.success("Booking cancelled");
-                fetchMyBookings();
-            } catch (error) {
-                console.error("Cancel failed:", error);
-                toast.error("Failed to cancel booking");
-            }
+        if (!confirmed) return;
+
+        try {
+            await cancelBooking(booking.id);
+            toast.success("Booking cancelled");
+            fetchMyBookings();
+        } catch (error) {
+            console.error("Cancel failed:", error);
+            toast.error("Failed to cancel booking");
+        }
+    };
+
+    const handleRemoveFromMyBookings = async (booking) => {
+        if (!booking) return;
+        const status = String(booking.status).toUpperCase();
+        if (!(status === "CANCELLED" || status === "COMPLETED")) {
+            toast.error("You can remove only cancelled or completed bookings");
+            return;
+        }
+
+        const confirmed = await toast.confirm({
+            title: "Remove Booking",
+            message: "Remove this booking from My Bookings?",
+            type: "warning",
+            confirmText: "Remove",
+        });
+        if (!confirmed) return;
+
+        try {
+            await hideBooking(booking.id);
+            toast.success("Removed from My Bookings");
+            fetchMyBookings();
+        } catch (error) {
+            console.error("Remove failed:", error);
+            toast.error("Failed to remove booking");
         }
     };
 
@@ -1003,156 +1077,8 @@ export default function TravellerDashboard() {
                             </div>
                         )}
 
-                        {/* MAIN CONTENT: TWO COLUMN LAYOUT */}
+                        {/* MAIN CONTENT: POSTS LIST + OPTIONAL SELECTED POST (SPLIT VIEW) */}
                         <div className={`main-content ${selectedPost ? "show-two-column" : "single-column"}`}>
-                            {/* LEFT PANE: Service Details */}
-                            {selectedPost && (
-                                <div className="selected-post">
-                                    <button
-                                        className="close-btn"
-                                        onClick={() => {
-                                            setSelectedPost(null);
-                                            setViewingSinglePost(null);
-                                            setActiveImageIndex(0);
-                                        }}
-                                    >
-                                        ✕
-                                    </button>
-                                    <h2>{selectedPost.title}</h2>
-
-                                    <div className="traveller-post-images">
-                                        {selectedImages.length > 0 ? (
-                                            <>
-                                                <div className="traveller-image-main-wrapper">
-                                                    <img
-                                                        src={getImageUrl(selectedImages[activeImageIndex])}
-                                                        alt={`${selectedPost.title} - Image ${activeImageIndex + 1}`}
-                                                        className="traveller-main-image"
-                                                    />
-                                                    {selectedImages.length > 1 && (
-                                                        <>
-                                                            <button
-                                                                type="button"
-                                                                className="traveller-gallery-nav prev"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    goToPrevImage();
-                                                                }}
-                                                            >
-                                                                ‹
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="traveller-gallery-nav next"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    goToNextImage();
-                                                                }}
-                                                            >
-                                                                ›
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    <div className="traveller-image-badge">
-                                                        {activeImageIndex + 1} / {selectedImages.length}
-                                                    </div>
-                                                </div>
-
-                                                {selectedImages.length > 1 && (
-                                                    <div className="traveller-image-thumbnails">
-                                                        {selectedImages.map((img, idx) => (
-                                                            <button
-                                                                key={`${selectedPost.id}-thumb-${idx}`}
-                                                                type="button"
-                                                                className={`traveller-thumb-wrapper ${
-                                                                    idx === activeImageIndex ? "active" : ""
-                                                                }`}
-                                                                onClick={() => setActiveImageIndex(idx)}
-                                                            >
-                                                                <img
-                                                                    src={getImageUrl(img)}
-                                                                    alt={`${selectedPost.title} thumbnail ${idx + 1}`}
-                                                                    className="traveller-thumbnail-image"
-                                                                />
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <div className="traveller-no-image">
-                                                <p>No images uploaded.</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* PRICE DISPLAY - PROMINENT INLINE */}
-                                    {(selectedPost.priceFrom || selectedPost.priceTo) && (
-                                        <div className="traveller-inline-price">
-                                            <strong>💰 Price:</strong>{" "}
-                                            <span className="traveller-price-amount">
-                                                {selectedPost.currency || "LKR"}{" "}
-                                                {selectedPost.priceFrom ? Number(selectedPost.priceFrom).toLocaleString() : ""}
-                                                {selectedPost.priceFrom && selectedPost.priceTo && " – "}
-                                                {selectedPost.priceTo ? Number(selectedPost.priceTo).toLocaleString() : ""}
-                                            </span>
-                                            {selectedPost.priceUnit && (
-                                                <span className="traveller-price-unit"> {selectedPost.priceUnit}</span>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div dangerouslySetInnerHTML={{ __html: selectedPost.description }} />
-                                    <p><strong>District:</strong> {selectedPost.district}</p>
-                                    <p>
-                                        <strong>Location:</strong>{" "}
-                                        {(() => {
-                                            const safeUrl = getSafeExternalUrl(selectedPost.location);
-                                            if (!safeUrl) return <span>{selectedPost.location || "—"}</span>;
-                                            return (
-                                                <a
-                                                    href={safeUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer noopener"
-                                                >
-                                                    {safeUrl}
-                                                </a>
-                                            );
-                                        })()}
-                                    </p>
-                                    
-                                    <button className="btn book-btn" onClick={handleBookService}>
-                                        📅 Book This Service
-                                    </button>
-
-                                    {/* Write Review Button */}
-                                    <button
-                                        className="btn write-review-btn"
-                                        onClick={() => setShowReviewModal(true)}
-                                        style={{
-                                            marginTop: '16px',
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            color: 'white',
-                                            border: 'none',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px'
-                                        }}
-                                    >
-                                        ✍️ Write a Review
-                                    </button>
-
-                                    {/* Reviews Section - New Component */}
-                                    <ReviewSection
-                                        reviews={serviceReviews}
-                                        serviceId={selectedPost.id}
-                                        onReviewsUpdate={fetchServiceReviews}
-                                        currentUserId={user?.id}
-                                    />
-                                </div>
-                            )}
-
-                            {/* RIGHT: Posts List */}
                             <div className={`posts-section ${selectedPost ? "shrunk" : ""} ${isListView ? "list-view" : ""}`}>
                                 {loading ? (
                                     <p style={{ padding: '20px' }}>Loading services...</p>
@@ -1288,6 +1214,177 @@ export default function TravellerDashboard() {
                                     })
                                 )}
                             </div>
+                            {selectedPost && (
+                                <div className="selected-post">
+                                    <button
+                                        type="button"
+                                        className="close-btn"
+                                        onClick={() => {
+                                            setSelectedPost(null);
+                                            setViewingSinglePost(null);
+                                            setActiveImageIndex(0);
+                                        }}
+                                    >
+                                        ✕
+                                    </button>
+
+                                    <h2>{selectedPost.title}</h2>
+
+                                    <div className="traveller-post-images">
+                                        {selectedImages.length > 0 ? (
+                                            <>
+                                                <div className="traveller-image-main-wrapper">
+                                                    <img
+                                                        src={getImageUrl(selectedImages[activeImageIndex])}
+                                                        alt={`${selectedPost.title} - Image ${activeImageIndex + 1}`}
+                                                        className="traveller-main-image"
+                                                    />
+                                                    {selectedImages.length > 1 && (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                className="traveller-gallery-nav prev"
+                                                                onClick={goToPrevImage}
+                                                            >
+                                                                ‹
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="traveller-gallery-nav next"
+                                                                onClick={goToNextImage}
+                                                            >
+                                                                ›
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    <div className="traveller-image-badge">
+                                                        {activeImageIndex + 1} / {selectedImages.length}
+                                                    </div>
+                                                </div>
+
+                                                {selectedImages.length > 1 && (
+                                                    <div className="traveller-image-thumbnails">
+                                                        {selectedImages.map((img, idx) => (
+                                                            <button
+                                                                key={`${selectedPost.id}-thumb-${idx}`}
+                                                                type="button"
+                                                                className={`traveller-thumb-wrapper ${
+                                                                    idx === activeImageIndex ? "active" : ""
+                                                                }`}
+                                                                onClick={() => setActiveImageIndex(idx)}
+                                                            >
+                                                                <img
+                                                                    src={getImageUrl(img)}
+                                                                    alt={`${selectedPost.title} thumbnail ${idx + 1}`}
+                                                                    className="traveller-thumbnail-image"
+                                                                />
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="traveller-no-image">
+                                                <p>No images uploaded.</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {(selectedPost.priceFrom || selectedPost.priceTo) && (
+                                        <div className="traveller-inline-price">
+                                            <strong>💰 Price:</strong>{" "}
+                                            <span className="traveller-price-amount">
+                                                {selectedPost.currency || "LKR"}{" "}
+                                                {selectedPost.priceFrom
+                                                    ? Number(selectedPost.priceFrom).toLocaleString()
+                                                    : ""}
+                                                {selectedPost.priceFrom && selectedPost.priceTo && " – "}
+                                                {selectedPost.priceTo
+                                                    ? Number(selectedPost.priceTo).toLocaleString()
+                                                    : ""}
+                                            </span>
+                                            {selectedPost.priceUnit && (
+                                                <span className="traveller-price-unit"> {selectedPost.priceUnit}</span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div dangerouslySetInnerHTML={{ __html: selectedPost.description }} />
+                                    <p><strong>District:</strong> {selectedPost.district}</p>
+                                    <p>
+                                        <strong>Location:</strong>{" "}
+                                        {(() => {
+                                            const safeUrl = getSafeExternalUrl(selectedPost.location);
+                                            if (!safeUrl) return <span>{selectedPost.location || "—"}</span>;
+                                            return (
+                                                <a
+                                                    href={safeUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer noopener"
+                                                >
+                                                    {safeUrl}
+                                                </a>
+                                            );
+                                        })()}
+                                    </p>
+
+                                    {selectedPost.externalBookingUrl && (
+                                        <div style={{
+                                            padding: '12px',
+                                            backgroundColor: '#e3f2fd',
+                                            borderLeft: '4px solid #2196f3',
+                                            borderRadius: '4px',
+                                            marginBottom: '16px'
+                                        }}>
+                                            <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
+                                                <strong>ℹ️ Provider Info:</strong> This service uses the provider's own booking system.
+                                                You'll be redirected to their website to complete your booking.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="book-actions">
+                                        {buildWhatsappUrl(selectedPost?.whatsappNumber) && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary whatsapp-btn"
+                                                onClick={handleWhatsappChat}
+                                            >
+                                                <FaWhatsapp aria-hidden="true" focusable="false" />
+                                                WhatsApp Chat
+                                            </button>
+                                        )}
+                                        <button type="button" className="btn book-btn" onClick={handleBookService}>
+                                            {selectedPost.externalBookingUrl
+                                                ? "🌐 Visit Provider's Booking Site"
+                                                : "📅 Book This Service"}
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        className="btn write-review-btn"
+                                        onClick={() => setShowReviewModal(true)}
+                                        style={{
+                                            marginTop: '16px',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        ✍️ Write a Review
+                                    </button>
+
+                                    <ReviewSection
+                                        reviews={serviceReviews}
+                                        serviceId={selectedPost.id}
+                                        onReviewsUpdate={fetchServiceReviews}
+                                        currentUserId={user?.id}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
@@ -1316,7 +1413,9 @@ export default function TravellerDashboard() {
                                                 // Traveler can't change status, but keep for compatibility
                                                 fetchMyBookings();
                                             }}
-                                            onDeleteBooking={() => handleCancelBooking(booking.id)}
+                                            onCancelBooking={() => handleCancelBooking(booking)}
+                                            onViewPost={openServiceFromPlan}
+                                            onRemoveBooking={() => handleRemoveFromMyBookings(booking)}
                                         />
                                     </div>
                                 ))}
@@ -1420,11 +1519,12 @@ export default function TravellerDashboard() {
 
                 {/* BOOKING MODAL */}
                 {showBookingModal && selectedPost && (
-                    <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
-                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-overlay booking-modal-overlay" onClick={() => setShowBookingModal(false)}>
+                        <div className="modal-content booking-modal" onClick={(e) => e.stopPropagation()}>
                             <CategoryBookingForm
                                 serviceId={selectedPost.id || selectedPost._id}
                                 category={selectedPost.category}
+                                serviceData={selectedPost}
                                 onSubmit={handleSubmitBooking}
                                 onCancel={() => setShowBookingModal(false)}
                                 isLoading={isSubmittingBooking}

@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -66,8 +67,36 @@ public class BookingController {
         }
 
         String userId = auth.getName();
-        List<Booking> bookings = bookingRepository.findByTravellerId(userId);
+        List<Booking> bookings = bookingRepository.findByTravellerIdAndHiddenByTravellerFalse(userId);
         return ResponseEntity.ok(bookings);
+    }
+
+    // Hide booking from traveller's My Bookings (allowed only when CANCELLED or COMPLETED)
+    @PutMapping("/{id}/hide")
+    public ResponseEntity<?> hideBookingFromTraveller(@PathVariable String id, Authentication auth) {
+        if (auth == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+
+        String userId = auth.getName();
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null) {
+            return ResponseEntity.status(404).body(new ApiResponse(false, "Booking not found", null));
+        }
+
+        if (!userId.equals(booking.getTravellerId())) {
+            return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to modify this booking", null));
+        }
+
+        String status = booking.getStatus() == null ? "" : booking.getStatus().toUpperCase();
+        if (!("CANCELLED".equals(status) || "COMPLETED".equals(status))) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Only completed or cancelled bookings can be removed", null));
+        }
+
+        booking.setHiddenByTraveller(true);
+        booking.setUpdatedAt(new Date());
+        Booking saved = bookingRepository.save(booking);
+        return ResponseEntity.ok(new ApiResponse(true, "Booking removed from My Bookings", Map.of("booking", saved)));
     }
 
     // Get provider's bookings
@@ -98,11 +127,44 @@ public class BookingController {
             return ResponseEntity.status(404).body(new ApiResponse(false, "Booking not found", null));
         }
 
+        String userId = auth.getName();
+        if (!userId.equals(booking.getProviderId())) {
+            return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to update this booking", null));
+        }
+
         String newStatus = body.get("status");
         booking.setStatus(newStatus);
+        booking.setUpdatedAt(new Date());
         bookingRepository.save(booking);
 
         return ResponseEntity.ok(new ApiResponse(true, "Status updated", Map.of("booking", booking)));
+    }
+
+    // Cancel booking (traveller only) - allowed only when PENDING
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelBookingAsTraveller(@PathVariable String id, Authentication auth) {
+        if (auth == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+
+        String userId = auth.getName();
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null) {
+            return ResponseEntity.status(404).body(new ApiResponse(false, "Booking not found", null));
+        }
+
+        if (!userId.equals(booking.getTravellerId())) {
+            return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to cancel this booking", null));
+        }
+
+        if (booking.getStatus() == null || !"PENDING".equalsIgnoreCase(booking.getStatus())) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Only pending bookings can be cancelled", null));
+        }
+
+        booking.setStatus("CANCELLED");
+        booking.setUpdatedAt(new Date());
+        Booking saved = bookingRepository.save(booking);
+        return ResponseEntity.ok(new ApiResponse(true, "Booking cancelled", Map.of("booking", saved)));
     }
 
     // Cancel/Delete booking (for travellers or providers)
@@ -125,6 +187,10 @@ public class BookingController {
 
         if (!isTraveller && !isProvider) {
             return ResponseEntity.status(403).body(new ApiResponse(false, "Not authorized to delete this booking", null));
+        }
+
+        if (isTraveller && (booking.getStatus() == null || !"PENDING".equalsIgnoreCase(booking.getStatus()))) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Only pending bookings can be cancelled", null));
         }
 
         bookingRepository.deleteById(id);

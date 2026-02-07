@@ -7,7 +7,8 @@ export const getMyBookings = () => api.get("/bookings/my-bookings");
 export const getProviderBookings = () => api.get("/bookings/provider-bookings");
 export const updateBookingStatus = (bookingId, status) => 
   api.put(`/bookings/${bookingId}/status`, { status });
-export const cancelBooking = (bookingId) => api.delete(`/bookings/${bookingId}`);
+export const cancelBooking = (bookingId) => api.put(`/bookings/${bookingId}/cancel`);
+export const hideBooking = (bookingId) => api.put(`/bookings/${bookingId}/hide`);
 export const deleteBooking = (bookingId) => api.delete(`/bookings/${bookingId}`);
 
 // Review APIs

@@ -492,6 +492,21 @@ export default function ProviderDashboard() {
                       <span className="meta-value">Not provided</span>
                     )}
                   </div>
+                  <div className="meta-item meta-location">
+                    <span className="meta-label">Booking Site</span>
+                    {selectedPost.externalBookingUrl ? (
+                      <a
+                        href={selectedPost.externalBookingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="meta-link"
+                      >
+                        🌐 Your Booking Site
+                      </a>
+                    ) : (
+                      <span className="meta-value">Platform booking</span>
+                    )}
+                  </div>
                   <div className="meta-item">
                     <span className="meta-label">Created</span>
                     <span className="meta-value">
@@ -782,6 +797,28 @@ export default function ProviderDashboard() {
                             </a>
                           ) : "—"}
                         </p>
+                        
+                        {previewSelectedPost.externalBookingUrl && (
+                          <div style={{
+                            padding: '12px',
+                            backgroundColor: '#e3f2fd',
+                            borderLeft: '4px solid #2196f3',
+                            borderRadius: '4px',
+                            marginBottom: '16px'
+                          }}>
+                            <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
+                              <strong>🌐 External Booking:</strong> Travellers will be redirected to{" "}
+                              <a 
+                                href={previewSelectedPost.externalBookingUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                style={{ color: '#1565c0', textDecoration: 'underline' }}
+                              >
+                                your booking site
+                              </a>
+                            </p>
+                          </div>
+                        )}
 
                         <button className="preview-book-btn" disabled>
                           📅 Book This Service

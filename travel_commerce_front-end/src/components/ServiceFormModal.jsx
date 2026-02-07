@@ -104,6 +104,49 @@ const PLANS = [
   { id: "premium", name: "Premium Spotlight", price: 30, photoLimit: 30, color: "#9370DB", recommended: true },
 ];
 
+// Predefined options for each category
+const CATEGORY_OFFERINGS = {
+  "hotel": {
+    label: "Room Types",
+    options: ["Single Room", "Double Room", "Twin Room", "Triple Room", "Suite", "Deluxe Room", "Family Room", "Studio"],
+    key: "roomTypes"
+  },
+  "driver": {
+    label: "Vehicle Types",
+    options: ["Car", "Van", "SUV", "Minibus", "Bus", "Luxury Car", "Tuk Tuk"],
+    key: "vehicleTypes"
+  },
+  "tour guide": {
+    label: "Languages",
+    options: ["English", "Sinhala", "Tamil", "French", "German", "Spanish", "Italian", "Chinese", "Japanese", "Korean"],
+    key: "languages"
+  },
+  "experience": {
+    label: "Activity Types",
+    options: ["Water Sports", "Hiking", "Cycling", "Wildlife Watching", "Cultural Experience", "Adventure Sports", "Wellness & Yoga", "Surfing", "Diving"],
+    key: "activityTypes"
+  },
+  "restaurant": {
+    label: "Cuisine Types",
+    options: ["Sri Lankan", "Continental", "Chinese", "Indian", "Thai", "Italian", "Seafood", "Mediterranean", "Vegetarian", "Vegan"],
+    key: "cuisineTypes"
+  }
+};
+
+// Helper function to build offerings object from selected items
+const buildOfferings = (category, selectedItems) => {
+  if (!selectedItems || selectedItems.length === 0) return {};
+  
+  const categoryLower = (category || "").toLowerCase();
+  const config = CATEGORY_OFFERINGS[categoryLower];
+  
+  if (config && config.key) {
+    return { [config.key]: selectedItems };
+  }
+  
+  return {};
+};
+
 export default function ServiceFormModal({
   isOpen,
   onClose,
@@ -129,6 +172,8 @@ export default function ServiceFormModal({
     priceTo: "",
     priceUnit: "per person",
     currency: "LKR",
+    externalBookingUrl: "",
+    whatsappNumber: "",
   });
 
   // plan (used for photo limit & price; not editable in edit)
@@ -140,6 +185,9 @@ export default function ServiceFormModal({
   // new photos selected in this modal (both create & edit)
   const [photos, setPhotos] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
+  
+  // Offerings checkboxes - array of selected items
+  const [selectedOfferings, setSelectedOfferings] = useState([]);
 
   // reset everything
   const resetForm = () => {
@@ -153,12 +201,15 @@ export default function ServiceFormModal({
       priceTo: "",
       priceUnit: "per person",
       currency: "LKR",
+      externalBookingUrl: "",
+      whatsappNumber: "",
     });
     setSelectedPlan(PLANS[0]);
     setExistingImages([]);
     setPhotos([]);
     setError("");
     setUploadProgress({});
+    setSelectedOfferings([]);
   };
 
   // init on open
@@ -179,6 +230,8 @@ export default function ServiceFormModal({
         priceTo: initialService.priceTo || "",
         priceUnit: initialService.priceUnit || "per person",
         currency: initialService.currency || "LKR",
+        externalBookingUrl: initialService.externalBookingUrl || "",
+        whatsappNumber: initialService.whatsappNumber || "",
       });
 
       if (initialService.planId) {
@@ -190,6 +243,16 @@ export default function ServiceFormModal({
       setPhotos([]);
       setUploadProgress({});
       setError("");
+      
+      // Extract serviceOfferings to array
+      if (initialService.serviceOfferings) {
+        const offeringsArray = Object.values(initialService.serviceOfferings)
+          .flat()
+          .filter(Boolean);
+        setSelectedOfferings(offeringsArray);
+      } else {
+        setSelectedOfferings([]);
+      }
     }
 
     if (!isEdit) {
@@ -327,6 +390,57 @@ export default function ServiceFormModal({
     ? html.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim()
     : "";
 
+  const normalizeWhatsappDigits = (raw) => {
+    const value = (raw || "").trim();
+    if (!value) return "";
+
+    // Remove common separators and keep leading + if present.
+    const cleaned = value.replace(/[\s()\-\.]/g, "");
+    const hasPlus = cleaned.startsWith("+");
+    let digits = cleaned.replace(/\D/g, "");
+
+    // Support 00 prefix (international) by stripping.
+    if (!hasPlus && digits.startsWith("00")) {
+      digits = digits.slice(2);
+    }
+
+    // Support Sri Lanka local format 0XXXXXXXXX -> 94XXXXXXXXX
+    if (digits.length === 10 && digits.startsWith("0")) {
+      digits = `94${digits.slice(1)}`;
+    }
+
+    return digits;
+  };
+
+  const getWhatsappNumberError = (raw) => {
+    const value = (raw || "").trim();
+    if (!value) return null;
+    if (/[A-Za-z]/.test(value)) {
+      return "WhatsApp number must not contain letters";
+    }
+
+    // '+' is only allowed at the start, if present
+    const plusIndex = value.indexOf("+");
+    if (plusIndex > 0) {
+      return "WhatsApp number: '+' must be at the beginning";
+    }
+
+    const digits = normalizeWhatsappDigits(value);
+    if (!digits) {
+      return "WhatsApp number is invalid";
+    }
+    if (digits.length < 8 || digits.length > 15) {
+      return "WhatsApp number must have 8 to 15 digits";
+    }
+
+    // If the user entered a local-looking number that wasn't converted, reject.
+    if (digits.startsWith("0")) {
+      return "Please include country code (e.g., +94...) or use 0XXXXXXXXX for Sri Lanka";
+    }
+
+    return null;
+  };
+
   // submit handler (create + edit)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -347,6 +461,11 @@ export default function ServiceFormModal({
       throw new Error(priceErrors[0]);
     }
 
+    const whatsappError = getWhatsappNumberError(serviceData.whatsappNumber);
+    if (whatsappError) {
+      throw new Error(whatsappError);
+    }
+
       // ------------- EDIT MODE -------------
       if (isEdit) {
         if (!initialService?.id) {
@@ -354,9 +473,15 @@ export default function ServiceFormModal({
         }
 
         const formData = new FormData();
+        
+        // Build offerings object from selected items
+        const serviceOfferings = buildOfferings(serviceData.category, selectedOfferings);
+        
         const serviceJson = JSON.stringify({
           ...serviceData,
+          whatsappNumber: serviceData.whatsappNumber?.trim() || "",
           existingImages, // images user decided to keep
+          serviceOfferings,
         });
 
         formData.append("serviceData", serviceJson);
@@ -374,10 +499,16 @@ export default function ServiceFormModal({
       }
 
       const formData = new FormData();
+      
+      // Build offerings object from selected items
+      const serviceOfferings = buildOfferings(serviceData.category, selectedOfferings);
+      
       const serviceJson = JSON.stringify({
         ...serviceData,
+        whatsappNumber: serviceData.whatsappNumber?.trim() || "",
         planId: selectedPlan.id,
         planName: selectedPlan.name,
+        serviceOfferings,
       });
 
       formData.append("serviceData", serviceJson);
@@ -530,6 +661,69 @@ export default function ServiceFormModal({
                   onChange={handleInputChange}
                   placeholder="https://maps.google.com/..."
                 />
+              </div>
+
+              {/* OFFERINGS FIELD - Category specific checkboxes */}
+              {serviceData.category && CATEGORY_OFFERINGS[serviceData.category.toLowerCase()] && (
+                <div className="form-group offerings-checklist">
+                  <label className="offerings-label">
+                    <span className="label-icon">✓</span>
+                    {CATEGORY_OFFERINGS[serviceData.category.toLowerCase()].label}
+                    <span className="label-badge">{selectedOfferings.length} selected</span>
+                  </label>
+                  <div className="offerings-grid">
+                    {CATEGORY_OFFERINGS[serviceData.category.toLowerCase()].options.map((option) => (
+                      <label key={option} className="checkbox-item">
+                        <input
+                          type="checkbox"
+                          checked={selectedOfferings.includes(option)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedOfferings([...selectedOfferings, option]);
+                            } else {
+                              setSelectedOfferings(selectedOfferings.filter(item => item !== option));
+                            }
+                          }}
+                        />
+                        <span className="checkbox-label">{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <span className="form-text">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{verticalAlign: 'middle', marginRight: '6px'}}>
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Select all that apply. Travellers will only see these options when booking.
+                  </span>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>External Booking Site (Optional)</label>
+                <input
+                  type="url"
+                  name="externalBookingUrl"
+                  value={serviceData.externalBookingUrl}
+                  onChange={handleInputChange}
+                  placeholder="https://your-booking-site.com"
+                />
+                <span className="form-text">
+                  If you have your own booking website, add the URL here. Travellers will be redirected to your site to complete the booking.
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label>WhatsApp Number (Optional)</label>
+                <input
+                  type="tel"
+                  name="whatsappNumber"
+                  value={serviceData.whatsappNumber}
+                  onChange={handleInputChange}
+                  placeholder="e.g., +94771234567 or 0771234567"
+                />
+                <span className="form-text">
+                  Add a WhatsApp contact number so travellers can chat with you directly.
+                </span>
               </div>
 
               {/* PRICING SECTION */}
