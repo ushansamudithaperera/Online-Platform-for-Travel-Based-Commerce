@@ -77,12 +77,68 @@ public class AITripPlannerService {
             rawText = callGemini(prompt);
         }
 
+        // Build a map of serviceId -> district for validation
+        Map<String, String> serviceDistrictMap = new HashMap<>();
+        for (ServicePost post : activeServices) {
+            if (post.getId() != null && post.getDistrict() != null) {
+                serviceDistrictMap.put(post.getId(), post.getDistrict().trim().toLowerCase());
+            }
+        }
+
         String jsonArray = extractJsonArray(rawText);
         try {
-            return objectMapper.readTree(jsonArray);
+            JsonNode itinerary = objectMapper.readTree(jsonArray);
+            // Post-process: validate service district matches traveller's current district
+            return validateServiceLocations(itinerary, serviceDistrictMap);
         } catch (Exception e) {
             throw new RuntimeException("AI response was not valid JSON array", e);
         }
+    }
+
+    /**
+     * Post-processing validation: for each activity with a serviceId,
+     * check that the service's actual district matches the activity's currentDistrict.
+     * If mismatched, strip serviceId and serviceName.
+     */
+    private JsonNode validateServiceLocations(JsonNode itinerary, Map<String, String> serviceDistrictMap) {
+        if (!itinerary.isArray()) return itinerary;
+
+        com.fasterxml.jackson.databind.node.ArrayNode result = objectMapper.createArrayNode();
+
+        for (JsonNode dayNode : itinerary) {
+            com.fasterxml.jackson.databind.node.ObjectNode dayObj = dayNode.deepCopy();
+            JsonNode activitiesNode = dayObj.get("activities");
+
+            if (activitiesNode != null && activitiesNode.isArray()) {
+                com.fasterxml.jackson.databind.node.ArrayNode validatedActivities = objectMapper.createArrayNode();
+
+                for (JsonNode actNode : activitiesNode) {
+                    com.fasterxml.jackson.databind.node.ObjectNode act = actNode.deepCopy();
+                    String serviceId = act.has("serviceId") ? act.get("serviceId").asText("").trim() : "";
+                    String currentDistrict = act.has("currentDistrict") ? act.get("currentDistrict").asText("").trim().toLowerCase() : "";
+
+                    if (!serviceId.isEmpty() && !currentDistrict.isEmpty()) {
+                        String serviceDistrict = serviceDistrictMap.getOrDefault(serviceId, "");
+                        if (!serviceDistrict.isEmpty() && !serviceDistrict.equals(currentDistrict)) {
+                            // District mismatch — strip the service reference
+                            System.out.println("Location mismatch: service '" + serviceId + "' is in '" + serviceDistrict
+                                    + "' but traveller is in '" + currentDistrict + "'. Removing service reference.");
+                            act.put("serviceId", "");
+                            act.put("serviceName", "");
+                            // Append a helpful note
+                            String note = act.has("note") ? act.get("note").asText("") : "";
+                            if (!note.toLowerCase().contains("arrange")) {
+                                act.put("note", note + " (No matching service available in " + currentDistrict + ")");
+                            }
+                        }
+                    }
+                    validatedActivities.add(act);
+                }
+                dayObj.set("activities", validatedActivities);
+            }
+            result.add(dayObj);
+        }
+        return result;
     }
 
     private String buildPrompt(String servicesJson, String userQuery, int numDays, boolean hasServices) {
@@ -98,11 +154,21 @@ public class AITripPlannerService {
             sb.append("- Use services from the list above where relevant. Reference them by their 'id' in the 'serviceId' field.\n");
             sb.append("- If no service fits a particular activity, set serviceId to empty string and write a helpful note.\n");
             sb.append("- Include the service title in the 'serviceName' field when referencing a service.\n");
-            sb.append("- CRITICAL LOCATION RULE: Each activity must use a service that is in the SAME district/region where the traveller is at that time of the itinerary.\n");
-            sb.append("- For each day, determine which district/city the traveller is currently in, and ONLY suggest services from that district.\n");
-            sb.append("- For travel days (e.g. returning from Galle to Colombo), suggest services in the DEPARTURE city for morning activities and only suggest destination city services AFTER arrival.\n");
-            sb.append("- Do NOT mix services from different districts in the same time slot. For example, if the traveller is in Galle at 09:00, do not suggest a Colombo-based driver.\n");
-            sb.append("- For drivers/transport, prefer services from the district where the pickup happens.\n");
+            sb.append("\n*** CRITICAL LOCATION MATCHING RULES (MUST FOLLOW) ***\n");
+            sb.append("Before assigning ANY service to an activity, you MUST check the service's 'district' field and verify it matches the traveller's CURRENT physical location at that moment.\n");
+            sb.append("Step-by-step process for EACH activity:\n");
+            sb.append("  1. Determine: Where is the traveller physically located at this time?\n");
+            sb.append("  2. Only consider services whose 'district' matches that physical location.\n");
+            sb.append("  3. If NO service from the correct district exists, set serviceId to empty string.\n");
+            sb.append("  4. NEVER use a service from a different district just because it's the only one available.\n");
+            sb.append("\nTRAVEL DAY EXAMPLE (e.g., 'Return from Galle to Colombo'):\n");
+            sb.append("  - 08:00 Check-out hotel → traveller is STILL IN GALLE → use only Galle services\n");
+            sb.append("  - 09:00 Drive to Colombo → traveller is DEPARTING FROM GALLE → use only Galle-district drivers (NOT Colombo drivers)\n");
+            sb.append("  - 12:00 Arrive Colombo, lunch → traveller is NOW IN COLOMBO → use Colombo services from this point onward\n");
+            sb.append("  - 14:00 Explore Colombo → use Colombo services\n");
+            sb.append("\nKey principle: A driver/transport service picks you up WHERE YOU ARE, not where you're going. ");
+            sb.append("If the traveller is in Galle and needs to go to Colombo, they need a GALLE-based driver, not a Colombo-based one.\n");
+            sb.append("If no driver exists in the departure district, set serviceId to empty string and write 'Arrange local transport from [departure] to [destination]'.\n");
         } else {
             sb.append("NOTE: There are currently no listed services on the platform.\n");
             sb.append("- Create a general Sri Lanka travel itinerary based on popular destinations.\n");
@@ -111,8 +177,10 @@ public class AITripPlannerService {
         }
 
         sb.append("\nReturn ONLY a raw JSON array (no markdown, no explanation) with this exact structure:\n");
-        sb.append("[{ \"day\": 1, \"title\": \"Day title\", \"activities\": [{ \"time\": \"09:00\", \"serviceId\": \"...\", \"serviceName\": \"...\", \"note\": \"Description of the activity\", \"category\": \"Hotel|Tour Guide|Restaurant|Experience|Driver\" }] }]\n");
-        sb.append("Make sure each day has 3-6 activities with realistic times. Include meals, transport, and sightseeing.");
+        sb.append("[{ \"day\": 1, \"title\": \"Day title\", \"activities\": [{ \"time\": \"09:00\", \"currentDistrict\": \"The district where the traveller physically is at this moment\", \"serviceId\": \"...\", \"serviceName\": \"...\", \"note\": \"Description of the activity\", \"category\": \"Hotel|Tour Guide|Restaurant|Experience|Driver\" }] }]\n");
+        sb.append("The 'currentDistrict' field is MANDATORY for every activity. It must be the Sri Lankan district where the traveller is physically located at that time (e.g. 'Galle', 'Colombo', 'Kandy').\n");
+        sb.append("Make sure each day has 3-6 activities with realistic times. Include meals, transport, and sightseeing.\n");
+        sb.append("FINAL CHECK: Before outputting, review EVERY activity where you assigned a serviceId. Verify that service's district matches the currentDistrict. If it doesn't match, remove the serviceId and serviceName.");
 
         return sb.toString();
     }
