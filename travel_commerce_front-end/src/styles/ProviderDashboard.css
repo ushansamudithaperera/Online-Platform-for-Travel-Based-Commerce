@@ -997,18 +997,59 @@
 }
 
 .preview-header {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+  border-radius: 16px;
+  padding: 28px 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.25);
+}
+
+.preview-header::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+}
+
+.preview-header::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 40%;
+  width: 120px;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
 }
 
 .preview-header h2 {
   font-size: 1.8rem;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview-header h2::before {
+  content: '👁️';
+  font-size: 1.5rem;
 }
 
 .preview-subtitle {
-  color: #6b7280;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
   margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.1px;
 }
 
 .preview-empty {
@@ -1027,7 +1068,7 @@
 
 .preview-main-content.show-two-column {
   display: flex;
-  gap: 24px;
+  gap: 36px;
 }
 
 /* Detail pane (left) */
