@@ -71,10 +71,14 @@ export default function CategoryBookingForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
+      // Separate category-specific fields into bookingDetails map
+      const { contactEmail, contactPhone, ...dynamicFields } = formData;
       onSubmit({
         serviceId,
         category,
-        ...formData,
+        contactEmail,
+        contactPhone,
+        bookingDetails: dynamicFields,
       });
     }
   };
