@@ -82,6 +82,7 @@ export default function TravellerDashboard() {
     const [sortBy, setSortBy] = useState("recommended");
     const [selectedPost, setSelectedPost] = useState(null);
     const [viewingSinglePost, setViewingSinglePost] = useState(null); // Track if viewing from My Reviews
+    const [cameFromTripPlanner, setCameFromTripPlanner] = useState(false); // Track navigation from Trip Planner
     const [loading, setLoading] = useState(true); 
     const [posts, setPosts] = useState([]);
 
@@ -199,6 +200,7 @@ export default function TravellerDashboard() {
         try {
             setLoading(true);
             const res = await getServiceById(serviceId);
+            setCameFromTripPlanner(true);
             setActiveTab("services");
             setSelectedPost(res?.data || null);
         } catch (error) {
@@ -206,6 +208,12 @@ export default function TravellerDashboard() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const backToTripPlanner = () => {
+        setSelectedPost(null);
+        setCameFromTripPlanner(false);
+        setActiveTab("tripPlanner");
     };
 
     useEffect(() => {
@@ -1216,13 +1224,26 @@ export default function TravellerDashboard() {
                             </div>
                             {selectedPost && (
                                 <div className="selected-post">
-                                    <button
-                                        type="button"
-                                        className="close-btn"
-                                        onClick={() => {
-                                            setSelectedPost(null);
-                                            setViewingSinglePost(null);
-                                            setActiveImageIndex(0);
+{cameFromTripPlanner && (
+                        <button
+                            type="button"
+                            className="back-to-planner-btn"
+                            onClick={backToTripPlanner}
+                        >
+                            ← Back to Trip Planner
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        className="close-btn"
+                        onClick={() => {
+                            if (cameFromTripPlanner) {
+                                backToTripPlanner();
+                            } else {
+                                setSelectedPost(null);
+                                setViewingSinglePost(null);
+                                setActiveImageIndex(0);
+                            }
                                         }}
                                     >
                                         ✕
@@ -1389,10 +1410,10 @@ export default function TravellerDashboard() {
                     </>
                 )}
 
-                {/* TRIP PLANNER TAB */}
-                {activeTab === "tripPlanner" && (
+                {/* TRIP PLANNER TAB — kept mounted so state persists */}
+                <div style={{ display: activeTab === "tripPlanner" ? "block" : "none" }}>
                     <TripPlanner onOpenService={openServiceFromPlan} />
-                )}
+                </div>
 
                 {/* BOOKINGS TAB */}
                 {activeTab === "bookings" && (

@@ -98,6 +98,11 @@ public class AITripPlannerService {
             sb.append("- Use services from the list above where relevant. Reference them by their 'id' in the 'serviceId' field.\n");
             sb.append("- If no service fits a particular activity, set serviceId to empty string and write a helpful note.\n");
             sb.append("- Include the service title in the 'serviceName' field when referencing a service.\n");
+            sb.append("- CRITICAL LOCATION RULE: Each activity must use a service that is in the SAME district/region where the traveller is at that time of the itinerary.\n");
+            sb.append("- For each day, determine which district/city the traveller is currently in, and ONLY suggest services from that district.\n");
+            sb.append("- For travel days (e.g. returning from Galle to Colombo), suggest services in the DEPARTURE city for morning activities and only suggest destination city services AFTER arrival.\n");
+            sb.append("- Do NOT mix services from different districts in the same time slot. For example, if the traveller is in Galle at 09:00, do not suggest a Colombo-based driver.\n");
+            sb.append("- For drivers/transport, prefer services from the district where the pickup happens.\n");
         } else {
             sb.append("NOTE: There are currently no listed services on the platform.\n");
             sb.append("- Create a general Sri Lanka travel itinerary based on popular destinations.\n");
