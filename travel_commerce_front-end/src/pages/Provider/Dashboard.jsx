@@ -1,5 +1,6 @@
 // src/pages/Provider/ProviderDashboard.jsx
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import "../../styles/ProviderDashboard.css";
 import Footer from "../../components/Footer";
@@ -27,10 +28,21 @@ const truncateTitle = (title) => {
 
 export default function ProviderDashboard() {
   const toast = useToast();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("services"); // services, bookings, preview
   const [selectedPost, setSelectedPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [returnFormData, setReturnFormData] = useState(null);
+
+  /* Auto-open create modal with pre-filled data when returning from checkout */
+  useEffect(() => {
+    if (location.state?.returnFormData) {
+      setReturnFormData(location.state.returnFormData);
+      setShowCreateModal(true);
+      window.history.replaceState({}, "");
+    }
+  }, [location.state]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [posts, setPosts] = useState([]);
   
@@ -985,8 +997,9 @@ export default function ProviderDashboard() {
       <ServiceFormModal
         mode="create"
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => { setShowCreateModal(false); setReturnFormData(null); }}
         onSuccess={handleServiceCreated}
+        initialFormData={returnFormData}
       />
 
       {/* EDIT SERVICE MODAL */}

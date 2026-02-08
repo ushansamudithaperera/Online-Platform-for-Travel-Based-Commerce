@@ -154,6 +154,7 @@ export default function ServiceFormModal({
   mode = "create", // "create" | "edit"
   initialService,  // for edit
   onUpdate,        // for edit
+  initialFormData, // pre-fill create form when returning from checkout
 }) {
   const isEdit = mode === "edit";
   const navigate = useNavigate();
@@ -255,11 +256,33 @@ export default function ServiceFormModal({
       }
     }
 
-    if (!isEdit) {
+    if (!isEdit && initialFormData) {
+      // Returning from checkout — restore previously typed data
+      setServiceData({
+        title: initialFormData.serviceData?.title || "",
+        description: initialFormData.serviceData?.description || "",
+        district: initialFormData.serviceData?.district || "",
+        location: initialFormData.serviceData?.location || "",
+        category: initialFormData.serviceData?.category || "",
+        priceFrom: initialFormData.serviceData?.priceFrom || "",
+        priceTo: initialFormData.serviceData?.priceTo || "",
+        priceUnit: initialFormData.serviceData?.priceUnit || "per person",
+        currency: initialFormData.serviceData?.currency || "LKR",
+        externalBookingUrl: initialFormData.serviceData?.externalBookingUrl || "",
+        whatsappNumber: initialFormData.serviceData?.whatsappNumber || "",
+      });
+      if (initialFormData.selectedPlan) {
+        const found = PLANS.find((p) => p.id === initialFormData.selectedPlan.id);
+        if (found) setSelectedPlan(found);
+      }
+      if (initialFormData.photos) setPhotos(initialFormData.photos);
+      if (initialFormData.selectedOfferings) setSelectedOfferings(initialFormData.selectedOfferings);
+      setError("");
+    } else if (!isEdit) {
       resetForm();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isEdit, initialService]);
+  }, [isOpen, isEdit, initialService, initialFormData]);
 
   // computed counts for photo limits
   const maxPhotos = isEdit
@@ -498,35 +521,24 @@ export default function ServiceFormModal({
         throw new Error("Please upload at least one photo");
       }
 
-      const formData = new FormData();
-      
-      // Build offerings object from selected items
-      const serviceOfferings = buildOfferings(serviceData.category, selectedOfferings);
-      
-      const serviceJson = JSON.stringify({
-        ...serviceData,
-        whatsappNumber: serviceData.whatsappNumber?.trim() || "",
-        planId: selectedPlan.id,
-        planName: selectedPlan.name,
-        serviceOfferings,
-      });
-
-      formData.append("serviceData", serviceJson);
-      photos.forEach((file) => formData.append("images", file));
-
-      const response = await createService(formData);
-      const createdService = response.data;
+      // Don't create the service yet — go to payment first.
+      // Pass all form data so checkout can create the service after payment.
+      const formSnapshot = {
+        serviceData: { ...serviceData, whatsappNumber: serviceData.whatsappNumber?.trim() || "" },
+        selectedPlan,
+        photos,
+        selectedOfferings,
+        serviceOfferings: buildOfferings(serviceData.category, selectedOfferings),
+      };
 
       onClose();
 
       navigate("/payment/checkout", {
         state: {
-          postData: createdService,
-          selectedPlan: selectedPlan,
+          formSnapshot,
+          selectedPlan,
         },
       });
-
-      if (onSuccess) onSuccess(createdService);
     } catch (err) {
       const backendMsg = err.response?.data;
       const fallbackMsg =
