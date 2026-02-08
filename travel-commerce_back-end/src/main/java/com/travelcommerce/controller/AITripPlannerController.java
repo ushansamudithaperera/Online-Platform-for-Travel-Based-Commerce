@@ -37,7 +37,7 @@ public class AITripPlannerController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Trip planner failed: " + e.getMessage());
+            return ResponseEntity.status(500).body("Trip planner failed");
         }
     }
 
