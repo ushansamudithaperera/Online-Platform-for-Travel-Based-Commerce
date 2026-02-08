@@ -267,7 +267,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <p className="pf-mock-badge">
-                  🧪 Demo Mode — No real charges. Enter any card details to proceed.
+                 {/*🧪 Demo Mode — No real charges. Enter any card details to proceed. */}
                 </p>
               </form>
             </div>

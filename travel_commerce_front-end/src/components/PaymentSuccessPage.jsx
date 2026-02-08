@@ -83,7 +83,7 @@ export default function PaymentSuccessPage() {
           </div>
 
           <p className="pf-mock-badge" style={{ marginTop: "1.5rem" }}>
-            🧪 Demo Mode — No real charges were made
+            {/*🧪 Demo Mode — No real charges were made */}
           </p>
         </div>
       </div>
