@@ -61,13 +61,25 @@ export default function CheckoutPage() {
       setCard((p) => ({ ...p, number: value.replace(/\D/g, "").slice(0, 16) }));
     } else if (name === "expiry") {
       let v = value.replace(/[^\d/]/g, "");
-      const raw = v.replace("/", "");
+      const raw = v.replace(/\//g, "");
       if (raw.length > 4) return;
+      // Restrict month to 01-12
+      if (raw.length >= 2) {
+        const mm = parseInt(raw.slice(0, 2), 10);
+        if (mm < 1 || mm > 12) return;
+      } else if (raw.length === 1 && parseInt(raw, 10) > 1) {
+        // If first digit > 1, auto-prefix with 0
+        v = "0" + raw;
+        setCard((p) => ({ ...p, expiry: v.slice(0, 2) + "/" }));
+        return;
+      }
       if (raw.length > 2) v = raw.slice(0, 2) + "/" + raw.slice(2);
       else v = raw;
       setCard((p) => ({ ...p, expiry: v }));
     } else if (name === "cvc") {
       setCard((p) => ({ ...p, cvc: value.replace(/\D/g, "").slice(0, 4) }));
+    } else if (name === "name") {
+      setCard((p) => ({ ...p, name: value.replace(/[^a-zA-Z\s]/g, "") }));
     } else {
       setCard((p) => ({ ...p, [name]: value }));
     }
@@ -78,7 +90,24 @@ export default function CheckoutPage() {
     const e = {};
     if (card.number.length < 13) e.number = "Enter a valid card number";
     if (!card.name.trim()) e.name = "Name is required";
-    if (!/^\d{2}\/\d{2}$/.test(card.expiry)) e.expiry = "Use MM/YY format";
+    else if (!/^[a-zA-Z\s]+$/.test(card.name)) e.name = "Name must contain letters only";
+    if (!/^\d{2}\/\d{2}$/.test(card.expiry)) {
+      e.expiry = "Use MM/YY format";
+    } else {
+      const [mm, yy] = card.expiry.split("/").map(Number);
+      if (mm < 1 || mm > 12) {
+        e.expiry = "Invalid month";
+      } else {
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear() % 100;
+        if (yy < currentYear || (yy === currentYear && mm < currentMonth)) {
+          e.expiry = "Card has expired";
+        } else if (yy > currentYear + 10) {
+          e.expiry = "Expiry date too far in the future";
+        }
+      }
+    }
     if (card.cvc.length < 3) e.cvc = "Enter a valid CVC";
     setErrors(e);
     return Object.keys(e).length === 0;

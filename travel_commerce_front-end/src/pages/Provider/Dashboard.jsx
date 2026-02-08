@@ -12,6 +12,7 @@ import { getProviderBookings, updateBookingStatus, deleteBooking } from "../../a
 import BookingDetailsCard from "../../components/BookingDetailsCard";
 import ServiceFormModal from "../../components/ServiceFormModal";
 import NotificationPanel from "../../components/NotificationPanel";
+import { FaSyncAlt, FaEdit, FaTrashAlt } from "react-icons/fa";
 import { useToast } from "../../context/ToastContext";
 
 const backendBaseUrl =
@@ -88,10 +89,38 @@ export default function ProviderDashboard() {
           .trim()
       : "";
 
+  const images = selectedPost?.images || [];
+
+  const goToPrevImage = () => {
+    if (!images.length) return;
+    setActiveImageIndex((prev) =>
+      prev === 0 ? images.length - 1 : prev - 1
+    );
+  };
+
+  const goToNextImage = () => {
+    if (!images.length) return;
+    setActiveImageIndex((prev) =>
+      prev === images.length - 1 ? 0 : prev + 1
+    );
+  };
+
   useEffect(() => {
     setActiveImageIndex(0);
     setShowFullDescription(false);
   }, [selectedPost?.id]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); goToPrevImage(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); goToNextImage(); }
+      else if (e.key === "Escape") { e.preventDefault(); setLightboxOpen(false); }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen, images.length]);
 
   useEffect(() => {
     if (activeTab === "services" || activeTab === "preview") {
@@ -205,22 +234,6 @@ export default function ProviderDashboard() {
     // Toast is already shown in ServiceFormModal — no duplicate needed here
   };
 
-  const images = selectedPost?.images || [];
-
-  const goToPrevImage = () => {
-    if (!images.length) return;
-    setActiveImageIndex((prev) =>
-      prev === 0 ? images.length - 1 : prev - 1
-    );
-  };
-
-  const goToNextImage = () => {
-    if (!images.length) return;
-    setActiveImageIndex((prev) =>
-      prev === images.length - 1 ? 0 : prev + 1
-    );
-  };
-
   // Description + pricing helpers
   const priceFromText = selectedPost
     ? formatPrice(selectedPost.priceFrom)
@@ -270,11 +283,11 @@ export default function ProviderDashboard() {
             <div className="provider-left">
           <div className="provider-header">
             <div>
-              <h2>Provider Dashboard</h2>
+              <h2>My Services</h2>
               <p className="provider-subtitle">
-                Preview how your service will appear to travellers. Update
-                details, images and pricing anytime.
+                Manage your service listings, view bookings, and connect with travellers.
               </p>
+
             </div>
             <div className="provider-header-actions">
               <NotificationPanel />
@@ -571,14 +584,14 @@ export default function ProviderDashboard() {
                     type="button"
                     onClick={() => setShowEditModal(true)}
                   >
-                    Edit Service
+                    <FaEdit /> Edit Service
                   </button>
                   <button
                     className="delete-btn"
                     type="button"
                     onClick={() => handleDelete(selectedPost.id)}
                   >
-                    Delete Service
+                    <FaTrashAlt /> Delete Service
                   </button>
                 </div>
               </div>
@@ -608,7 +621,7 @@ export default function ProviderDashboard() {
               onClick={fetchProviderPosts}
               title="Refresh list"
             >
-              ↻
+              <FaSyncAlt />
             </button>
           </div>
 
@@ -705,7 +718,7 @@ export default function ProviderDashboard() {
                 onClick={fetchProviderBookings}
                 title="Refresh bookings"
               >
-                ↻
+                <FaSyncAlt />
               </button>
             </div>
 
