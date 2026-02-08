@@ -1,0 +1,585 @@
+/* Global Home Container */
+.home-container {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color: #333;
+  background-color: #fdfdfd;
+  /* Soft off-white */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ---------------- HERO SECTION ---------------- */
+.hero {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  z-index: 1;
+}
+
+.hero-img.active {
+  opacity: 1;
+}
+
+/* Dark overlay for readability */
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  /* Slight darkness */
+  z-index: 2;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  color: #fff;
+  padding: 20px;
+  max-width: 800px;
+
+  /* Glassmorphism Effect */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.ayubowan-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  /* Elegant Serif */
+  font-size: 5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  min-height: 90px;
+  background: linear-gradient(to right, #ffffff, #d4af37);
+  /* White to Gold */
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cursor {
+  font-weight: 100;
+  color: #d4af37;
+  /* Gold cursor */
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.sub-text {
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin-bottom: 1.5rem;
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+}
+
+.intro-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  margin-bottom: 2.5rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.btn-hero {
+  padding: 12px 32px;
+  border-radius: 50px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #d4af37;
+  /* Sri Lankan Gold */
+  color: #2a004f;
+  /* Deep Purple text */
+  border: 2px solid #d4af37;
+}
+
+.btn-primary:hover {
+  background: transparent;
+  color: #d4af37;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+}
+
+.btn-outline:hover {
+  background: #fff;
+  color: #2a004f;
+}
+
+.hero-dots {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+.hero-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.hero-dot.active {
+  background-color: #d4af37;
+  /* Gold active dot */
+  transform: scale(1.2);
+}
+
+/* ---------------- SECTIONS COMMON ---------------- */
+.section-title {
+  font-size: 2.5rem;
+  color: #2a004f;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-family: 'Playfair Display', serif;
+  position: relative;
+  display: inline-block;
+}
+
+.section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: #d4af37;
+  /* Gold underline */
+  margin: 10px auto 0;
+  border-radius: 2px;
+}
+
+.section-description {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 3rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+.scroll-appear {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
+}
+
+.scroll-appear.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------------- DESTINATIONS (NEW) ---------------- */
+.destinations-section {
+  padding: 80px 20px;
+  background-color: #fff;
+}
+
+.destinations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  /* Strictly 2 columns */
+  gap: 30px;
+  max-width: 1000px;
+  /* Slightly narrower for better 2x2 proportions */
+  margin: 0 auto;
+}
+
+.destination-card {
+  position: relative;
+  height: 350px;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s ease;
+}
+
+.destination-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.dest-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.destination-card:hover .dest-img {
+  transform: scale(1.1);
+}
+
+.dest-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 30px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  color: #fff;
+  transform: translateY(10px);
+  transition: transform 0.3s ease;
+}
+
+.destination-card:hover .dest-overlay {
+  transform: translateY(0);
+}
+
+.dest-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  color: #fff;
+}
+
+.dest-desc {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-top: 5px;
+  color: #d4af37;
+  /* Gold text for description */
+}
+
+@media (max-width: 768px) {
+  .destinations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ---------------- CULTURE & EXPERIENCE (NEW) ---------------- */
+.culture-section {
+  padding: 80px 20px;
+  background-color: #fffbf0;
+  /* Very light cream/yellow tint */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative pattern background (simple CSS pattern) */
+.culture-section::before {
+  content: "";
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 200px;
+  height: 200px;
+  border: 20px solid rgba(212, 175, 55, 0.1);
+  /* Faint gold */
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.culture-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.culture-text {
+  flex: 1;
+  min-width: 300px;
+}
+
+.culture-image-grid {
+  flex: 1;
+  min-width: 300px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.culture-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.culture-img.large {
+  grid-column: span 2;
+  height: 250px;
+}
+
+
+/* ---------------- KEY FEATURES ---------------- */
+.key-features {
+  padding: 80px 20px;
+  background: #fff;
+  text-align: center;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 40px auto 0;
+}
+
+.feature-box {
+  padding: 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  transition: transform 0.3s;
+}
+
+.feature-box:hover {
+  transform: translateY(-5px);
+  border-color: #d4af37;
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  color: #2a004f;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2a004f !important;
+  /* Force visibility with deep purple */
+  margin-bottom: 15px;
+}
+
+.feature-box p {
+  color: #555;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+/* ---------------- DUAL SLIDERS ---------------- */
+.bothslides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 40px;
+  padding: 80px 20px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.slider-box {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.slider-title {
+  background: #2a004f;
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+  margin: 0;
+  font-size: 1.5rem;
+  font-family: 'Playfair Display', serif;
+}
+
+.slider-title.travellers {
+  background: linear-gradient(135deg, #8D153A 0%, #5e0b24 100%);
+  /* Sri Lankan Maroon */
+}
+
+.slider-title.providers {
+  background: linear-gradient(135deg, #2a004f 0%, #15002b 100%);
+  /* Deep Purple */
+}
+
+
+.services-slider {
+  position: relative;
+  height: 400px;
+  overflow: hidden;
+}
+
+.service-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.8s ease-in-out, transform 8s linear;
+  /* Slow zoom for activity */
+}
+
+.service-card.active {
+  opacity: 1;
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.service-card.inactive {
+  opacity: 0;
+  z-index: 1;
+}
+
+.service-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 10%, transparent 60%);
+}
+
+.service-content {
+  position: absolute;
+  bottom: 40px;
+  left: 20px;
+  right: 20px;
+  color: #fff;
+  z-index: 10;
+}
+
+.service-content h3 {
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+  font-family: 'Playfair Display', serif;
+  color: #d4af37;
+  /* Gold accent */
+}
+
+.dots {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+.dot.active {
+  background: #d4af37;
+  transform: scale(1.2);
+}
+
+/* ---------------- HOW IT WORKS ---------------- */
+.how-it-works {
+  padding: 80px 20px;
+  background-color: #f4f6f8;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 40px;
+  max-width: 1100px;
+  margin: 40px auto 0;
+}
+
+.step-box {
+  text-align: center;
+  position: relative;
+}
+
+.step-number {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  line-height: 50px;
+  border-radius: 50%;
+  background: #2a004f;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 10px rgba(42, 0, 79, 0.3);
+}
+
+.step-box h3 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .ayubowan-text {
+    font-size: 3rem;
+  }
+
+  .culture-content {
+    flex-direction: column;
+  }
+
+  .culture-image-grid {
+    width: 100%;
+  }
+
+  .bothslides {
+    grid-template-columns: 1fr;
+  }
+}
