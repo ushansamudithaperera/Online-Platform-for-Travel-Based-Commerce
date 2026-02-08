@@ -201,7 +201,7 @@ export default function ProviderDashboard() {
       prev.map((p) => (p.id === updatedService.id ? updatedService : p))
     );
     setSelectedPost(updatedService);
-    toast.success("Service updated successfully!");
+    // Toast is already shown in ServiceFormModal — no duplicate needed here
   };
 
   const images = selectedPost?.images || [];
