@@ -74,6 +74,7 @@ export default function TravellerDashboard() {
     const [aiSearching, setAiSearching] = useState(false);
     const [aiFilteredIds, setAiFilteredIds] = useState(null);
     const [aiSearchMessage, setAiSearchMessage] = useState(""); // Feedback message for AI search
+    const [aiSearchExplanation, setAiSearchExplanation] = useState("");
     const [useAiSearch, setUseAiSearch] = useState(true); // Toggle for AI search 
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [selectedDistrict, setSelectedDistrict] = useState("all");
@@ -528,6 +529,7 @@ export default function TravellerDashboard() {
         if (!trimmed) {
             setSearch("");
             setAiFilteredIds(null);
+            setAiSearchExplanation("");
             return;
         }
 
@@ -535,10 +537,11 @@ export default function TravellerDashboard() {
         if (useAiSearch) {
             setAiSearching(true);
             setAiSearchMessage("");
+            setAiSearchExplanation("");
             try {
                 // Prepare simplified post data for AI
                 const simplifiedPosts = posts.map(p => ({
-                    id: Number(p.id) || p.id, // Ensure numeric ID for backend
+                    id: String(p.id),
                     title: p.title,
                     description: toPlainText(p.description),
                     category: p.category,
@@ -561,25 +564,19 @@ export default function TravellerDashboard() {
                 console.log('AI search response:', response?.data);
 
                 const matchedIds = response?.data?.matchedPostIds || [];
+                const explanation = response?.data?.explanation || "";
+                setAiSearchExplanation(explanation);
                 console.log('Matched IDs count:', matchedIds.length);
                 console.log('Matched IDs:', matchedIds);
                 console.log('Matched IDs types:', matchedIds.slice(0, 3).map(id => ({ id, type: typeof id })));
                 console.log('Sample post IDs:', posts.slice(0, 3).map(p => ({ id: p.id, type: typeof p.id })));
-                
-                if (Array.isArray(matchedIds) && matchedIds.length > 0) {
-                    // Ensure ID types match - convert to strings for comparison if needed
-                    const idsAsStrings = matchedIds.map(id => String(id));
-                    setAiFilteredIds(new Set(idsAsStrings));
-                    setSearch(""); // Clear keyword search when using AI
-                    setAiSearchMessage("");
-                    console.log('AI search SET with', idsAsStrings.length, 'results');
-                } else {
-                    console.log('No AI results, falling back to keyword search');
-                    // No AI results - fall back to keyword search silently
-                    setSearch(trimmed.toLowerCase());
-                    setAiFilteredIds(null);
-                    setAiSearchMessage("");
-                }
+
+                // Always keep AI mode active; even if 0 matches, we still show the explanation.
+                const idsAsStrings = Array.isArray(matchedIds) ? matchedIds.map(id => String(id)) : [];
+                setAiFilteredIds(new Set(idsAsStrings));
+                setSearch(""); // Clear keyword search when using AI
+                setAiSearchMessage("");
+                console.log('AI search SET with', idsAsStrings.length, 'results');
             } catch (error) {
                 console.error("AI search failed:", error);
                 console.error("Error details:", error.response?.data || error.message);
@@ -587,6 +584,7 @@ export default function TravellerDashboard() {
                 setSearch(trimmed.toLowerCase());
                 setAiFilteredIds(null);
                 setAiSearchMessage("");
+                setAiSearchExplanation("AI search is temporarily unavailable. Showing keyword results instead.");
             } finally {
                 setAiSearching(false);
             }
@@ -594,6 +592,7 @@ export default function TravellerDashboard() {
             // Use traditional keyword search
             setSearch(trimmed.toLowerCase());
             setAiFilteredIds(null);
+            setAiSearchExplanation("");
         }
     };
 
@@ -604,6 +603,7 @@ export default function TravellerDashboard() {
         setAiFilteredIds(null);
         setSearchTerm("");
         setAiSearchMessage("");
+        setAiSearchExplanation("");
     };
 
     const handleResetFilters = () => {
@@ -611,6 +611,7 @@ export default function TravellerDashboard() {
         setSearch("");
         setAiFilteredIds(null);
         setAiSearchMessage("");
+        setAiSearchExplanation("");
         setSelectedCategory("all");
         setSelectedDistrict("all");
         setPriceMin("");
@@ -958,7 +959,14 @@ export default function TravellerDashboard() {
                                     </div>
                                     {aiFilteredIds && (
                                         <div className="search-mode-badge">
-                                            🤖 AI-powered results ({aiFilteredIds.size} matches)
+                                            🤖 AI-powered results ({aiFilteredIds.size === 0 ? "no matches" : `${aiFilteredIds.size} matches`})
+                                        </div>
+                                    )}
+                                    {useAiSearch && (aiSearching || aiSearchExplanation) && (
+                                        <div className="search-mode-badge ai-explanation-badge">
+                                            {aiSearching
+                                                ? "AI is analyzing your request and preparing an explanation…"
+                                                : aiSearchExplanation}
                                         </div>
                                     )}
                                     {!aiFilteredIds && search && useAiSearch && (
