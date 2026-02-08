@@ -185,9 +185,6 @@ export default function CheckoutPage() {
                   <span className="pf-summary-label">Total</span>
                   <span className="pf-summary-value">${selectedPlan.price}.00</span>
                 </div>
-                <div className="pf-secure-note">
-                  <span>🔒</span> Secure checkout — your data is encrypted
-                </div>
               </div>
 
               {/* Right — Card Form */}
