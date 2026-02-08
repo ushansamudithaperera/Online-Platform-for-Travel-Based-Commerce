@@ -2,6 +2,18 @@
 import React, { useState } from "react";
 import { getBookingConfig } from "../config/bookingCategoryConfig";
 import { useToast } from "../context/ToastContext";
+import {
+  FaCalendarAlt,
+  FaEnvelope,
+  FaPhone,
+  FaUser,
+  FaClock,
+  FaMapMarkerAlt,
+  FaTrashAlt,
+  FaTimesCircle,
+  FaExternalLinkAlt,
+  FaChevronDown,
+} from "react-icons/fa";
 import "../styles/BookingDetailsCard.css";
 
 export default function BookingDetailsCard({
@@ -17,12 +29,14 @@ export default function BookingDetailsCard({
   const config = getBookingConfig(booking.category);
   const toast = useToast();
 
-  const statusColors = {
-    PENDING: "#FFA500",
-    CONFIRMED: "#4CAF50",
-    CANCELLED: "#F44336",
-    COMPLETED: "#2196F3",
+  const statusConfig = {
+    PENDING: { color: "#f59e0b", bg: "#fffbeb", border: "#fcd34d", label: "Pending", icon: "⏳" },
+    CONFIRMED: { color: "#10b981", bg: "#ecfdf5", border: "#6ee7b7", label: "Confirmed", icon: "✓" },
+    CANCELLED: { color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", label: "Cancelled", icon: "✕" },
+    COMPLETED: { color: "#3b82f6", bg: "#eff6ff", border: "#93c5fd", label: "Completed", icon: "★" },
   };
+
+  const currentStatus = statusConfig[booking.status] || statusConfig.PENDING;
 
   const handleStatusChange = async (newStatus) => {
     const confirmed = await toast.confirm({
@@ -60,144 +74,175 @@ export default function BookingDetailsCard({
     });
   };
 
+  const fieldIcons = {
+    date: <FaCalendarAlt />,
+    time: <FaClock />,
+    email: <FaEnvelope />,
+    phone: <FaPhone />,
+    text: <FaMapMarkerAlt />,
+  };
+
   const renderDynamicFields = () => {
     return config.fields.map((field) => {
       const value = booking.bookingDetails?.[field.name] ?? booking[field.name];
       if (!value) return null;
 
-      // Format date fields nicely
       let displayValue = value;
       if (field.type === "date" && value) {
         displayValue = formatDate(value);
       }
 
       return (
-        <div key={field.name} className="detail-row">
-          <span className="detail-label">{field.label}:</span>
-          <span className="detail-value">{displayValue}</span>
+        <div key={field.name} className="bdc-detail-item">
+          <div className="bdc-detail-icon">
+            {fieldIcons[field.type] || <FaMapMarkerAlt />}
+          </div>
+          <div className="bdc-detail-content">
+            <span className="bdc-detail-label">{field.label}</span>
+            <span className="bdc-detail-value">{displayValue}</span>
+          </div>
         </div>
       );
     });
   };
 
   return (
-    <div className="booking-details-card">
+    <div
+      className="bdc-card"
+      style={{ "--status-color": currentStatus.color, "--status-bg": currentStatus.bg, "--status-border": currentStatus.border }}
+    >
+      {/* Colored top accent */}
+      <div className="bdc-accent" />
+
       {/* Header */}
-      <div className="card-header">
-        <div className="header-left">
-          <h4>{booking.serviceTitle}</h4>
-          <p className="booking-id">Booking #{booking.id?.slice(-6)}</p>
+      <div className="bdc-header">
+        <div className="bdc-header-info">
+          <h4 className="bdc-title">{booking.serviceTitle}</h4>
+          <span className="bdc-booking-id">#{booking.id?.slice(-6)}</span>
         </div>
-        <div className="header-right">
-          <span
-            className="status-badge"
-            style={{ backgroundColor: statusColors[booking.status] }}
-          >
-            {booking.status}
-          </span>
+        <div
+          className="bdc-status-badge"
+          style={{ background: currentStatus.bg, color: currentStatus.color, borderColor: currentStatus.border }}
+        >
+          <span className="bdc-status-icon">{currentStatus.icon}</span>
+          {currentStatus.label}
         </div>
       </div>
 
-      {/* Service Category Badge */}
-      <div className="category-badge">
-        <span className="category-icon">📍</span>
+      {/* Category chip */}
+      <div className="bdc-category-chip">
+        <span className="bdc-category-dot" />
         {config.name}
       </div>
 
-      {/* Dynamic Booking Details */}
-      <div className="details-section">
-        <h5>Booking Details</h5>
-        <div className="details-grid">
-          {renderDynamicFields()}
-          <div className="detail-row">
-            <span className="detail-label">Contact Email:</span>
-            <span className="detail-value">{booking.contactEmail}</span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Contact Phone:</span>
-            <span className="detail-value">{booking.contactPhone}</span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Traveller:</span>
-            <span className="detail-value">{booking.travellerName}</span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Booking Date:</span>
-            <span className="detail-value">{formatDate(booking.createdAt)}</span>
+      {/* Details grid */}
+      <div className="bdc-details">
+        {renderDynamicFields()}
+
+        <div className="bdc-detail-item">
+          <div className="bdc-detail-icon"><FaEnvelope /></div>
+          <div className="bdc-detail-content">
+            <span className="bdc-detail-label">Contact Email</span>
+            <span className="bdc-detail-value">{booking.contactEmail}</span>
           </div>
         </div>
-        {booking.message && (
-          <div className="message-section">
-            <p><strong>Message:</strong></p>
-            <p className="message-text">{booking.message}</p>
+
+        <div className="bdc-detail-item">
+          <div className="bdc-detail-icon"><FaPhone /></div>
+          <div className="bdc-detail-content">
+            <span className="bdc-detail-label">Contact Phone</span>
+            <span className="bdc-detail-value">{booking.contactPhone}</span>
           </div>
-        )}
+        </div>
+
+        <div className="bdc-detail-item">
+          <div className="bdc-detail-icon"><FaUser /></div>
+          <div className="bdc-detail-content">
+            <span className="bdc-detail-label">Traveller</span>
+            <span className="bdc-detail-value">{booking.travellerName}</span>
+          </div>
+        </div>
+
+        <div className="bdc-detail-item">
+          <div className="bdc-detail-icon"><FaCalendarAlt /></div>
+          <div className="bdc-detail-content">
+            <span className="bdc-detail-label">Booked On</span>
+            <span className="bdc-detail-value">{formatDate(booking.createdAt)}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Actions (Provider View) */}
+      {/* Message */}
+      {booking.message && (
+        <div className="bdc-message">
+          <p className="bdc-message-label">💬 Message</p>
+          <p className="bdc-message-text">{booking.message}</p>
+        </div>
+      )}
+
+      {/* Provider Actions */}
       {isProvider && (
-        <div className="actions-section">
-          <div className="status-actions">
-            <label>Update Status:</label>
-            <select
-              value={booking.status}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              disabled={isUpdating}
-              className="status-select"
-            >
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+        <div className="bdc-actions">
+          <div className="bdc-status-control">
+            <label className="bdc-status-label">Status</label>
+            <div className="bdc-select-wrapper">
+              <select
+                value={booking.status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                disabled={isUpdating}
+                className="bdc-status-select"
+              >
+                <option value="PENDING">⏳ Pending</option>
+                <option value="CONFIRMED">✓ Confirmed</option>
+                <option value="COMPLETED">★ Completed</option>
+                <option value="CANCELLED">✕ Cancelled</option>
+              </select>
+              <FaChevronDown className="bdc-select-arrow" />
+            </div>
           </div>
           <button
-            className="btn btn-danger"
+            className="bdc-btn bdc-btn-delete"
             onClick={() => onDeleteBooking(booking.id)}
             disabled={isUpdating}
           >
-            Delete Booking
+            <FaTrashAlt /> Delete
           </button>
         </div>
       )}
 
-      {/* Actions (Traveller View) */}
+      {/* Traveller Actions */}
       {!isProvider && (onViewPost || onCancelBooking || onRemoveBooking) && (
-        <div className="actions-section">
-          <div className="traveller-actions">
-            {onViewPost && booking.serviceId && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => onViewPost(booking.serviceId)}
-                disabled={isUpdating}
-              >
-                View Original Post
-              </button>
-            )}
-
-            {onCancelBooking && String(booking.status).toUpperCase() === "PENDING" && (
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={handleCancelAsTraveller}
-                disabled={isUpdating}
-              >
-                Cancel Booking
-              </button>
-            )}
-
-            {onRemoveBooking && ["CANCELLED", "COMPLETED"].includes(String(booking.status).toUpperCase()) && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => onRemoveBooking(booking.id)}
-                disabled={isUpdating}
-              >
-                Remove
-              </button>
-            )}
-          </div>
+        <div className="bdc-actions bdc-actions-traveller">
+          {onViewPost && booking.serviceId && (
+            <button
+              type="button"
+              className="bdc-btn bdc-btn-view"
+              onClick={() => onViewPost(booking.serviceId)}
+              disabled={isUpdating}
+            >
+              <FaExternalLinkAlt /> View Post
+            </button>
+          )}
+          {onCancelBooking && String(booking.status).toUpperCase() === "PENDING" && (
+            <button
+              type="button"
+              className="bdc-btn bdc-btn-cancel"
+              onClick={handleCancelAsTraveller}
+              disabled={isUpdating}
+            >
+              <FaTimesCircle /> Cancel
+            </button>
+          )}
+          {onRemoveBooking && ["CANCELLED", "COMPLETED"].includes(String(booking.status).toUpperCase()) && (
+            <button
+              type="button"
+              className="bdc-btn bdc-btn-remove"
+              onClick={() => onRemoveBooking(booking.id)}
+              disabled={isUpdating}
+            >
+              <FaTrashAlt /> Remove
+            </button>
+          )}
         </div>
       )}
     </div>

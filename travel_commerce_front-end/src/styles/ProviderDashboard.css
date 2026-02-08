@@ -382,37 +382,52 @@
 /* Action buttons */
 .large-post .action-buttons {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   margin-top: 22px;
 }
 
 .edit-btn,
 .delete-btn {
-  padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
   border-radius: 10px;
-  border: none;
+  border: 1.5px solid;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.88rem;
   flex: 1;
+  transition: all 0.25s ease;
 }
 
 .edit-btn {
-  background: #7b68ee;
-  color: #fff;
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
 }
 
 .edit-btn:hover {
-  background: #6a5acd;
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 }
 
 .delete-btn {
-  background: #f87171;
-  color: #fff;
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 .delete-btn:hover {
-  background: #ef4444;
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
 }
 
 /* Empty state */
@@ -468,12 +483,18 @@
   border-radius: 999px;
   width: 28px;
   height: 28px;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+  transition: background 0.2s, transform 0.2s;
 }
 
 .refresh-btn:hover {
   background: #d1d5db;
+  transform: rotate(90deg);
 }
 
 .services-list {
@@ -858,24 +879,7 @@
   margin: 0.5rem 0 0;
 }
 
-.refresh-btn {
-  padding: 0.6rem 1rem;
-  background: #ecf0f1;
-  border: 1px solid #bdc3c7;
-  border-radius: 5px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 45px;
-  text-align: center;
-}
-
-.refresh-btn:hover {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
-  transform: rotate(180deg);
-}
+/* refresh-btn already defined above — no duplicate needed */
 
 .bookings-content {
   padding: 2rem;

@@ -17,3 +17,11 @@ export const deleteNotification = (id) => axios.delete(`/notifications/${id}`);
 
 // Clear all notifications
 export const clearAllNotifications = () => axios.delete("/notifications/clear-all");
+
+// Admin: Send notification to a specific user
+export const adminSendNotification = (recipientId, message) =>
+  axios.post("/notifications/admin/send", { recipientId, message });
+
+// Admin: Broadcast notification to users (targetRole: "ALL", "ROLE_TRAVELLER", "ROLE_PROVIDER")
+export const adminBroadcast = (message, targetRole = "ALL") =>
+  axios.post("/notifications/admin/broadcast", { message, targetRole });

@@ -250,6 +250,23 @@ public class ReviewController {
         }
 
         reviewRepository.deleteById(id);
+
+        // If admin deleted someone else's review, notify the review author
+        if (isAdmin && !isOwner) {
+            ServicePost service = serviceRepository.findById(review.getServiceId()).orElse(null);
+            String serviceTitle = service != null ? service.getTitle() : "a service";
+            notificationService.createNotification(
+                review.getTravellerId(),
+                userId,
+                user.getFullname(),
+                "REVIEW_DELETED",
+                "Admin removed your review on \"" + serviceTitle + "\"",
+                id,
+                review.getServiceId(),
+                serviceTitle
+            );
+        }
+
         return ResponseEntity.ok(new ApiResponse(true, "Review deleted", null));
     }
 }

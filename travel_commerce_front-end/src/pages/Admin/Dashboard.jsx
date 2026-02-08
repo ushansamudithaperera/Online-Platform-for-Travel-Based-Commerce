@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../../context/ToastContext"; 
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import NotificationPanel from "../../components/NotificationPanel";
+import { adminSendNotification, adminBroadcast } from "../../api/notificationApi";
 import "../../styles/AdminDashboard.css"; 
 
 export default function AdminDashboard() {
@@ -15,6 +17,13 @@ export default function AdminDashboard() {
     const [posts, setPosts] = useState([]); 
     const [reviews, setReviews] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Notification sending state
+    const [notifRecipientId, setNotifRecipientId] = useState("");
+    const [notifMessage, setNotifMessage] = useState("");
+    const [broadcastMessage, setBroadcastMessage] = useState("");
+    const [broadcastTarget, setBroadcastTarget] = useState("ALL");
+    const [notifSending, setNotifSending] = useState(false);
 
     // 1. LOAD DATA
     useEffect(() => {
@@ -402,6 +411,151 @@ export default function AdminDashboard() {
         );
     };
 
+    // --- NOTIFICATION HANDLERS ---
+    const handleSendNotification = async () => {
+        if (!notifRecipientId || !notifMessage.trim()) {
+            toast.warning("Please select a user and enter a message");
+            return;
+        }
+        setNotifSending(true);
+        try {
+            await adminSendNotification(notifRecipientId, notifMessage.trim());
+            toast.success("Notification sent!");
+            setNotifRecipientId("");
+            setNotifMessage("");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to send notification");
+        } finally {
+            setNotifSending(false);
+        }
+    };
+
+    const handleBroadcast = async () => {
+        if (!broadcastMessage.trim()) {
+            toast.warning("Please enter a broadcast message");
+            return;
+        }
+        const confirmed = await toast.confirm({
+            title: 'Broadcast Notification',
+            message: `Send this notification to ${broadcastTarget === 'ALL' ? 'all users' : broadcastTarget.replace('ROLE_', '').toLowerCase() + 's'}?`,
+            type: 'warning',
+            confirmText: 'Send',
+        });
+        if (!confirmed) return;
+
+        setNotifSending(true);
+        try {
+            const res = await adminBroadcast(broadcastMessage.trim(), broadcastTarget);
+            const count = res.data?.data?.recipientCount || 0;
+            toast.success(`Broadcast sent to ${count} users!`);
+            setBroadcastMessage("");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to send broadcast");
+        } finally {
+            setNotifSending(false);
+        }
+    };
+
+    const renderNotifications = () => {
+        const nonAdminUsers = users.filter(u => u.role !== 'ROLE_ADMIN');
+        return (
+            <div className="table-container">
+                <h3>📢 Send Notifications</h3>
+
+                {/* Direct Message Section */}
+                <div style={{
+                    background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px',
+                    padding: '20px', marginBottom: '20px'
+                }}>
+                    <h4 style={{margin: '0 0 12px', color: '#334155'}}>Send to Specific User</h4>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                        <select
+                            value={notifRecipientId}
+                            onChange={(e) => setNotifRecipientId(e.target.value)}
+                            style={{
+                                padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1',
+                                fontSize: '14px', width: '100%', maxWidth: '400px'
+                            }}
+                        >
+                            <option value="">-- Select User --</option>
+                            {nonAdminUsers.map(u => (
+                                <option key={u.id} value={u.id}>
+                                    {u.fullname} ({u.email}) - {u.role.replace('ROLE_', '')}
+                                </option>
+                            ))}
+                        </select>
+                        <textarea
+                            value={notifMessage}
+                            onChange={(e) => setNotifMessage(e.target.value)}
+                            placeholder="Type your notification message..."
+                            rows={3}
+                            style={{
+                                padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1',
+                                fontSize: '14px', resize: 'vertical', width: '100%', maxWidth: '600px'
+                            }}
+                        />
+                        <button
+                            onClick={handleSendNotification}
+                            disabled={notifSending}
+                            className="btn"
+                            style={{
+                                background: '#6366f1', color: 'white', padding: '10px 20px',
+                                borderRadius: '8px', width: 'fit-content', opacity: notifSending ? 0.6 : 1
+                            }}
+                        >
+                            {notifSending ? 'Sending...' : '📩 Send Notification'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Broadcast Section */}
+                <div style={{
+                    background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px',
+                    padding: '20px'
+                }}>
+                    <h4 style={{margin: '0 0 12px', color: '#92400e'}}>📣 Broadcast to Multiple Users</h4>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                        <select
+                            value={broadcastTarget}
+                            onChange={(e) => setBroadcastTarget(e.target.value)}
+                            style={{
+                                padding: '10px', borderRadius: '8px', border: '1px solid #fde68a',
+                                fontSize: '14px', width: '100%', maxWidth: '300px'
+                            }}
+                        >
+                            <option value="ALL">All Users (Travellers + Providers)</option>
+                            <option value="ROLE_TRAVELLER">Travellers Only</option>
+                            <option value="ROLE_PROVIDER">Providers Only</option>
+                        </select>
+                        <textarea
+                            value={broadcastMessage}
+                            onChange={(e) => setBroadcastMessage(e.target.value)}
+                            placeholder="Type your broadcast message..."
+                            rows={3}
+                            style={{
+                                padding: '10px', borderRadius: '8px', border: '1px solid #fde68a',
+                                fontSize: '14px', resize: 'vertical', width: '100%', maxWidth: '600px'
+                            }}
+                        />
+                        <button
+                            onClick={handleBroadcast}
+                            disabled={notifSending}
+                            className="btn"
+                            style={{
+                                background: '#d97706', color: 'white', padding: '10px 20px',
+                                borderRadius: '8px', width: 'fit-content', opacity: notifSending ? 0.6 : 1
+                            }}
+                        >
+                            {notifSending ? 'Sending...' : '📣 Broadcast'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <>
             <Navbar />
@@ -413,14 +567,19 @@ export default function AdminDashboard() {
                         <button className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => {setActiveTab('users'); setSearchTerm("");}}>👥 Users</button>
                         <button className={`nav-item ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => {setActiveTab('posts'); setSearchTerm("");}}>📝 Services</button>
                         <button className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => {setActiveTab('reviews'); setSearchTerm("");}}>⭐ Reviews</button>
+                        <button className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => {setActiveTab('notifications'); setSearchTerm("");}}>📢 Notifications</button>
                     </nav>
                 </aside>
                 <main className="admin-content">
-                    <h1>{activeTab.toUpperCase()}</h1>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                        <h1>{activeTab.toUpperCase()}</h1>
+                        <NotificationPanel />
+                    </div>
                     {activeTab === "overview" && renderOverview()}
                     {activeTab === "users" && renderUserManagement()}
                     {activeTab === "posts" && renderPostManagement()}
                     {activeTab === "reviews" && renderReviewManagement()}
+                    {activeTab === "notifications" && renderNotifications()}
                 </main>
             </div>
             <Footer />

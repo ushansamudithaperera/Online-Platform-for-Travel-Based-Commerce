@@ -6,6 +6,7 @@ import com.travelcommerce.dto.RegisterDTO;
 import com.travelcommerce.model.Role;
 import com.travelcommerce.model.User;
 import com.travelcommerce.service.AuthService;
+import com.travelcommerce.service.NotificationService;
 import com.travelcommerce.repository.UserRepository;
 import com.travelcommerce.config.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ public class AuthController {
     @Autowired private AuthService authService;
     @Autowired private UserRepository userRepository;
     @Autowired private JwtUtil jwtUtil;
+    @Autowired private NotificationService notificationService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterDTO body) {
@@ -37,6 +39,19 @@ public class AuthController {
             u.setRole(Role.ROLE_TRAVELLER);
         }
         User saved = authService.register(u);
+
+        // Notify all admins about the new registration
+        String roleLabel = saved.getRole().name().replace("ROLE_", "").toLowerCase();
+        notificationService.notifyAllAdmins(
+            saved.getId(),
+            saved.getFullname(),
+            "NEW_USER_REGISTERED",
+            saved.getFullname() + " registered as a new " + roleLabel,
+            saved.getId(),
+            null,
+            null
+        );
+
         return ResponseEntity.ok(new ApiResponse(true, "Registered", Map.of("id", saved.getId())));
     }
 
