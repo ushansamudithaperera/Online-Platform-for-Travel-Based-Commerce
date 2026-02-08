@@ -36,18 +36,9 @@ const TITLE_MAX_LENGTH = 50; // or 20 if you prefer the same as ProviderDashboar
 const CURRENCY_SYMBOLS = {
   LKR: "Rs.",
   USD: "$",
-  EUR: "€",
-  GBP: "£",
 };
 
-// Minimum price floor per category (in base currency units)
-const MIN_PRICE_BY_CATEGORY = {
-  "Tour Guide": 100,
-  "Hotel": 500,
-  "Restaurant": 50,
-  "Experience": 200,
-  "Driver": 10,
-};
+
 
 // Category-specific price unit options
 const PRICE_UNITS_BY_CATEGORY = {
@@ -59,8 +50,9 @@ const PRICE_UNITS_BY_CATEGORY = {
     { value: "per hour", label: "Per Hour" },
   ],
   "Hotel": [
+    { value: "per day", label: "Per Day" },
     { value: "per night", label: "Per Night" },
-    { value: "per room per night", label: "Per Room / Night" },
+    { value: "per room", label: "Per Room" },
   ],
   "Restaurant": [], // no unit dropdown — average meal cost
   "Experience": [
@@ -307,14 +299,20 @@ export default function ServiceFormModal({
         setServiceData((prev) => ({ ...prev, priceUnit: units[0].value }));
       }
     } else {
-      // Restaurant — no unit needed
-      setServiceData((prev) => ({ ...prev, priceUnit: "" }));
+      // Restaurant — no unit needed, and clear priceTo since it only uses a single price
+      setServiceData((prev) => ({ ...prev, priceUnit: "", priceTo: "" }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceData.category]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // Title field: allow only letters, spaces, and basic punctuation (no numbers)
+    if (name === "title") {
+      const lettersOnly = value.replace(/[0-9]/g, "");
+      setServiceData((prev) => ({ ...prev, [name]: lettersOnly }));
+      return;
+    }
     setServiceData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -352,7 +350,7 @@ export default function ServiceFormModal({
     return `From ${symbol} ${from}${unit}`;
   };
 
-  // Validate price fields  
+  // Validate price fields
   const getPriceErrors = () => {
     const errors = [];
     const cat = serviceData.category;
@@ -360,11 +358,7 @@ export default function ServiceFormModal({
 
     const from = Number(serviceData.priceFrom);
     const to = serviceData.priceTo ? Number(serviceData.priceTo) : null;
-    const minFloor = MIN_PRICE_BY_CATEGORY[cat] || 0;
 
-    if (serviceData.priceFrom && from < minFloor) {
-      errors.push(`Minimum price for ${cat} is ${CURRENCY_SYMBOLS[serviceData.currency] || serviceData.currency} ${minFloor}`);
-    }
     if (to !== null && from && to <= from) {
       errors.push("Maximum price must be higher than the starting price");
     }
@@ -766,8 +760,6 @@ export default function ServiceFormModal({
                         >
                           <option value="LKR">LKR (Sri Lankan Rupee)</option>
                           <option value="USD">USD (US Dollar)</option>
-                          <option value="EUR">EUR (Euro)</option>
-                          <option value="GBP">GBP (British Pound)</option>
                         </select>
                       </div>
 

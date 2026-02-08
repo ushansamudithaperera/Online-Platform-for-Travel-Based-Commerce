@@ -30,7 +30,14 @@ export default function AddService() {
 
     // Handle Text Inputs
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        // Title field: allow only letters, spaces, and basic punctuation (no numbers)
+        if (name === "title") {
+            const lettersOnly = value.replace(/[0-9]/g, "");
+            setFormData({ ...formData, [name]: lettersOnly });
+            return;
+        }
+        setFormData({ ...formData, [name]: value });
     };
 
     // Handle File Selection
