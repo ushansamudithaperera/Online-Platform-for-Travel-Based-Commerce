@@ -2,6 +2,7 @@ package com.travelcommerce.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.travelcommerce.dto.TripPlanRequestDTO;
+import com.travelcommerce.dto.SmartSearchResponseDTO;
 import com.travelcommerce.service.AITripPlannerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -47,22 +48,19 @@ public class AITripPlannerController {
             String searchQuery = (String) request.get("searchQuery");
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> availablePosts = (List<Map<String, Object>>) request.get("availablePosts");
-            
-            if (searchQuery == null || searchQuery.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "searchQuery is required"));
+
+            if (availablePosts == null) {
+                availablePosts = new ArrayList<>();
             }
-            
-            if (availablePosts == null || availablePosts.isEmpty()) {
-                return ResponseEntity.ok(Map.of("matchedPostIds", new ArrayList<>()));
-            }
-            
+
             System.out.println("Smart search request - Query: " + searchQuery + ", Posts count: " + availablePosts.size());
-            
-            List<Long> matchedIds = aiTripPlannerService.smartSearch(searchQuery, availablePosts);
-            
-            System.out.println("Smart search result - Matched IDs: " + matchedIds);
-            
-            return ResponseEntity.ok(Map.of("matchedPostIds", matchedIds));
+
+            SmartSearchResponseDTO response = aiTripPlannerService.smartSearchExplainable(searchQuery, availablePosts);
+
+            System.out.println("Smart search result - Strategy: " + (response.getInterpretation() != null ? response.getInterpretation().getStrategy() : "") +
+                    ", Matched IDs: " + (response.getMatchedPostIds() != null ? response.getMatchedPostIds().size() : 0));
+
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
