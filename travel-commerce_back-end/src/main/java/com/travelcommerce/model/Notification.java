@@ -18,7 +18,10 @@ public class Notification {
 
     private String type;             // BOOKING_NEW, BOOKING_CONFIRMED, BOOKING_CANCELLED,
                                      // BOOKING_COMPLETED, BOOKING_DELETED,
-                                     // REVIEW_NEW, REVIEW_REPLY
+                                     // REVIEW_NEW, REVIEW_REPLY, REVIEW_DELETED,
+                                     // ADMIN_MESSAGE, SERVICE_APPROVED, SERVICE_REJECTED,
+                                     // SERVICE_DELETED, USER_REMOVED, NEW_SERVICE_POSTED,
+                                     // NEW_USER_REGISTERED
 
     private String message;          // human-readable notification text
     private String relatedId;        // bookingId or reviewId

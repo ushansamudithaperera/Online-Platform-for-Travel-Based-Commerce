@@ -73,6 +73,17 @@ public class BookingController {
             service.getTitle()
         );
 
+        // Notify all admins about the new booking
+        notificationService.notifyAllAdmins(
+            userId,
+            user.getFullname(),
+            "BOOKING_NEW",
+            user.getFullname() + " booked \"" + service.getTitle() + "\"",
+            saved.getId(),
+            service.getId(),
+            service.getTitle()
+        );
+
         return ResponseEntity.ok(new ApiResponse(true, "Booking created successfully", Map.of("booking", saved)));
     }
 

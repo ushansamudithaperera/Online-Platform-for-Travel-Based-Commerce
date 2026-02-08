@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
 import com.travelcommerce.repository.ServiceRepository;
+import com.travelcommerce.service.NotificationService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ public class ServiceController {
     @Autowired private ObjectMapper objectMapper;
 
     @Autowired private ServiceRepository serviceRepository;
+    @Autowired private NotificationService notificationService;
 
     private static String validateAndCleanWhatsappNumber(String raw) {
         if (raw == null) return null;
@@ -267,6 +269,17 @@ public class ServiceController {
                 saved = servicePostService.create(post);
             }
 
+            // Notify all admins about the new service posting
+            notificationService.notifyAllAdmins(
+                userId,
+                user.getFullname(),
+                "NEW_SERVICE_POSTED",
+                user.getFullname() + " posted a new service: \"" + saved.getTitle() + "\"",
+                saved.getId(),
+                saved.getId(),
+                saved.getTitle()
+            );
+
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
             logger.error("Error creating service", e);
@@ -340,6 +353,32 @@ public class ServiceController {
             if (updated.getAdminMessage() != null) {
                 existing.setAdminMessage(updated.getAdminMessage());
             }
+
+            // Notify the provider about the admin's decision
+            String statusUpper = updated.getStatus().toString().toUpperCase();
+            String notifType;
+            String notifMessage;
+            if ("ACTIVE".equals(statusUpper)) {
+                notifType = "SERVICE_APPROVED";
+                notifMessage = "Your service \"" + existing.getTitle() + "\" has been approved by admin";
+            } else if ("BANNED".equals(statusUpper)) {
+                notifType = "SERVICE_REJECTED";
+                String reason = updated.getAdminMessage() != null ? ": " + updated.getAdminMessage() : "";
+                notifMessage = "Your service \"" + existing.getTitle() + "\" has been rejected by admin" + reason;
+            } else {
+                notifType = "ADMIN_MESSAGE";
+                notifMessage = "Your service \"" + existing.getTitle() + "\" status changed to " + statusUpper;
+            }
+            notificationService.createNotification(
+                existing.getProviderId(),
+                userId,
+                user.getFullname(),
+                notifType,
+                notifMessage,
+                existing.getId(),
+                existing.getId(),
+                existing.getTitle()
+            );
         }
         // 🟢 FIX END NEW
 
@@ -494,8 +533,41 @@ public class ServiceController {
 
         if (!owner && !isAdmin) return ResponseEntity.status(403).body("Forbidden");
 
+        // Capture info before deleting
+        String providerId = existing.getProviderId();
+        String serviceTitle = existing.getTitle();
+        String serviceIdCopy = existing.getId();
+
         servicePostService.delete(id);
         logger.info("Service {} deleted by user {}", id, userId);
+
+        // If admin deleted a provider's service, notify the provider
+        if (isAdmin && !owner) {
+            notificationService.createNotification(
+                providerId,
+                userId,
+                user.getFullname(),
+                "SERVICE_DELETED",
+                "Admin deleted your service \"" + serviceTitle + "\"",
+                serviceIdCopy,
+                serviceIdCopy,
+                serviceTitle
+            );
+        }
+
+        // If provider deleted their own service, notify admins
+        if (owner && !isAdmin) {
+            notificationService.notifyAllAdmins(
+                userId,
+                user != null ? user.getFullname() : "Provider",
+                "SERVICE_DELETED",
+                (user != null ? user.getFullname() : "A provider") + " deleted their service \"" + serviceTitle + "\"",
+                serviceIdCopy,
+                serviceIdCopy,
+                serviceTitle
+            );
+        }
+
         return ResponseEntity.ok("Deleted");
     }
 }

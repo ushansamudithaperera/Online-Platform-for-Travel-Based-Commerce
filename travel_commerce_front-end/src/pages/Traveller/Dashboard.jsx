@@ -157,6 +157,17 @@ export default function TravellerDashboard() {
         setActiveImageIndex((prev) => (prev === selectedImages.length - 1 ? 0 : prev + 1));
     };
     
+    // Keyboard navigation for image gallery
+    useEffect(() => {
+        if (!selectedPost) return;
+        const handleKeyDown = (e) => {
+            if (e.key === "ArrowLeft") { e.preventDefault(); goToPrevImage(); }
+            else if (e.key === "ArrowRight") { e.preventDefault(); goToNextImage(); }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [selectedPost, selectedImages.length]);
+
     // Fetch data from backend on component mount
     useEffect(() => {
         if (activeTab === "services") {
