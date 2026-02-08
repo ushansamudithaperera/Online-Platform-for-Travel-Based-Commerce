@@ -14,6 +14,10 @@ import ProviderDashboard from "./pages/Provider/ProviderDashboard.jsx";
 import AdminLogin from "./pages/Admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 
+/* payment flow */
+import CheckoutPage from "./components/CheckoutPage.jsx";
+import PaymentSuccessPage from "./components/PaymentSuccessPage.jsx";
+
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 export default function RoutesElement() {
@@ -36,6 +40,8 @@ export default function RoutesElement() {
 
       <Route element={<ProtectedRoute allowedRoles={["provider"]} />}>
         <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+        <Route path="/payment/checkout" element={<CheckoutPage />} />
+        <Route path="/payment/success" element={<PaymentSuccessPage />} />
       </Route>
 
       <Route path="/admin/login" element={<AdminLogin />} />

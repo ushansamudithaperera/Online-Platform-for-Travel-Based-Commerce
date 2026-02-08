@@ -1,104 +1,295 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from './Navbar'; // Corrected path (from previous fix)
-import Footer from './Footer'; // Corrected path (from previous fix)
-// 🚨 FIX: Corrected CSS import path
-import '../styles/PaymentFlow.css'; 
+import React, { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import { createService } from "../api/serviceApi";
+import "../styles/PaymentFlow.css";
+
+/* ─── Card brand detector ─── */
+const detectBrand = (num) => {
+  if (!num) return null;
+  if (num.startsWith("4")) return "visa";
+  if (/^5[1-5]/.test(num) || /^2[2-7]/.test(num)) return "mastercard";
+  if (num.startsWith("3")) return "amex";
+  return "generic";
+};
+
+const BRAND_LABELS = { visa: "VISA", mastercard: "MC", amex: "AMEX", generic: "" };
 
 export default function CheckoutPage() {
-    const nav = useNavigate();
-    const location = useLocation();
-    const { postData, selectedPlan } = location.state || {};
+  const nav = useNavigate();
+  const location = useLocation();
+  const { formSnapshot, selectedPlan } = location.state || {};
 
-    const [cardDetails, setCardDetails] = useState({
-        number: '4242424242424242', // Mock card for easy testing
-        expiry: '12/26',
-        cvc: '123',
-        name: 'John Doe'
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+  /* ─── state ─── */
+  const [step, setStep] = useState(1); // 1 = payment, 2 = processing
+  const [card, setCard] = useState({ number: "", name: "", expiry: "", cvc: "" });
+  const [errors, setErrors] = useState({});
+  const [progress, setProgress] = useState(0);
 
-    if (!selectedPlan || !postData) {
-        return (
-            <div className="payment-error">
-                <p>⚠️ Error: Missing plan or service details. Please start over.</p>
-            </div>
-        );
-    }
-
-    const handlePaymentSubmit = (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        // --- MOCK PAYMENT PROCESSING ---
-        setTimeout(() => {
-            setLoading(false);
-            
-            // Simulate a successful payment
-            const isSuccess = cardDetails.number.startsWith('4242');
-            
-            if (isSuccess) {
-                nav('/payment/success', { 
-                    state: { 
-                        planName: selectedPlan.name, 
-                        postTitle: postData.description.substring(0, 30) + '...', // Use description for title since title is missing here
-                        isNewPost: true
-                    } 
-                });
-            } else {
-                setError('Payment failed. Please check your card details.');
-            }
-        }, 2000);
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setCardDetails(prev => ({ ...prev, [name]: value }));
-    };
-
+  /* ─── missing data guard ─── */
+  if (!formSnapshot || !selectedPlan) {
     return (
-        <>
-            <Navbar />
-            <div className="payment-flow-container">
-                <div className="payment-box checkout-box">
-                    <h2 className="payment-title">Complete Payment</h2>
-                    {/* Note: postData.title is missing, using description for temporary display */}
-                    <p className="payment-subtitle">Post: **{postData.description.substring(0, 30)}...** | Plan: **{selectedPlan.name}** | Amount: **${selectedPlan.price}**</p>
-                    
-                    <form onSubmit={handlePaymentSubmit} className="checkout-form">
-                        
-                        <label>Card Number</label>
-                        <input type="text" name="number" value={cardDetails.number} onChange={handleChange} required maxLength="16" placeholder="XXXX XXXX XXXX XXXX" />
-
-                        <label>Name on Card</label>
-                        <input type="text" name="name" value={cardDetails.name} onChange={handleChange} required placeholder="Full Name" />
-
-                        <div className="expiry-group">
-                            <div>
-                                <label>Expiry (MM/YY)</label>
-                                <input type="text" name="expiry" value={cardDetails.expiry} onChange={handleChange} required maxLength="5" placeholder="MM/YY" />
-                            </div>
-                            <div>
-                                <label>CVC</label>
-                                <input type="text" name="cvc" value={cardDetails.cvc} onChange={handleChange} required maxLength="4" placeholder="CVC" />
-                            </div>
-                        </div>
-
-                        {error && <p className="error-msg">{error}</p>}
-                        
-                        <button type="submit" className="post-btn" disabled={loading}>
-                            {loading ? `Processing $${selectedPlan.price}...` : `Pay $${selectedPlan.price} and Post`}
-                        </button>
-
-                        <p className="mock-note">
-                            *This is a mock checkout. Use any details; payment will succeed if card starts with 4242.
-                        </p>
-                    </form>
-                </div>
-            </div>
-            <Footer />
-        </>
+      <>
+        <Navbar />
+        <div className="pf-container">
+          <div className="pf-card pf-error-card">
+            <div className="pf-error-icon">⚠️</div>
+            <h2>Something went wrong</h2>
+            <p>Service details are missing. Please create a new post from the dashboard.</p>
+            <Link to="/provider/dashboard" className="pf-btn pf-btn-primary">
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </>
     );
+  }
+
+  /* ─── helpers ─── */
+  const formatCardNumber = (raw) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 16);
+    return digits.replace(/(.{4})/g, "$1 ").trim();
+  };
+
+  const handleCardChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "number") {
+      setCard((p) => ({ ...p, number: value.replace(/\D/g, "").slice(0, 16) }));
+    } else if (name === "expiry") {
+      let v = value.replace(/[^\d/]/g, "");
+      const raw = v.replace("/", "");
+      if (raw.length > 4) return;
+      if (raw.length > 2) v = raw.slice(0, 2) + "/" + raw.slice(2);
+      else v = raw;
+      setCard((p) => ({ ...p, expiry: v }));
+    } else if (name === "cvc") {
+      setCard((p) => ({ ...p, cvc: value.replace(/\D/g, "").slice(0, 4) }));
+    } else {
+      setCard((p) => ({ ...p, [name]: value }));
+    }
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: "" }));
+  };
+
+  const validate = () => {
+    const e = {};
+    if (card.number.length < 13) e.number = "Enter a valid card number";
+    if (!card.name.trim()) e.name = "Name is required";
+    if (!/^\d{2}\/\d{2}$/.test(card.expiry)) e.expiry = "Use MM/YY format";
+    if (card.cvc.length < 3) e.cvc = "Enter a valid CVC";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handlePayment = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setStep(2);
+    setProgress(0);
+
+    const interval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 100) { clearInterval(interval); return 100; }
+        return p + Math.random() * 15 + 5;
+      });
+    }, 300);
+
+    // Simulate payment processing delay
+    await new Promise((resolve) => setTimeout(resolve, 2800));
+    clearInterval(interval);
+    setProgress(100);
+
+    try {
+      // Create the service AFTER successful payment
+      const formData = new FormData();
+      const serviceJson = JSON.stringify({
+        ...formSnapshot.serviceData,
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        serviceOfferings: formSnapshot.serviceOfferings,
+      });
+      formData.append("serviceData", serviceJson);
+      formSnapshot.photos.forEach((file) => formData.append("images", file));
+
+      const response = await createService(formData);
+      const createdService = response.data;
+
+      nav("/payment/success", {
+        state: {
+          planName: selectedPlan.name,
+          planPrice: selectedPlan.price,
+          postTitle: createdService.title || formSnapshot.serviceData.title || "Your Service",
+          postId: createdService.id,
+          isNewPost: true,
+        },
+      });
+    } catch (err) {
+      console.error("Service creation failed after payment:", err);
+      setStep(1);
+      setErrors({ number: "Payment processed but service creation failed. Please try again." });
+    }
+  };
+
+  const brand = detectBrand(card.number);
+
+  return (
+    <>
+      <Navbar />
+      <div className="pf-container">
+        {/* ─── Progress Stepper ─── */}
+        <div className="pf-stepper">
+          {["Payment", "Confirmation"].map((label, i) => {
+            const num = i + 1;
+            const isActive = step === num;
+            const isDone = step > num;
+            return (
+              <React.Fragment key={label}>
+                <div className={`pf-step ${isActive ? "active" : ""} ${isDone ? "done" : ""}`}>
+                  <div className="pf-step-circle">{isDone ? "✓" : num}</div>
+                  <span className="pf-step-label">{label}</span>
+                </div>
+                {i < 1 && <div className={`pf-step-line ${isDone ? "done" : ""}`} />}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* ════════ STEP 1 — Payment ════════ */}
+        {step === 1 && (
+          <div className="pf-card pf-payment-card">
+            <div className="pf-payment-layout">
+              {/* Left — Order Summary */}
+              <div className="pf-order-summary">
+                <h3>Order Summary</h3>
+                <div className="pf-summary-item">
+                  <span className="pf-summary-label">Service</span>
+                  <span className="pf-summary-value">{formSnapshot.serviceData?.title || "New Service"}</span>
+                </div>
+                <div className="pf-summary-item">
+                  <span className="pf-summary-label">Plan</span>
+                  <span className="pf-summary-value pf-plan-tag" style={{ background: selectedPlan.color }}>
+                    {selectedPlan.name}
+                  </span>
+                </div>
+                <div className="pf-summary-item">
+                  <span className="pf-summary-label">Photos allowed</span>
+                  <span className="pf-summary-value">{selectedPlan.photoLimit}</span>
+                </div>
+                <div className="pf-summary-divider" />
+                <div className="pf-summary-item pf-summary-total">
+                  <span className="pf-summary-label">Total</span>
+                  <span className="pf-summary-value">${selectedPlan.price}.00</span>
+                </div>
+                <div className="pf-secure-note">
+                  <span>🔒</span> Secure checkout — your data is encrypted
+                </div>
+              </div>
+
+              {/* Right — Card Form */}
+              <form className="pf-card-form" onSubmit={handlePayment}>
+                <h3>Payment Details</h3>
+
+                <div className="pf-form-group">
+                  <label>Card Number</label>
+                  <div className={`pf-input-wrapper ${errors.number ? "error" : ""}`}>
+                    <span className="pf-input-icon">💳</span>
+                    <input
+                      type="text"
+                      name="number"
+                      value={formatCardNumber(card.number)}
+                      onChange={handleCardChange}
+                      placeholder="1234 5678 9012 3456"
+                      autoComplete="cc-number"
+                    />
+                    {brand && <span className="pf-card-brand">{BRAND_LABELS[brand]}</span>}
+                  </div>
+                  {errors.number && <span className="pf-field-error">{errors.number}</span>}
+                </div>
+
+                <div className="pf-form-group">
+                  <label>Name on Card</label>
+                  <div className={`pf-input-wrapper ${errors.name ? "error" : ""}`}>
+                    <span className="pf-input-icon">👤</span>
+                    <input
+                      type="text"
+                      name="name"
+                      value={card.name}
+                      onChange={handleCardChange}
+                      placeholder="John Doe"
+                      autoComplete="cc-name"
+                    />
+                  </div>
+                  {errors.name && <span className="pf-field-error">{errors.name}</span>}
+                </div>
+
+                <div className="pf-form-row">
+                  <div className="pf-form-group">
+                    <label>Expiry Date</label>
+                    <div className={`pf-input-wrapper ${errors.expiry ? "error" : ""}`}>
+                      <span className="pf-input-icon">📅</span>
+                      <input
+                        type="text"
+                        name="expiry"
+                        value={card.expiry}
+                        onChange={handleCardChange}
+                        placeholder="MM/YY"
+                        autoComplete="cc-exp"
+                      />
+                    </div>
+                    {errors.expiry && <span className="pf-field-error">{errors.expiry}</span>}
+                  </div>
+                  <div className="pf-form-group">
+                    <label>CVC</label>
+                    <div className={`pf-input-wrapper ${errors.cvc ? "error" : ""}`}>
+                      <span className="pf-input-icon">🔐</span>
+                      <input
+                        type="text"
+                        name="cvc"
+                        value={card.cvc}
+                        onChange={handleCardChange}
+                        placeholder="123"
+                        autoComplete="cc-csc"
+                      />
+                    </div>
+                    {errors.cvc && <span className="pf-field-error">{errors.cvc}</span>}
+                  </div>
+                </div>
+
+                <div className="pf-card-actions">
+                  <button type="button" className="pf-btn pf-btn-ghost" onClick={() => nav("/provider/dashboard", { state: { returnFormData: formSnapshot } })}>
+                    ← Back to Service Form
+                  </button>
+                  <button type="submit" className="pf-btn pf-btn-primary pf-btn-pay">
+                    Pay ${selectedPlan.price}.00
+                  </button>
+                </div>
+
+                <p className="pf-mock-badge">
+                  🧪 Demo Mode — No real charges. Enter any card details to proceed.
+                </p>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ════════ STEP 2 — Processing ════════ */}
+        {step === 2 && (
+          <div className="pf-card pf-processing-card">
+            <div className="pf-processing-content">
+              <div className="pf-spinner-ring" />
+              <h2>Processing Payment</h2>
+              <p>Please wait while we securely process your payment…</p>
+              <div className="pf-progress-bar">
+                <div className="pf-progress-fill" style={{ width: `${Math.min(progress, 100)}%` }} />
+              </div>
+              <span className="pf-progress-text">{Math.round(Math.min(progress, 100))}%</span>
+            </div>
+          </div>
+        )}
+      </div>
+      <Footer />
+    </>
+  );
 }
