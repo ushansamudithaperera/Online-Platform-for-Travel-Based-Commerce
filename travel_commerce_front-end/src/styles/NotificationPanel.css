@@ -1,0 +1,337 @@
+/* ══════════════════════════════════════════════════════
+   NotificationPanel.css — Bell + Dropdown notification UI
+   ══════════════════════════════════════════════════════ */
+
+/* ─── Container ─── */
+.np-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ─── Bell Button ─── */
+.np-bell-btn {
+  position: relative;
+  background: none;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #475569;
+  background: #f8fafc;
+}
+
+.np-bell-btn:hover {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4f46e5;
+  transform: scale(1.05);
+}
+
+.np-bell-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ─── Unread badge ─── */
+.np-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  animation: np-pulse 2s infinite;
+}
+
+@keyframes np-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ─── Dropdown Panel ─── */
+.np-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 380px;
+  max-height: 480px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: np-slideIn 0.2s ease-out;
+}
+
+@keyframes np-slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ─── Header ─── */
+.np-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.np-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.np-unread-count {
+  font-size: 11px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.np-header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.np-action-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.np-action-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.np-clear-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* ─── Notification List ─── */
+.np-list {
+  overflow-y: auto;
+  max-height: 380px;
+  padding: 6px;
+}
+
+.np-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.np-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+/* ─── Notification Item ─── */
+.np-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.np-item:hover {
+  background: #f8fafc;
+}
+
+.np-item.np-unread {
+  background: #f0f4ff;
+}
+
+.np-item.np-unread:hover {
+  background: #e8edff;
+}
+
+/* ─── Item Icon ─── */
+.np-item-icon {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ─── Item Content ─── */
+.np-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.np-item-message {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.4;
+  margin: 0 0 3px;
+  word-wrap: break-word;
+}
+
+.np-unread .np-item-message {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.np-item-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ─── Unread Dot ─── */
+.np-item-dot {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  background: #6366f1;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.5);
+}
+
+/* ─── Empty State ─── */
+.np-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.np-empty-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.np-empty p {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 4px;
+}
+
+.np-empty-sub {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ─── Spinner ─── */
+.np-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: np-spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes np-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Dashboard integration helpers ─── */
+
+/* Provider Dashboard header wrapper */
+.provider-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Traveller Dashboard tabs section */
+.tabs-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tabs-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tabs-right {
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  .np-dropdown {
+    width: 320px;
+    right: -40px;
+  }
+
+  .np-item-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 14px;
+  }
+
+  .np-item-message {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .np-dropdown {
+    width: 290px;
+    right: -60px;
+  }
+}

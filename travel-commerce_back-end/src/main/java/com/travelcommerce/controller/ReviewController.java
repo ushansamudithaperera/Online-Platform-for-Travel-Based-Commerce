@@ -6,6 +6,9 @@ import com.travelcommerce.model.User;
 import com.travelcommerce.model.Role; // 🟢 ADDED THIS IMPORT
 import com.travelcommerce.repository.ReviewRepository;
 import com.travelcommerce.repository.UserRepository;
+import com.travelcommerce.repository.ServiceRepository;
+import com.travelcommerce.model.ServicePost;
+import com.travelcommerce.service.NotificationService;
 import com.travelcommerce.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +32,12 @@ public class ReviewController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ServiceRepository serviceRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
     // Create review
     @PostMapping
     public ResponseEntity<?> createReview(@RequestBody Review review, Authentication auth) {
@@ -47,6 +56,22 @@ public class ReviewController {
         review.setTravellerName(user.getFullname());
 
         Review saved = reviewRepository.save(review);
+
+        // Notify the service provider about the new review
+        ServicePost service = serviceRepository.findById(review.getServiceId()).orElse(null);
+        if (service != null && service.getProviderId() != null) {
+            notificationService.createNotification(
+                service.getProviderId(),
+                userId,
+                user.getFullname(),
+                "REVIEW_NEW",
+                user.getFullname() + " left a " + review.getRating() + "-star review on \"" + service.getTitle() + "\"",
+                saved.getId(),
+                service.getId(),
+                service.getTitle()
+            );
+        }
+
         return ResponseEntity.ok(new ApiResponse(true, "Review submitted successfully", Map.of("review", saved)));
     }
 
@@ -129,6 +154,23 @@ public class ReviewController {
         reply.setRating(0); // Replies don't have ratings
 
         Review saved = reviewRepository.save(reply);
+
+        // Notify the parent review author about the reply
+        if (!parentReview.getTravellerId().equals(userId)) {
+            ServicePost service = serviceRepository.findById(parentReview.getServiceId()).orElse(null);
+            String serviceTitle = service != null ? service.getTitle() : "a service";
+            notificationService.createNotification(
+                parentReview.getTravellerId(),
+                userId,
+                user.getFullname(),
+                "REVIEW_REPLY",
+                user.getFullname() + " replied to your review on \"" + serviceTitle + "\"",
+                saved.getId(),
+                parentReview.getServiceId(),
+                serviceTitle
+            );
+        }
+
         return ResponseEntity.ok(new ApiResponse(true, "Reply submitted successfully", Map.of("reply", saved)));
     }
     

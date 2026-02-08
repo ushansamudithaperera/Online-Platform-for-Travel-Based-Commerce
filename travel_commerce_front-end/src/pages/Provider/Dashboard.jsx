@@ -11,6 +11,7 @@ import {
 import { getProviderBookings, updateBookingStatus, deleteBooking } from "../../api/travellerApi";
 import BookingDetailsCard from "../../components/BookingDetailsCard";
 import ServiceFormModal from "../../components/ServiceFormModal";
+import NotificationPanel from "../../components/NotificationPanel";
 import { useToast } from "../../context/ToastContext";
 
 const backendBaseUrl =
@@ -275,12 +276,15 @@ export default function ProviderDashboard() {
                 details, images and pricing anytime.
               </p>
             </div>
-            <button
-              className="add-btn"
-              onClick={() => setShowCreateModal(true)}
-            >
-              + Add New Service
-            </button>
+            <div className="provider-header-actions">
+              <NotificationPanel />
+              <button
+                className="add-btn"
+                onClick={() => setShowCreateModal(true)}
+              >
+                + Add New Service
+              </button>
+            </div>
           </div>
 
           {loading ? (

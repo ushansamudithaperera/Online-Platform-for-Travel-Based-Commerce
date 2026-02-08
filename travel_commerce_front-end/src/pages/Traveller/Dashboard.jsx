@@ -9,6 +9,7 @@ import TripPlanner from "../../components/TripPlanner";
 import CategoryBookingForm from "../../components/CategoryBookingForm";
 import BookingDetailsCard from "../../components/BookingDetailsCard";
 import ReviewSection from "../../components/ReviewSection";
+import NotificationPanel from "../../components/NotificationPanel";
 import { getBookingConfig, getCategoryKey } from "../../config/bookingCategoryConfig";
 import { SRI_LANKA_DISTRICTS, normalizeDistrict } from "../../config/sriLankaDistricts";
 
@@ -878,6 +879,7 @@ export default function TravellerDashboard() {
             <div className="traveller-container">
                 {/* TABS */}
                 <div className="tabs-section">
+                    <div className="tabs-left">
                     <button 
                         className={`tab-btn ${activeTab === "services" ? "active" : ""}`}
                         onClick={() => setActiveTab("services")}
@@ -908,6 +910,10 @@ export default function TravellerDashboard() {
                     >
                         My Reviews
                     </button>
+                    </div>
+                    <div className="tabs-right">
+                        <NotificationPanel />
+                    </div>
                 </div>
 
                 {/* SERVICES / FAVORITES TAB */}

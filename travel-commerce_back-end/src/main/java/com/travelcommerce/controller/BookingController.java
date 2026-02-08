@@ -7,6 +7,7 @@ import com.travelcommerce.repository.UserRepository;
 import com.travelcommerce.repository.ServiceRepository;
 import com.travelcommerce.model.ServicePost;
 import com.travelcommerce.dto.ApiResponse;
+import com.travelcommerce.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,9 @@ public class BookingController {
     
     @Autowired
     private ServiceRepository serviceRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     // Create booking
     @PostMapping
@@ -56,6 +60,19 @@ public class BookingController {
         booking.setStatus("PENDING");
 
         Booking saved = bookingRepository.save(booking);
+
+        // Notify provider about new booking
+        notificationService.createNotification(
+            service.getProviderId(),
+            userId,
+            user.getFullname(),
+            "BOOKING_NEW",
+            user.getFullname() + " booked your service \"" + service.getTitle() + "\"",
+            saved.getId(),
+            service.getId(),
+            service.getTitle()
+        );
+
         return ResponseEntity.ok(new ApiResponse(true, "Booking created successfully", Map.of("booking", saved)));
     }
 
@@ -137,6 +154,21 @@ public class BookingController {
         booking.setUpdatedAt(new Date());
         bookingRepository.save(booking);
 
+        // Notify traveller about status change
+        User provider = userRepository.findById(userId).orElse(null);
+        String providerName = provider != null ? provider.getFullname() : "Provider";
+        String statusLabel = newStatus.substring(0, 1).toUpperCase() + newStatus.substring(1).toLowerCase();
+        notificationService.createNotification(
+            booking.getTravellerId(),
+            userId,
+            providerName,
+            "BOOKING_" + newStatus.toUpperCase(),
+            providerName + " " + statusLabel.toLowerCase() + " your booking for \"" + booking.getServiceTitle() + "\"",
+            booking.getId(),
+            booking.getServiceId(),
+            booking.getServiceTitle()
+        );
+
         return ResponseEntity.ok(new ApiResponse(true, "Status updated", Map.of("booking", booking)));
     }
 
@@ -164,6 +196,21 @@ public class BookingController {
         booking.setStatus("CANCELLED");
         booking.setUpdatedAt(new Date());
         Booking saved = bookingRepository.save(booking);
+
+        // Notify provider about traveller's cancellation
+        User traveller = userRepository.findById(userId).orElse(null);
+        String travellerName = traveller != null ? traveller.getFullname() : "Traveller";
+        notificationService.createNotification(
+            booking.getProviderId(),
+            userId,
+            travellerName,
+            "BOOKING_CANCELLED",
+            travellerName + " cancelled their booking for \"" + booking.getServiceTitle() + "\"",
+            booking.getId(),
+            booking.getServiceId(),
+            booking.getServiceTitle()
+        );
+
         return ResponseEntity.ok(new ApiResponse(true, "Booking cancelled", Map.of("booking", saved)));
     }
 
@@ -194,6 +241,22 @@ public class BookingController {
         }
 
         bookingRepository.deleteById(id);
+
+        // Notify the other party about the deletion
+        User currentUser = userRepository.findById(userId).orElse(null);
+        String currentUserName = currentUser != null ? currentUser.getFullname() : "User";
+        String recipientId = isTraveller ? booking.getProviderId() : booking.getTravellerId();
+        notificationService.createNotification(
+            recipientId,
+            userId,
+            currentUserName,
+            "BOOKING_DELETED",
+            currentUserName + " deleted the booking for \"" + booking.getServiceTitle() + "\"",
+            id,
+            booking.getServiceId(),
+            booking.getServiceTitle()
+        );
+
         return ResponseEntity.ok(new ApiResponse(true, "Booking deleted", null));
     }
 }
