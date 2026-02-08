@@ -205,6 +205,7 @@ export default function NotificationPanel() {
                     {TYPE_ICONS[n.type] || "🔔"}
                   </div>
                   <div className="np-item-content">
+                    {n.senderName && <p className="np-item-sender"><strong>From:</strong> {n.senderName}</p>}
                     <p className="np-item-message">{n.message}</p>
                     <span className="np-item-time">{timeAgo(n.createdAt)}</span>
                   </div>
