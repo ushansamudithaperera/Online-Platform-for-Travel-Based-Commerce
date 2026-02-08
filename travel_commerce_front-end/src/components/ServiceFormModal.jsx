@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createService, updateService } from "../api/serviceApi";
+import { useToast } from "../context/ToastContext";
 import "../styles/ServiceFormModal.css";
 
 import ReactQuill from "react-quill";
@@ -161,6 +162,7 @@ export default function ServiceFormModal({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
 
   // text fields
   const [serviceData, setServiceData] = useState({
@@ -512,6 +514,7 @@ export default function ServiceFormModal({
 
         const res = await updateService(initialService.id, formData);
         if (onUpdate) onUpdate(res.data);
+        toast.success("Service updated successfully!");
         onClose();
         return;
       }
@@ -554,6 +557,7 @@ export default function ServiceFormModal({
       }
 
       setError(finalMsg);
+      toast.error(finalMsg);
       console.error("Submission error:", err);
     } finally {
       setLoading(false);

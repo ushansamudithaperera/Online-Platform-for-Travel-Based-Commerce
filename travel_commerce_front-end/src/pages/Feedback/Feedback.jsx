@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import axios from "axios";
 
 export default function Feedback() {
     const { user } = useAuth();
+    const toast = useToast();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: "",
@@ -59,6 +61,7 @@ export default function Feedback() {
             const response = await axios.post("http://localhost:8080/api/feedback", formData, { headers });
 
             setStatus({ type: "success", message: "Thank you for your feedback!" });
+            toast.success("Feedback submitted successfully! Thank you.");
             // Reset form but keep user details if logged in
             setFormData({
                 name: user ? (user.fullname || user.name || "") : "",
@@ -73,6 +76,7 @@ export default function Feedback() {
                 type: "error",
                 message: error.response?.data?.message || "Something went wrong. Please try again."
             });
+            toast.error(error.response?.data?.message || "Failed to submit feedback. Please try again.");
         } finally {
             setIsSubmitting(false);
         }

@@ -8,8 +8,7 @@ import "../../styles/AdminDashboard.css";
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
-    // 🟢 FIX: Initialize the Toast Hook
-    const { toast } = useToast(); 
+    const toast = useToast(); 
 
     const [activeTab, setActiveTab] = useState("overview");
     const [users, setUsers] = useState([]); 
@@ -53,7 +52,10 @@ export default function AdminDashboard() {
                 headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache, no-store' }
             });
             if (res.ok) setPosts(await res.json());
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to load services");
+        }
     };
 
     const fetchUsers = async () => {
@@ -63,7 +65,10 @@ export default function AdminDashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) setUsers(await res.json());
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to load users");
+        }
     };
 
     const fetchReviews = async () => {
@@ -73,12 +78,22 @@ export default function AdminDashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) setReviews(await res.json());
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to load reviews");
+        }
     };
 
     // --- ACTION HANDLERS (Now using Toast! 🍞) ---
     const handlePostAction = async (postId, action) => {
-        if (!window.confirm(`Are you sure you want to ${action} this post?`)) return;
+        const actionLabels = { delete: 'Delete', approve: 'Approve', reject: 'Reject' };
+        const confirmed = await toast.confirm({
+            title: `${actionLabels[action] || action} Service`,
+            message: `Are you sure you want to ${action} this service? This action cannot be undone.`,
+            type: action === 'delete' ? 'danger' : 'warning',
+            confirmText: actionLabels[action] || 'Confirm',
+        });
+        if (!confirmed) return;
 
         const postToUpdate = posts.find(p => p.id === postId);
         const token = localStorage.getItem("token");
@@ -115,7 +130,13 @@ export default function AdminDashboard() {
     };
 
     const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Remove this user permanently?")) return;
+        const confirmed = await toast.confirm({
+            title: 'Remove User',
+            message: 'Are you sure you want to permanently remove this user? This action cannot be undone.',
+            type: 'danger',
+            confirmText: 'Remove',
+        });
+        if (!confirmed) return;
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
@@ -132,7 +153,13 @@ export default function AdminDashboard() {
     };
 
     const handleDeleteReview = async (reviewId) => {
-        if (!window.confirm("Delete this review?")) return;
+        const confirmed = await toast.confirm({
+            title: 'Delete Review',
+            message: 'Are you sure you want to delete this review?',
+            type: 'danger',
+            confirmText: 'Delete',
+        });
+        if (!confirmed) return;
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:8080/api/reviews/${reviewId}`, {

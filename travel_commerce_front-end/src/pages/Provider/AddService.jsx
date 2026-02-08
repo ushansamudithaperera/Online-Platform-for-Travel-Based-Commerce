@@ -68,6 +68,7 @@ export default function AddService() {
 
         } catch (err) {
             console.error(err);
+            toast.error("Failed to create service. Ensure you are logged in as a Provider.");
             setError("Failed to create service. Ensure you are logged in as a Provider.");
         } finally {
             setLoading(false);

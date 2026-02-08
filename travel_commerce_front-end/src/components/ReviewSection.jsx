@@ -84,6 +84,7 @@ const ReviewItem = ({ review, serviceId, onReviewsUpdate, currentUserId, depth }
         setIsSubmitting(true);
         try {
             await createReply(review.id, { comment: replyText });
+            toast.success('Reply submitted successfully!');
             setReplyText('');
             setShowReplyForm(false);
             onReviewsUpdate(serviceId);
@@ -105,6 +106,7 @@ const ReviewItem = ({ review, serviceId, onReviewsUpdate, currentUserId, depth }
         if (confirmed) {
             try {
                 await deleteReview(review.id);
+                toast.success('Comment deleted successfully!');
                 onReviewsUpdate(serviceId);
             } catch (error) {
                 console.error('Failed to delete:', error);
@@ -120,6 +122,7 @@ const ReviewItem = ({ review, serviceId, onReviewsUpdate, currentUserId, depth }
         setIsSubmitting(true);
         try {
             await updateReview(review.id, { comment: editText, rating: editRating });
+            toast.success('Comment updated successfully!');
             setIsEditing(false);
             onReviewsUpdate(serviceId);
         } catch (error) {

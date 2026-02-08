@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../context/ToastContext";
 import Navbar from "../../components/Navbar"; 
 import Footer from "../../components/Footer";
 import "../../styles/Login.css"; 
@@ -11,6 +12,7 @@ export default function AdminLogin() {
     const [loading, setLoading] = useState(false);
     
     const nav = useNavigate();
+    const toast = useToast();
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -42,15 +44,19 @@ export default function AdminLogin() {
                     localStorage.setItem("role", userRole);
                     localStorage.setItem("user", JSON.stringify(data.user || data)); // Save user details
                     
+                    toast.success("Admin login successful!");
                     window.location.href = "/admin/dashboard";
                 } else {
+                    toast.error(`Access Denied. You do not have admin privileges.`);
                     setErr(`Access Denied. Server says you are: ${userRole}`);
                 }
             } else {
+                toast.error(data.message || "Login failed. Please check your credentials.");
                 setErr(data.message || "Login failed");
             }
         } catch (error) {
             console.error(error);
+            toast.error("Server error. Please ensure the backend is running.");
             setErr("Server error. Check console for details.");
         } finally {
             setLoading(false);

@@ -111,6 +111,7 @@ export default function ProviderDashboard() {
       }
     } catch (error) {
       console.error("Failed to fetch provider posts:", error);
+      toast.error("Failed to load your services. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -127,6 +128,7 @@ export default function ProviderDashboard() {
       }
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
+      toast.error("Failed to load bookings. Please refresh the page.");
     } finally {
       setBookingsLoading(false);
     }
@@ -191,6 +193,7 @@ export default function ProviderDashboard() {
   const handleServiceCreated = (newService) => {
     setPosts((prev) => [newService, ...prev]);
     setSelectedPost(newService);
+    toast.success("Service created successfully!");
   };
 
   const handleServiceUpdated = (updatedService) => {
@@ -198,6 +201,7 @@ export default function ProviderDashboard() {
       prev.map((p) => (p.id === updatedService.id ? updatedService : p))
     );
     setSelectedPost(updatedService);
+    toast.success("Service updated successfully!");
   };
 
   const images = selectedPost?.images || [];

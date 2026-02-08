@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { createService } from "../api/serviceApi";
+import { useToast } from "../context/ToastContext";
 import "../styles/PaymentFlow.css";
 
 /* ─── Card brand detector ─── */
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
   const [card, setCard] = useState({ number: "", name: "", expiry: "", cvc: "" });
   const [errors, setErrors] = useState({});
   const [progress, setProgress] = useState(0);
+  const toast = useToast();
 
   /* ─── missing data guard ─── */
   if (!formSnapshot || !selectedPlan) {
@@ -127,6 +129,7 @@ export default function CheckoutPage() {
       });
     } catch (err) {
       console.error("Service creation failed after payment:", err);
+      toast.error("Payment processed but service creation failed. Please try again.");
       setStep(1);
       setErrors({ number: "Payment processed but service creation failed. Please try again." });
     }

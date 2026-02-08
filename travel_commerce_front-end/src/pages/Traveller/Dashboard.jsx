@@ -247,6 +247,7 @@ export default function TravellerDashboard() {
             setPosts(response.data);
         } catch (error) {
             console.error("Failed to fetch public services:", error);
+            toast.error("Failed to load services. Please refresh the page.");
             setPosts([]); 
         } finally {
             setLoading(false);
@@ -271,6 +272,7 @@ export default function TravellerDashboard() {
             setFavoritePosts(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error("Failed to fetch wishlist:", error);
+            toast.error("Failed to load your wishlist.");
             setFavoritePosts([]);
         } finally {
             setLoading(false);
@@ -284,6 +286,7 @@ export default function TravellerDashboard() {
             setBookings(response.data);
         } catch (error) {
             console.error("Failed to fetch bookings:", error);
+            toast.error("Failed to load your bookings.");
             setBookings([]);
         } finally {
             setLoading(false);
@@ -297,6 +300,7 @@ export default function TravellerDashboard() {
             setMyReviews(response.data);
         } catch (error) {
             console.error("Failed to fetch reviews:", error);
+            toast.error("Failed to load your reviews.");
             setMyReviews([]);
         } finally {
             setLoading(false);
@@ -309,6 +313,7 @@ export default function TravellerDashboard() {
             setServiceReviews(response.data);
         } catch (error) {
             console.error("Failed to fetch service reviews:", error);
+            toast.error("Failed to load reviews for this service.");
             setServiceReviews([]);
         }
     }
@@ -636,6 +641,7 @@ export default function TravellerDashboard() {
 
         try {
             await toggleWishlist(serviceId);
+            toast.success(wasLiked ? "Removed from wishlist" : "Added to wishlist!");
         } catch (error) {
             // revert if server failed
             setWishlistIds((prev) => {
@@ -645,6 +651,7 @@ export default function TravellerDashboard() {
                 return Array.from(prevSet);
             });
             console.error("Wishlist toggle failed:", error);
+            toast.error("Failed to update wishlist. Please try again.");
         }
     };
 
