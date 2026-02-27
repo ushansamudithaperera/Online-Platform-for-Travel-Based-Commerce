@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link } from "react-router-dom";
 import authApi from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
@@ -223,8 +224,36 @@ export default function Register() {
               {loading ? "Registering..." : "Sign Up"}
             </button>
 
+
             {err && <p className="error-msg">{err}</p>}
           </form>
+
+          {/* Google Sign Up Button */}
+          <div style={{ margin: '24px 0', textAlign: 'center' }}>
+            <GoogleLogin
+              text="signup_with"
+              onSuccess={credentialResponse => {
+                // Send credentialResponse.credential (JWT) to your backend for verification
+                fetch('http://localhost:8080/api/oauth2/callback/google', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ token: credentialResponse.credential })
+                })
+                .then(res => res.json())
+                .then(data => {
+                  // Handle registration (store token, redirect, etc.)
+                  // Example: toast.success('Google sign up successful!');
+                  // login(data.user, data.token); // If your backend returns these
+                  // nav('/traveller/dashboard');
+                  toast.success('Google sign up successful!');
+                })
+                .catch(() => toast.error('Google sign up failed'));
+              }}
+              onError={() => {
+                toast.error('Google sign up failed');
+              }}
+            />
+          </div>
 
           <p className="signup-text">
             Already have an account?{" "}

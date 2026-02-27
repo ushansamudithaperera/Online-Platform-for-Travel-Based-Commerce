@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link } from "react-router-dom";
 import authApi from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
@@ -84,6 +85,40 @@ export default function Login() {
               {loading ? "Logging in..." : "Login"}
             </button>
           </form>
+
+          {/* Google Login Button */}
+          <div style={{ margin: '24px 0', textAlign: 'center' }}>
+            <GoogleLogin
+              onSuccess={credentialResponse => {
+                // Send credentialResponse.credential (JWT) to your backend for verification
+                fetch('http://localhost:8080/api/oauth2/callback/google', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ token: credentialResponse.credential })
+                })
+                .then(res => res.json())
+                .then(data => {
+                  if (data && data.token && data.user) {
+                    login(data.user, data.token);
+                    toast.success('Google login successful!');
+                    if (data.user.role === 'ROLE_TRAVELLER' || data.user.role === 'traveller') {
+                      nav('/traveller/dashboard');
+                    } else if (data.user.role === 'ROLE_PROVIDER' || data.user.role === 'provider') {
+                      nav('/provider/dashboard');
+                    } else {
+                      nav('/');
+                    }
+                  } else {
+                    toast.error('Google login failed: Invalid response');
+                  }
+                })
+                .catch(() => toast.error('Google login failed'));
+              }}
+              onError={() => {
+                toast.error('Google login failed');
+              }}
+            />
+          </div>
 
           {/* SIGN UP LINK */}
           <p className="signup-text">
