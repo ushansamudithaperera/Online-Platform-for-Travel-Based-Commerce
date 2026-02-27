@@ -58,7 +58,6 @@ export default function Navbar() {
 
         {/* Menu Items */}
         <div className="nav-links">
-          <Link className="gradient-link" to="/services">Explore</Link>
           <Link className="gradient-link" to="/about">About Us</Link>
           <Link className="gradient-link" to="/contact">Contact</Link>
           <Link className="gradient-link" to="/feedback">Feedback</Link>
@@ -88,7 +87,7 @@ export default function Navbar() {
               {showDropdown && (
                 <div className="profile-dropdown-menu">
                   <div className="dropdown-header">
-                    <p>Logged in as:</p>
+                    <p>Account</p>
                     <p className="user-name-text">
                       <strong>{user.fullname || user.name || user.email}</strong>
                     </p>
@@ -102,11 +101,11 @@ export default function Navbar() {
                     className="dropdown-link"
                     onClick={() => setShowDropdown(false)}
                   >
-                    Dashboard / Profile
+                    Dashboard
                   </Link>
 
                   <button onClick={handleLogout} className="dropdown-logout-btn">
-                    Logout
+                    Sign Out
                   </button>
                 </div>
               )}

@@ -252,19 +252,32 @@ export default function Home() {
       {/* ---------------- KEY FEATURES ---------------- */}
       <section className="key-features scroll-appear">
         <h2 className="section-title">Why Choose Travel Commerce?</h2>
+        <p className="section-subtitle">Experience seamless travel planning with trusted services</p>
         <div className="features-grid">
           <div className="feature-box">
-            <span className="feature-icon">✔</span>
+            <div className="feature-icon-wrapper">
+              <svg className="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <h3 className="feature-title">Verified Providers</h3>
             <p>Only trusted and verified service providers for your peace of mind.</p>
           </div>
           <div className="feature-box">
-            <span className="feature-icon">🔒</span>
+            <div className="feature-icon-wrapper">
+              <svg className="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <h3 className="feature-title">Secure Bookings</h3>
             <p>Your bookings and payments are protected with top-tier security.</p>
           </div>
           <div className="feature-box">
-            <span className="feature-icon">🌍</span>
+            <div className="feature-icon-wrapper">
+              <svg className="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <h3 className="feature-title">All-in-One Platform</h3>
             <p>Everything you need: Guides, drivers, hotels & experiences.</p>
           </div>
@@ -343,19 +356,55 @@ export default function Home() {
       {/* ---------------- HOW IT WORKS ---------------- */}
       <section className="how-it-works scroll-appear">
         <h2 className="section-title">How It Works</h2>
+        <p className="section-subtitle">Get started in three simple steps</p>
         <div className="steps-grid">
           <div className="step-box">
-            <span className="step-number">1</span>
+            <div className="step-number-wrapper">
+              <span className="step-number">01</span>
+            </div>
+            <div className="step-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="19" y2="14"/>
+                <line x1="22" y1="11" x2="16" y2="11"/>
+              </svg>
+            </div>
             <h3>Create Account</h3>
             <p>Sign up as traveller or provider.</p>
           </div>
+          <div className="step-connector"></div>
           <div className="step-box">
-            <span className="step-number">2</span>
+            <div className="step-number-wrapper">
+              <span className="step-number">02</span>
+            </div>
+            <div className="step-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+              </svg>
+            </div>
             <h3>Explore or Publish</h3>
             <p>Browse or publish services easily.</p>
           </div>
+          <div className="step-connector"></div>
           <div className="step-box">
-            <span className="step-number">3</span>
+            <div className="step-number-wrapper">
+              <span className="step-number">03</span>
+            </div>
+            <div className="step-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+                <path d="M8 14h.01"/>
+                <path d="M12 14h.01"/>
+                <path d="M16 14h.01"/>
+                <path d="M8 18h.01"/>
+                <path d="M12 18h.01"/>
+              </svg>
+            </div>
             <h3>Book & Connect</h3>
             <p>Secure bookings and communication.</p>
           </div>

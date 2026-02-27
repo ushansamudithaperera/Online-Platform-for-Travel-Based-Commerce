@@ -1,35 +1,25 @@
 /* HEADER HEIGHT VARIABLE */
 :root {
-  --nav-height: 70px;
+  --nav-height: 75px;
   --bg: #fcfcfc;
 }
 
-/* Push content BELOW the fixed header */
+/* Default: Push content BELOW the fixed header */
 html,
 body {
-  padding-top: 70px !important;
+  padding-top: var(--nav-height) !important;
   scroll-padding-top: var(--nav-height) !important;
 }
 
-/* Fix big white gap issue */
-.main-content,
-.provider-container,
-.category-section,
-.hero,
-.page {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+/* Home page - no body padding, hero handles spacing */
+.home-container {
+  margin-top: calc(-1 * var(--nav-height));
 }
 
 /* Mobile header adjustment */
 @media (max-width: 768px) {
   :root {
     --nav-height: 60px;
-  }
-
-  html,
-  body {
-    padding-top: var(--nav-height) !important;
   }
 }
 
@@ -55,6 +45,7 @@ body {
 
 .page {
   padding: 20px 0;
+  padding-top: calc(var(--nav-height) + 20px);
 }
 
 /* misc */

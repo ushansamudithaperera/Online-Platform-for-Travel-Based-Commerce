@@ -5,22 +5,22 @@
   --green-hover: #a1bb3d;
 
   /* NAV HEIGHT */
-  --nav-height: 70px;
+  --nav-height: 75px;
 }
 
 /* Navbar Container */
 .nav-container {
   background: var(--primary-gradient);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
   position: fixed;
   top: 0;
   width: 100%;
   height: var(--nav-height);
   display: flex;
   align-items: center;
-  padding: 0 30px;
+  padding: 0 50px;
   z-index: 1000;
-  transition: background 0.3s, box-shadow 0.3s;
+  transition: all 0.3s ease;
 }
 
 /* Transparent effect on scroll */
@@ -33,12 +33,15 @@
 .main-content {
   padding-top: var(--nav-height);
 }
-body {
+
+/* Only add padding for pages without hero section */
+body.with-navbar-space {
   padding-top: var(--nav-height);
 }
 
 /* Inner flex layout */
 .nav-inner {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -48,30 +51,56 @@ body {
 /* Brand */
 .brand {
   font-weight: 700;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   color: var(--white);
   text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: opacity 0.3s ease;
+}
+
+.brand:hover {
+  opacity: 0.9;
 }
 
 /* Nav Links */
 .nav-links {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .gradient-link {
   color: var(--white);
   text-decoration: none;
   font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: background 0.2s, transform 0.2s;
+  font-size: 1rem;
+  padding: 10px 20px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.gradient-link::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: #fff;
+  transition: width 0.3s ease;
 }
 
 .gradient-link:hover {
-  background: rgba(255,255,255,0.08);
-  transform: translateY(-2px);
+  background: rgba(255,255,255,0.1);
+}
+
+.gradient-link:hover::after {
+  width: 60%;
 }
 
 /* User greeting */
@@ -85,39 +114,54 @@ body {
 /* NAVBAR LOGIN & REGISTER BUTTONS */
 /* ----------------------------- */
 
-/* Login button - gradient background + white border + smaller size */
+/* Nav Actions Container */
+.nav-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Login button - transparent with border */
 .nav-container .login-btn {
-  background: var(--primary-gradient); /* header gradient */
+  background: transparent;
   color: var(--white);
-  border: 2px solid var(--white);
-  padding: 6px 18px;      /* smaller padding */
-  font-size: 0.8rem;      /* smaller text */
-  border-radius: 5px;     /* slightly rounded */
-  font-weight: 500;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  padding: 6px 18px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .nav-container .login-btn:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);/**/
+  border-color: var(--white);
+  transform: translateY(-2px);
 }
 
-/* Register button - green background + header color text + smaller size */
+/* Register button - green with better styling */
 .nav-container .register-btn {
-  background-color: var(--green); /* green color */
-  color: #2a004f;                 /* header gradient dark */
-  padding: 8px 16px;              /* smaller padding */
-  font-size: 0.8rem;              /* smaller text */
-  border-radius: 5px;             /* slightly rounded */
+  background: linear-gradient(135deg, #bed565 0%, #a1bb3d 100%);
+  color: #1a1a1a;
+  padding: 6px 18px;
+  font-size: 0.82rem;
+  border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  border: none;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 2px 6px rgba(190, 213, 101, 0.3);
 }
 
 .nav-container .register-btn:hover {
-  background-color: var(--green-hover);
+  background: linear-gradient(135deg, #a1bb3d 0%, #8a9f35 100%);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(190, 213, 101, 0.4);
 }
 
 /* Logout button */
@@ -185,69 +229,79 @@ body {
 /* The dropdown menu box */
 .profile-dropdown-menu {
     position: absolute;
-    top: 55px; /* Position below the navbar/icon */
+    top: 55px;
     right: 0;
-    /* Basic styling */
-    min-width: 220px;
-    background: var(--white);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    min-width: 200px;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    padding: 10px 0;
+    padding: 0;
 }
 
 /* Header/User info inside the dropdown */
 .dropdown-header {
-    padding: 8px 15px 12px;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 8px;
-    color: #333;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+
+.dropdown-header p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .user-name-text {
-    font-size: 1.1rem;
-    margin-top: 2px;
+    font-size: 1rem;
+    margin-top: 4px;
+    color: #222;
 }
 
 .user-role-badge {
     display: inline-block;
-    padding: 2px 8px;
-    margin-top: 5px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
-    text-transform: capitalize;
-    background-color: #f0f0f0;
-    color: #666;
+    padding: 3px 10px;
+    margin-top: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .user-role-badge.traveller {
-    background-color: #e6f7ff;
-    color: #007bff;
+    background-color: #e8f4fd;
+    color: #1a73e8;
 }
 
 .user-role-badge.provider {
-    background-color: #fffbe6;
-    color: #faad14;
+    background-color: #e8f5e9;
+    color: #2e7d32;
 }
 
 .user-role-badge.admin {
-    background-color: #ffe6e6;
-    color: #ff4d4f;
+    background-color: #fce4ec;
+    color: #c2185b;
 }
 
 /* Links inside the dropdown */
 .dropdown-link {
     display: block;
-    padding: 10px 15px;
+    padding: 14px 20px;
     text-decoration: none;
     color: #333;
+    font-size: 0.9rem;
     font-weight: 500;
     transition: background-color 0.2s;
+    border-bottom: 1px solid #f5f5f5;
 }
 
 .dropdown-link:hover {
-    background-color: #f5f5f5;
+    background-color: #e9d5ff;
+    color: #2a004f;
 }
 
 /* Logout button inside the dropdown */
@@ -256,15 +310,18 @@ body {
     text-align: left;
     background: none;
     border: none;
-    padding: 10px 15px;
-    color: #ff4d4d; /* Use the existing logout color */
+    padding: 14px 20px;
+    color: #666;
+    font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
 }
 
 .dropdown-logout-btn:hover {
-    background-color: #ffeeee;
+    background-color: #e9d5ff;
+    color: #2a004f;
+    color: #c62828;
 }
 
 /* Hide existing user links (now replaced by the dropdown) */

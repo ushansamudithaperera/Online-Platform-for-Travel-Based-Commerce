@@ -1,18 +1,18 @@
 .footer {
   background: linear-gradient(135deg, #2a004f, #12002b, #1b0036);
   color: #ffffff;
- padding: 25px 10px;}
+  padding: 50px 40px 20px;
+  margin-top: 0;
+}
 
 .footer-container {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  max-width: 1200px;
-  margin: auto;
-  gap: 150px;
-  max-width: 90%;   /* fills the width nicely */
-  margin: 0 auto;
+  max-width: 1300px;
+  margin: 0 auto 40px;
+  gap: 60px;
 }
 
 /* Make all columns equal width */
@@ -25,15 +25,17 @@
 
 /* LEFT */
 .footer-title {
-  font-size: 30px;
-  font-weight: bold;
-  margin-bottom: 10px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: #fff;
+  letter-spacing: 0.5px;
 }
 
 .footer-tagline {
-  font-size: 14px;
-  color: #d7d7d7;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.8;
   max-width: 90%;
 }
 
@@ -41,9 +43,15 @@
 .contact-detail {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  color: #e7e7e7;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 10px;
+  transition: color 0.3s ease;
+}
+
+.contact-detail:hover {
+  color: #fff;
 }
 
 /*
@@ -68,8 +76,10 @@
   align-items: flex-start; /* Align items from the left */}
 
 .contact-title {
-  font-size: 22px;
-  margin-bottom: 10px;
+  font-size: 1.2rem;
+  margin-bottom: 18px;
+  font-weight: 600;
+  color: #fff;
 }
 
 .contact-row {
@@ -111,12 +121,13 @@
 
 /* BOTTOM */
 .footer-bottom {
-  border-top: 1px solid #3a1b5c;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   text-align: center;
-  padding-top: 15px;
-  margin-top: 25px;
-  color: #bfbfbf;
-  font-size: 14px;
+  padding-top: 20px;
+  margin-top: 30px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
 }
 
 /* RESPONSIVE */

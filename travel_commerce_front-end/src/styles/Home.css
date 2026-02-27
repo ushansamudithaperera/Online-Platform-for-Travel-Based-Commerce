@@ -13,13 +13,14 @@ body {
 
 .hero {
   position: relative;
-  height: 80vh;
+  height: 100vh;
   width: 100vw;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
+  padding-top: 75px;
 }
 
 /* Hero Images for slideshow */
@@ -362,23 +363,23 @@ body {
   transform: scale(1.05);
 }
 
-/* Bigger dots */
+/* Dots */
 .dots {
   position: absolute;
-  bottom: 18px;
-  width: 100%;
-  text-align: center;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
   z-index: 3;
 }
 
 .dot {
-  display: inline-block;
   width: 10px;
-  /* bigger */
   height: 10px;
-  /* bigger */
-  margin: 0 6px;
-  background: #bbb;
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 50%;
   cursor: pointer;
   transition: 0.3s;
@@ -467,49 +468,94 @@ body {
 /*How its woorks*/
 
 .how-it-works {
-  max-width: 1300px;
-  margin: 60px auto;
+  padding: 100px 40px;
+  background: #fafafa;
   text-align: center;
 }
 
 .steps-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 30px;
-  margin-top: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  max-width: 1000px;
+  margin: 60px auto 0;
 }
 
 .step-box {
-  background: #f3e8ff;
-  /* light purple background */
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+  padding: 30px 40px;
+  flex: 0 0 auto;
+  width: 250px;
+  background: transparent;
 }
 
-.step-box:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+.step-connector {
+  width: 60px;
+  height: 1px;
+  background: #ddd;
+  margin-top: 35px;
+  flex-shrink: 0;
+}
+
+.step-number-wrapper {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #2a004f;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.step-box:hover .step-number-wrapper {
+  background: #2a004f;
 }
 
 .step-number {
-  font-size: 36px;
-  font-weight: bold;
-  color: #8eae12;
-  /* bold purple */
-  display: block;
-  margin-bottom: 10px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2a004f;
+  letter-spacing: 0.05em;
+  transition: color 0.3s ease;
+}
+
+.step-box:hover .step-number {
+  color: #fff;
+}
+
+.step-icon {
+  margin: 16px 0;
+}
+
+.step-icon svg {
+  width: 40px;
+  height: 40px;
+  color: #2a004f;
+  transition: all 0.3s ease;
+}
+
+.step-box:hover .step-icon svg {
+  color: #5a2a8a;
+  transform: scale(1.1);
 }
 
 .step-box h3 {
-  color: #7a3eb0;
-  /* purple headings */
+  color: #222;
+  margin-bottom: 12px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .step-box p {
-  color: #4b0082;
-  /* deep purple text */
+  color: #666;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 /* ---------------- TYPING ANIMATION ---------------- */
