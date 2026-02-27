@@ -4,8 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import authApi from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import Navbar from "../../components/Navbar";
-import Footer from "../../components/Footer";
+import "../../styles/AuthModal.css";
 import "../../styles/Login.css";
 
 export default function Register() {
@@ -15,41 +14,48 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("traveller");
   const [showPassword, setShowPassword] = useState(false);
-
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
-
   const toast = useToast();
-
   const [countryCodes, setCountryCodes] = useState([]);
   const [telephone, setTelephone] = useState({ code: "", number: "" });
-
   const nav = useNavigate();
 
-  /** ------------------------------------------------------------------
-   * HANDLE SUBMIT
-   * ------------------------------------------------------------------ */
+  useEffect(() => {
+    async function loadCodes() {
+      try {
+        const res = await fetch("https://restcountries.com/v3.1/all");
+        const data = await res.json();
+        const codes = data
+          .map((c) => ({
+            code: c.idd?.root && c.idd?.suffixes ? c.idd.root + c.idd.suffixes[0] : "",
+            name: c.name.common,
+          }))
+          .filter((c) => c.code);
+        setCountryCodes(codes);
+      } catch {
+        setCountryCodes([{ code: "+94", name: "Sri Lanka" }]);
+      }
+    }
+    loadCodes();
+  }, []);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setErr("");
-
     if (password !== confirmPassword) {
       setErr("Passwords do not match");
       return;
     }
-
     if (!telephone.code) {
       setErr("Please select a country code.");
       return;
     }
-
     if (!telephone.number) {
       setErr("Please enter your contact number.");
       return;
     }
-
     setLoading(true);
-
     try {
       const res = await authApi.register({
         fullname,
@@ -58,75 +64,30 @@ export default function Register() {
         password,
         role,
       });
-
       if (res.data?.success) {
-        // ✔ SHOW SUCCESS TOAST
         toast.success("Registration successful! Redirecting...");
-
         setTimeout(() => {
           nav("/login");
         }, 1500);
-
       } else {
         toast.error("Registration failed");
       }
-
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          "Registration failed"
+        error?.response?.data?.error ||
+        "Registration failed"
       );
     }
-
     setLoading(false);
   }
 
-  /** ------------------------------------------------------------------
-   * LOAD COUNTRY CODES
-   * ------------------------------------------------------------------ */
-  useEffect(() => {
-    async function loadCodes() {
-      try {
-        const res = await fetch("https://restcountries.com/v3.1/all?fields=name,idd");
-        const data = await res.json();
-
-        const codes = data
-          .map((c) => {
-            if (!c.idd?.root || !c.idd.suffixes?.length) return null;
-            const fullCode = c.idd.root + c.idd.suffixes[0];
-            return {
-              name: c.name.common,
-              code: fullCode.startsWith("+") ? fullCode : "+" + fullCode,
-            };
-          })
-          .filter(Boolean)
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        setCountryCodes(codes);
-
-        if (!telephone.code && codes.length > 0) {
-          setTelephone((prev) => ({ ...prev, code: codes[0].code }));
-        }
-      } catch (err) {
-        console.error(err);
-        setErr("Failed to load country codes.");
-      }
-    }
-
-    loadCodes();
-  }, []);
-
   return (
     <>
-      <Navbar />
-
-      <div className="main-content">
-        <div className="container page login-container">
+      <div className="auth-modal-bg">
+        <div className="auth-modal-card">
           <h2 className="login-title">Register</h2>
-
           <form onSubmit={handleSubmit} className="register-form">
-            {/* Full Name */}
             <label>Full Name</label>
             <input
               type="text"
@@ -135,8 +96,6 @@ export default function Register() {
               onChange={(e) => setFullname(e.target.value)}
               placeholder="Enter your full name"
             />
-
-            {/* Email */}
             <label>Email</label>
             <input
               type="email"
@@ -145,15 +104,11 @@ export default function Register() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
             />
-
-            {/* Contact */}
             <label>Contact Number</label>
             <div className="contact-number-group">
               <select
                 value={telephone.code}
-                onChange={(e) =>
-                  setTelephone({ ...telephone, code: e.target.value })
-                }
+                onChange={(e) => setTelephone({ ...telephone, code: e.target.value })}
               >
                 {countryCodes.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -161,7 +116,6 @@ export default function Register() {
                   </option>
                 ))}
               </select>
-
               <input
                 type="text"
                 value={telephone.number}
@@ -175,8 +129,6 @@ export default function Register() {
                 maxLength="12"
               />
             </div>
-
-            {/* Password */}
             <label>Password</label>
             <div style={{ position: "relative" }}>
               <input
@@ -193,8 +145,6 @@ export default function Register() {
                 {showPassword ? "Hide" : "Show"}
               </span>
             </div>
-
-            {/* Confirm Password */}
             <label>Confirm Password</label>
             <div style={{ position: "relative" }}>
               <input
@@ -211,60 +161,54 @@ export default function Register() {
                 {showPassword ? "Hide" : "Show"}
               </span>
             </div>
-
-            {/* Role */}
             <label>Register as:</label>
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="traveller">Traveller</option>
               <option value="provider">Provider</option>
             </select>
-
-            {/* Submit */}
             <button className="btn" type="submit" disabled={loading}>
               {loading ? "Registering..." : "Sign Up"}
             </button>
-
-
             {err && <p className="error-msg">{err}</p>}
           </form>
-
           {/* Google Sign Up Button */}
           <div style={{ margin: '24px 0', textAlign: 'center' }}>
             <GoogleLogin
-              text="signup_with"
               onSuccess={credentialResponse => {
                 fetch('http://localhost:8080/api/oauth2/callback/google', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ token: credentialResponse.credential, role })
+                  body: JSON.stringify({ token: credentialResponse.credential })
                 })
-                .then(res => res.json())
-                .then(data => {
-                  if (data && data.user) {
-                    toast.success('Google sign up successful! Please login.');
-                    nav('/login');
-                  } else {
-                    toast.error('Google sign up failed: ' + (data?.message || 'Unknown error'));
-                  }
-                })
-                .catch(() => toast.error('Google sign up failed'));
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data && data.token && data.user) {
+                      toast.success('Google sign up successful!');
+                      nav('/login');
+                    } else {
+                      toast.error('Google sign up failed: Invalid response');
+                    }
+                  })
+                  .catch(() => toast.error('Google sign up failed'));
               }}
               onError={() => {
                 toast.error('Google sign up failed');
               }}
             />
           </div>
-
           <p className="signup-text">
             Already have an account?{" "}
             <Link to="/login" className="signup-link">
               Login
             </Link>
           </p>
+          <p style={{ marginTop: '16px', textAlign: 'center' }}>
+            <Link to="/" className="signup-link" style={{ color: '#764ba2', fontWeight: 500 }}>
+              ← Back to Home
+            </Link>
+          </p>
         </div>
       </div>
-
-      <Footer />
     </>
   );
 }
