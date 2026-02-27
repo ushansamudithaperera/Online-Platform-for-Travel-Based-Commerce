@@ -1,0 +1,9 @@
+.hero-section {
+  background: linear-gradient(135deg, #a3d8f8 0%, #4fa3e3 100%);
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 0 40px 0;
+}

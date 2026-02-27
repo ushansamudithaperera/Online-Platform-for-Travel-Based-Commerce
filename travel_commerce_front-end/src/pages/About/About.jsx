@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import "../../styles/PurpleSection.css";
 import axios from "axios";
 
 export default function About() {
@@ -28,8 +29,9 @@ export default function About() {
   };
 
   return (
-    <div className="about-page">
+    <div className="purple-section-bg d-flex flex-column min-vh-100">
       <Navbar />
+      <div className="flex-grow-1">
       {/* 1. Hero Section */}
       <section className="bg-light py-5 text-center px-3">
         <div className="container">
@@ -237,6 +239,7 @@ export default function About() {
           </Link>
         </div>
       </section>
+      </div>
       <Footer />
     </div>
   );

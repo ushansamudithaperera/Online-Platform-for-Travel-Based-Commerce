@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import "../../styles/PurpleSection.css";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import axios from "axios";
@@ -83,8 +84,9 @@ export default function Feedback() {
     };
 
     return (
-        <div className="feedback-page d-flex flex-column min-vh-100 position-relative">
+        <div className="purple-section-bg d-flex flex-column min-vh-100 position-relative">
             <Navbar />
+            <div className="flex-grow-1">
 
             {/* Login Prompt Overlay */}
             {showLoginPrompt && (
@@ -265,6 +267,7 @@ export default function Feedback() {
                 </div>
             </div>
 
+            </div>
             <Footer />
         </div>
     );

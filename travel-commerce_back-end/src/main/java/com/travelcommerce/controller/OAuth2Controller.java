@@ -27,6 +27,7 @@ public class OAuth2Controller {
     public ResponseEntity<?> googleCallback(@RequestBody Map<String, String> body) {
         try {
             String googleToken = body.get("token");
+            String roleStr = body.get("role");
             // Parse JWT (Google ID token) payload
             String[] parts = googleToken.split("\\.");
             if (parts.length != 3) return ResponseEntity.badRequest().body("Invalid token");
@@ -42,12 +43,26 @@ public class OAuth2Controller {
                 User u = new User();
                 u.setEmail(email);
                 u.setFullname(name);
-                u.setRole(Role.ROLE_TRAVELLER); // Default role, or infer from frontend if needed
+                // Set role from frontend if valid
+                if (roleStr != null && roleStr.equalsIgnoreCase("provider")) {
+                    u.setRole(Role.ROLE_PROVIDER);
+                } else {
+                    u.setRole(Role.ROLE_TRAVELLER);
+                }
                 u.setStatus(Status.ACTIVE);
                 return u;
             });
             // If new user, save
             if (user.getId() == null) {
+                user = userRepository.save(user);
+            }
+            // If user exists but role is not set, update role if provided
+            if (user.getRole() == null && roleStr != null) {
+                if (roleStr.equalsIgnoreCase("provider")) {
+                    user.setRole(Role.ROLE_PROVIDER);
+                } else {
+                    user.setRole(Role.ROLE_TRAVELLER);
+                }
                 user = userRepository.save(user);
             }
 

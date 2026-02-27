@@ -38,9 +38,12 @@ export default function Login() {
       }, 800);
 
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message || "Login failed"
-      );
+      const backendMsg = error?.response?.data?.message || "Login failed";
+      if (backendMsg.includes("role does not match")) {
+        toast.error("Selected role does not match your account role. Please choose the correct role.");
+      } else {
+        toast.error(backendMsg);
+      }
     }
 
     setLoading(false);

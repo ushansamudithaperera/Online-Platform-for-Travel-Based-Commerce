@@ -233,19 +233,19 @@ export default function Register() {
             <GoogleLogin
               text="signup_with"
               onSuccess={credentialResponse => {
-                // Send credentialResponse.credential (JWT) to your backend for verification
                 fetch('http://localhost:8080/api/oauth2/callback/google', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ token: credentialResponse.credential })
+                  body: JSON.stringify({ token: credentialResponse.credential, role })
                 })
                 .then(res => res.json())
                 .then(data => {
-                  // Handle registration (store token, redirect, etc.)
-                  // Example: toast.success('Google sign up successful!');
-                  // login(data.user, data.token); // If your backend returns these
-                  // nav('/traveller/dashboard');
-                  toast.success('Google sign up successful!');
+                  if (data && data.user) {
+                    toast.success('Google sign up successful! Please login.');
+                    nav('/login');
+                  } else {
+                    toast.error('Google sign up failed: ' + (data?.message || 'Unknown error'));
+                  }
                 })
                 .catch(() => toast.error('Google sign up failed'));
               }}

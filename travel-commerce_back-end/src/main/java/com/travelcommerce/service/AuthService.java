@@ -27,7 +27,13 @@ public class AuthService {
     public String login(String email, String password, String roleStr) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Invalid credentials"));
         if (!passwordEncoder.matches(password, user.getPassword())) throw new RuntimeException("Invalid credentials");
-        // optional: check role
+        // Check role match
+        if (roleStr != null) {
+            String userRole = user.getRole().name().replace("ROLE_", "").toLowerCase();
+            if (!roleStr.equalsIgnoreCase(userRole)) {
+                throw new RuntimeException("Selected role does not match your account role");
+            }
+        }
         String roleName = user.getRole().name();
         return jwtUtil.generateToken(user.getId(), roleName);
     }

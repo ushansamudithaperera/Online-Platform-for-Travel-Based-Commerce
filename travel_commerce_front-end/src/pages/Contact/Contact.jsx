@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import "../../styles/PurpleSection.css";
 import { useToast } from "../../context/ToastContext";
 
 export default function Contact() {
@@ -23,7 +24,7 @@ export default function Contact() {
     };
 
     return (
-        <div className="contact-page d-flex flex-column min-vh-100 bg-light">
+        <div className="purple-section-bg d-flex flex-column min-vh-100">
             <Navbar />
             <div className="flex-grow-1 d-flex align-items-center py-5">
                 <div className="container">
@@ -81,7 +82,7 @@ export default function Contact() {
 
                         {/* Right Column: Contact Form */}
                         <div className="col-md-6 order-1 order-md-2">
-                            <div className="card border-0 shadow-lg" style={{ borderRadius: "15px" }}>
+                            <div className="purple-card">
                                 <div className="card-body p-4 p-md-5">
                                     <h3 className="fw-bold mb-4 text-center" style={{ color: "#2c3e50" }}>
                                         Send us a Message

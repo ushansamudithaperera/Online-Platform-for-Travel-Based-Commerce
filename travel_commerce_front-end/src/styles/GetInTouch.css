@@ -1,0 +1,14 @@
+.get-in-touch-section {
+  background: linear-gradient(135deg, #e3f0ff 0%, #b3d8f8 100%);
+  min-height: 100vh;
+  padding: 60px 0;
+}
+
+.get-in-touch-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  padding: 40px 32px;
+  max-width: 480px;
+  margin: 0 auto;
+}
