@@ -66,8 +66,11 @@ public class NotificationService {
      * Mark a single notification as read.
      */
     public Notification markAsRead(String notificationId, String userId) {
+        if (notificationId == null) {
+            return null;
+        }
         Notification notification = notificationRepository.findById(notificationId).orElse(null);
-        if (notification != null && notification.getRecipientId().equals(userId)) {
+        if (notification != null && notification.getRecipientId() != null && notification.getRecipientId().equals(userId)) {
             notification.setRead(true);
             return notificationRepository.save(notification);
         }
@@ -79,18 +82,23 @@ public class NotificationService {
      */
     public void markAllAsRead(String userId) {
         List<Notification> unread = notificationRepository.findByRecipientIdAndReadFalse(userId);
-        for (Notification n : unread) {
-            n.setRead(true);
+        if (unread != null && !unread.isEmpty()) {
+            for (Notification n : unread) {
+                n.setRead(true);
+            }
+            notificationRepository.saveAll(unread);
         }
-        notificationRepository.saveAll(unread);
     }
 
     /**
      * Delete a notification.
      */
     public void deleteNotification(String notificationId, String userId) {
+        if (notificationId == null) {
+            return;
+        }
         Notification notification = notificationRepository.findById(notificationId).orElse(null);
-        if (notification != null && notification.getRecipientId().equals(userId)) {
+        if (notification != null && notification.getRecipientId() != null && notification.getRecipientId().equals(userId)) {
             notificationRepository.deleteById(notificationId);
         }
     }
@@ -100,7 +108,9 @@ public class NotificationService {
      */
     public void deleteAllForUser(String userId) {
         List<Notification> all = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId);
-        notificationRepository.deleteAll(all);
+        if (all != null && !all.isEmpty()) {
+            notificationRepository.deleteAll(all);
+        }
     }
 
     /**

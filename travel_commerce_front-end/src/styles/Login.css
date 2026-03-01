@@ -1,35 +1,17 @@
-.login-container {
-  max-width: 420px;
-  margin: auto;
-  padding: 20px;
-}
-
-.login-title {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.form-login {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.form-login input,
-.form-login select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
+/* Legacy styles - unused with new grid layout but kept for fallback */
 .btn {
   padding: 10px;
-  background: #9d00ff;
+  background: #7B68EE;
   color: #fff;
   border-radius: 6px;
   border: none;
   cursor: pointer;
   font-size: 16px;
+  transition: 0.3s;
+}
+
+.btn:hover {
+  background: #6A5ACD;
 }
 
 .btn:disabled {
@@ -38,21 +20,27 @@
 }
 
 .error-msg {
-  color: red;
+  color: #e74c3c;
   margin-top: 10px;
+  text-align: center;
+  font-weight: 600;
 }
 
 .signup-text {
   margin-top: 20px;
   text-align: center;
+  font-size: 14px;
+  color: #555;
 }
 
 .signup-link {
-  color: #9d00ff;
-  font-weight: bold;
+  color: #7B68EE;
+  font-weight: 600;
   text-decoration: none;
+  transition: 0.2s;
 }
 
 .signup-link:hover {
   text-decoration: underline;
+  color: #6A5ACD;
 }

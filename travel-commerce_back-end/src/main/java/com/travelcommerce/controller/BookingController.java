@@ -41,6 +41,9 @@ public class BookingController {
         }
 
         String userId = auth.getName();
+        if (userId == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
         User user = userRepository.findById(userId).orElse(null);
         
         if (user == null) {
@@ -48,7 +51,11 @@ public class BookingController {
         }
 
         // Get service details
-        ServicePost service = serviceRepository.findById(booking.getServiceId()).orElse(null);
+        String serviceId = booking.getServiceId();
+        if (serviceId == null) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Service ID cannot be null", null));
+        }
+        ServicePost service = serviceRepository.findById(serviceId).orElse(null);
         if (service == null) {
             return ResponseEntity.status(404).body(new ApiResponse(false, "Service not found", null));
         }
@@ -106,6 +113,10 @@ public class BookingController {
             return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
         }
 
+        if (id == null) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Booking ID cannot be null", null));
+        }
+
         String userId = auth.getName();
         Booking booking = bookingRepository.findById(id).orElse(null);
         if (booking == null) {
@@ -150,6 +161,10 @@ public class BookingController {
             return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
         }
 
+        if (id == null) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Booking ID cannot be null", null));
+        }
+
         Booking booking = bookingRepository.findById(id).orElse(null);
         if (booking == null) {
             return ResponseEntity.status(404).body(new ApiResponse(false, "Booking not found", null));
@@ -188,6 +203,10 @@ public class BookingController {
     public ResponseEntity<?> cancelBookingAsTraveller(@PathVariable String id, Authentication auth) {
         if (auth == null) {
             return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+
+        if (id == null) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Booking ID cannot be null", null));
         }
 
         String userId = auth.getName();
@@ -230,6 +249,10 @@ public class BookingController {
     public ResponseEntity<?> cancelBooking(@PathVariable String id, Authentication auth) {
         if (auth == null) {
             return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+
+        if (id == null) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Booking ID cannot be null", null));
         }
 
         String userId = auth.getName();

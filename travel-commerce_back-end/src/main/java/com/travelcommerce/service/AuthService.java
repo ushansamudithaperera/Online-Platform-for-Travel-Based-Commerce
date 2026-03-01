@@ -24,17 +24,25 @@ public class AuthService {
         return userRepository.save(u);
     }
 
-    public String login(String email, String password, String roleStr) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Invalid credentials"));
-        if (!passwordEncoder.matches(password, user.getPassword())) throw new RuntimeException("Invalid credentials");
-        // Check role match
+public String login(String email, String password, String roleStr) {
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+    
+    if (!passwordEncoder.matches(password, user.getPassword())) {
+        throw new RuntimeException("Invalid credentials");
+    }
+    
+    // 🟢 FIX: Skip role validation for ADMIN users only
+    if (user.getRole() != Role.ROLE_ADMIN) {
         if (roleStr != null) {
             String userRole = user.getRole().name().replace("ROLE_", "").toLowerCase();
             if (!roleStr.equalsIgnoreCase(userRole)) {
                 throw new RuntimeException("Selected role does not match your account role");
             }
         }
-        String roleName = user.getRole().name();
-        return jwtUtil.generateToken(user.getId(), roleName);
     }
+    
+    String roleName = user.getRole().name();
+    return jwtUtil.generateToken(user.getId(), roleName);
+}
 }

@@ -28,7 +28,7 @@ public class FeedbackController {
     public ResponseEntity<?> submitFeedback(@RequestBody Feedback feedback, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             String userId = authentication.getName();
-            User user = userRepository.findById(userId).orElse(null);
+            User user = userId != null ? userRepository.findById(userId).orElse(null) : null;
 
             if (user != null) {
                 // Auto-fill from logged-in user
@@ -54,6 +54,9 @@ public class FeedbackController {
         }
 
         String userId = authentication.getName();
+        if (userId == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
         User user = userRepository.findById(userId).orElse(null);
 
         if (user == null || user.getRole() != Role.ROLE_ADMIN) {

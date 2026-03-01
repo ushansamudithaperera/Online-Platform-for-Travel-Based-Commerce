@@ -20,7 +20,10 @@ public class JwtUserDetailsService implements UserDetailsService {
     // FIX 2: loadUserByUsername must be implemented to find the user by ID (as your JwtUtil token contains the ID)
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-
+        if (userId == null) {
+            throw new UsernameNotFoundException("User not found: null");
+        }
+        
         User u = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
 
@@ -28,9 +31,13 @@ public class JwtUserDetailsService implements UserDetailsService {
         // The authority name for the user must match the one checked by hasRole() in SecurityConfig
         String roleAuthority = "ROLE_" + u.getRole().name();
         
+        // Handle null password (Google OAuth users don't have a password)
+        // Spring Security's User class requires a non-null password
+        String password = u.getPassword() != null ? u.getPassword() : "";
+        
         return new org.springframework.security.core.userdetails.User(
                 u.getId(), // Principal name will be the userId
-                u.getPassword(),
+                password,
                 Collections.singletonList(new SimpleGrantedAuthority(roleAuthority))
         );
     }

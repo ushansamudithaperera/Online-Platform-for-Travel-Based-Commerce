@@ -2,6 +2,7 @@ package com.travelcommerce.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -15,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     private String configuredUploadDir;
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // Use configured path, or fall back to <user.dir>/uploads
         Path uploadsDir;
         if (configuredUploadDir != null && !configuredUploadDir.isBlank()) {

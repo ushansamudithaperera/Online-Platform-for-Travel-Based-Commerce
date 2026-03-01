@@ -48,19 +48,14 @@ public class UserController {
 
         // 2. Prevent Admin from deleting themselves
         String currentUserId = auth.getName();
-        if (id.equals(currentUserId)) {
+        if (currentUserId != null && id.equals(currentUserId)) {
             return ResponseEntity.badRequest().body("You cannot delete your own admin account.");
         }
-
-        // Get user info before deleting (for notification)
-        User targetUser = userRepository.findById(id).orElse(null);
-        String targetName = targetUser != null ? targetUser.getFullname() : "User";
-        String targetRole = targetUser != null ? targetUser.getRole().name().replace("ROLE_", "").toLowerCase() : "user";
 
         userService.deleteUser(id);
 
         // Notify the deleted user (they'll see it if they're still logged in)
-        User admin = userRepository.findById(currentUserId).orElse(null);
+        User admin = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
         String adminName = admin != null ? admin.getFullname() : "Admin";
         notificationService.createNotification(
             id,
@@ -80,6 +75,7 @@ public class UserController {
     private boolean isAdmin(Authentication auth) {
         if (auth == null) return false;
         String userId = auth.getName();
+        if (userId == null) return false;
         User user = userRepository.findById(userId).orElse(null);
         return user != null && user.getRole() == Role.ROLE_ADMIN;
     }

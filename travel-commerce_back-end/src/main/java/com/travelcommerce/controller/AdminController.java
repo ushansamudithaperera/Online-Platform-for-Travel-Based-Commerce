@@ -2,7 +2,6 @@ package com.travelcommerce.controller;
 
 import com.travelcommerce.model.ServicePost;
 import com.travelcommerce.repository.ServiceRepository;
-import com.travelcommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +11,6 @@ import java.util.List;
 @RequestMapping("/api/admin")
 public class AdminController {
     @Autowired private ServiceRepository serviceRepository;
-    @Autowired private UserRepository userRepository;
 
     @GetMapping("/pending-posts")
     public ResponseEntity<List<ServicePost>> pendingPosts() {
@@ -21,6 +19,7 @@ public class AdminController {
 
     @PostMapping("/posts/{id}/approve")
     public ResponseEntity<?> approve(@PathVariable String id) {
+        if (id == null) return ResponseEntity.badRequest().build();
         ServicePost s = serviceRepository.findById(id).orElse(null);
         if (s == null) return ResponseEntity.notFound().build();
         s.setStatus(com.travelcommerce.model.Status.ACTIVE);
@@ -30,6 +29,7 @@ public class AdminController {
 
     @PostMapping("/posts/{id}/ban")
     public ResponseEntity<?> ban(@PathVariable String id) {
+        if (id == null) return ResponseEntity.badRequest().build();
         ServicePost s = serviceRepository.findById(id).orElse(null);
         if (s == null) return ResponseEntity.notFound().build();
         s.setStatus(com.travelcommerce.model.Status.BANNED);

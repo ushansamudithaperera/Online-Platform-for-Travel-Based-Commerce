@@ -74,10 +74,6 @@ export default function App() {
 
       <Route path="*" element={<div style={{ padding: 40 }}>404 - Not Found</div>} />
 
-      {/* Temporary code part for testing */}
-      <Route path="/testp" element={<ProviderDashboard />} />
-      <Route path="/testt" element={<TravellerDashboard />} />
-
     </Routes>
   );
 }

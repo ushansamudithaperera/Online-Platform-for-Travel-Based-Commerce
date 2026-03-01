@@ -43,6 +43,9 @@ public class ServicePostService {
     }
 
     public ServicePost findById(String id) {
+        if (id == null || id.isEmpty()) {
+            return null;
+        }
         ServicePost post = repo.findById(id).orElse(null);
         if (post != null) {
             attachRating(post);
@@ -51,15 +54,23 @@ public class ServicePostService {
     }
 
     public ServicePost create(ServicePost p) {
+        if (p == null) {
+            throw new IllegalArgumentException("ServicePost cannot be null");
+        }
         return repo.save(p);
     }
 
     public ServicePost update(ServicePost p) {
+        if (p == null) {
+            throw new IllegalArgumentException("ServicePost cannot be null");
+        }
         return repo.save(p);
     }
 
     public void delete(String id) {
-        repo.deleteById(id);
+        if (id != null && !id.isEmpty()) {
+            repo.deleteById(id);
+        }
     }
 
     // Create with images

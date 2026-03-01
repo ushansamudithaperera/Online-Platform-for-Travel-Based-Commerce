@@ -54,27 +54,33 @@ export default function Login() {
         <div className="auth-modal-card">
           <h2 className="login-title">Login</h2>
           <form onSubmit={handleSubmit} className="form-login">
-            <label>Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-            />
-            <label>Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-            />
-            <label>Login as:</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="traveller">Traveller</option>
-              <option value="provider">Provider</option>
-            </select>
+            <div className="form-field">
+              <label>Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+              />
+            </div>
+            <div className="form-field">
+              <label>Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+              />
+            </div>
+            <div className="form-field full-width">
+              <label>Login as:</label>
+              <select value={role} onChange={(e) => setRole(e.target.value)}>
+                <option value="traveller">Traveller</option>
+                <option value="provider">Provider</option>
+              </select>
+            </div>
             <button className="btn" type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>
@@ -84,10 +90,11 @@ export default function Login() {
             <GoogleLogin
               onSuccess={credentialResponse => {
                 // Send credentialResponse.credential (JWT) to your backend for verification
+                // Include the selected role so new users get the correct role assigned
                 fetch('http://localhost:8080/api/oauth2/callback/google', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ token: credentialResponse.credential })
+                  body: JSON.stringify({ token: credentialResponse.credential, role: role })
                 })
                   .then(res => res.json())
                   .then(data => {

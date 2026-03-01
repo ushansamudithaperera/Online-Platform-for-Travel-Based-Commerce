@@ -882,7 +882,7 @@ export default function ProviderDashboard() {
                         <button className="preview-book-btn" disabled>
                           📅 Book This Service
                         </button>
-                        <p className="preview-note">Booking is disabled in preview mode.</p>
+                        <p className="preview-note">Travellers can Book services</p>
                       </div>
                     )}
 

@@ -88,84 +88,96 @@ export default function Register() {
         <div className="auth-modal-card">
           <h2 className="login-title">Register</h2>
           <form onSubmit={handleSubmit} className="register-form">
-            <label>Full Name</label>
-            <input
-              type="text"
-              required
-              value={fullname}
-              onChange={(e) => setFullname(e.target.value)}
-              placeholder="Enter your full name"
-            />
-            <label>Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-            />
-            <label>Contact Number</label>
-            <div className="contact-number-group">
-              <select
-                value={telephone.code}
-                onChange={(e) => setTelephone({ ...telephone, code: e.target.value })}
-              >
-                {countryCodes.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} ({c.name})
-                  </option>
-                ))}
-              </select>
+            <div className="form-field">
+              <label>Full Name</label>
               <input
                 type="text"
-                value={telephone.number}
-                onChange={(e) =>
-                  setTelephone({
-                    ...telephone,
-                    number: e.target.value.replace(/\D/g, ""),
-                  })
-                }
-                placeholder="Enter contact number"
-                maxLength="12"
-              />
-            </div>
-            <label>Password</label>
-            <div style={{ position: "relative" }}>
-              <input
-                type={showPassword ? "text" : "password"}
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                value={fullname}
+                onChange={(e) => setFullname(e.target.value)}
+                placeholder="Enter your full name"
               />
-              <span
-                className="show-hide-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </span>
             </div>
-            <label>Confirm Password</label>
-            <div style={{ position: "relative" }}>
+            <div className="form-field">
+              <label>Email</label>
               <input
-                type={showPassword ? "text" : "password"}
+                type="email"
                 required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your password"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
               />
-              <span
-                className="show-hide-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </span>
             </div>
-            <label>Register as:</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="traveller">Traveller</option>
-              <option value="provider">Provider</option>
-            </select>
+            <div className="form-field full-width">
+              <label>Contact Number</label>
+              <div className="contact-number-group">
+                <select
+                  value={telephone.code}
+                  onChange={(e) => setTelephone({ ...telephone, code: e.target.value })}
+                >
+                  {countryCodes.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} ({c.name})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={telephone.number}
+                  onChange={(e) =>
+                    setTelephone({
+                      ...telephone,
+                      number: e.target.value.replace(/\D/g, ""),
+                    })
+                  }
+                  placeholder="Enter contact number"
+                  maxLength="12"
+                />
+              </div>
+            </div>
+            <div className="form-field">
+              <label>Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                />
+                <span
+                  className="show-hide-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </span>
+              </div>
+            </div>
+            <div className="form-field">
+              <label>Confirm Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your password"
+                />
+                <span
+                  className="show-hide-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </span>
+              </div>
+            </div>
+            <div className="form-field full-width">
+              <label>Register as:</label>
+              <select value={role} onChange={(e) => setRole(e.target.value)}>
+                <option value="traveller">Traveller</option>
+                <option value="provider">Provider</option>
+              </select>
+            </div>
             <button className="btn" type="submit" disabled={loading}>
               {loading ? "Registering..." : "Sign Up"}
             </button>
@@ -175,10 +187,11 @@ export default function Register() {
           <div style={{ margin: '24px 0', textAlign: 'center' }}>
             <GoogleLogin
               onSuccess={credentialResponse => {
+                // Include the selected role so new users get the correct role assigned
                 fetch('http://localhost:8080/api/oauth2/callback/google', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ token: credentialResponse.credential })
+                  body: JSON.stringify({ token: credentialResponse.credential, role: role })
                 })
                   .then(res => res.json())
                   .then(data => {

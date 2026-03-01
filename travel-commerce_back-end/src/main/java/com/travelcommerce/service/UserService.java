@@ -20,11 +20,16 @@ public class UserService {
 
     // Delete a user (Ban/Remove)
     public void deleteUser(String id) {
-        userRepository.deleteById(id);
+        if (id != null) {
+            userRepository.deleteById(id);
+        }
     }
 
     // Find user by ID (Helper)
     public User findById(String id) {
-        return userRepository.findById(id).orElse(null);
+        if (id != null) {
+            return userRepository.findById(id).orElse(null);
+        }
+        return null;
     }
 }

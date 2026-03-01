@@ -191,13 +191,16 @@ public class ServiceController {
 
         try {
             String userId = auth.getName();
+            if (userId == null) return ResponseEntity.status(401).body("Unauthorized");
+            
             User user = userRepository.findById(userId).orElse(null);
             
             if (user == null || user.getRole() != Role.ROLE_PROVIDER) {
                 return ResponseEntity.status(403).body("Forbidden");
             }
 
-            Map<String, Object> serviceData = objectMapper.readValue(serviceDataJson, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> serviceData = (Map<String, Object>) objectMapper.readValue(serviceDataJson, Map.class);
 
             ServicePost post = new ServicePost();
             post.setTitle((String) serviceData.get("title"));
@@ -308,7 +311,7 @@ public class ServiceController {
         }
 
         String userId = auth.getName();
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userId != null ? userRepository.findById(userId).orElse(null) : null;
 
         boolean owner = existing.getProviderId().equals(userId);
         boolean isAdmin = user != null && user.getRole() == Role.ROLE_ADMIN;
@@ -372,7 +375,7 @@ public class ServiceController {
             notificationService.createNotification(
                 existing.getProviderId(),
                 userId,
-                user.getFullname(),
+                user != null ? user.getFullname() : "Admin",
                 notifType,
                 notifMessage,
                 existing.getId(),
@@ -405,6 +408,9 @@ public class ServiceController {
         }
 
         String userId = auth.getName();
+        if (userId == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
         User user = userRepository.findById(userId).orElse(null);
 
         boolean owner = existing.getProviderId().equals(userId);
@@ -415,6 +421,7 @@ public class ServiceController {
         }
 
         try {
+            @SuppressWarnings("unchecked")
             Map<String, Object> data = objectMapper.readValue(serviceDataJson, Map.class);
 
             existing.setTitle((String) data.get("title"));
@@ -546,7 +553,7 @@ public class ServiceController {
             notificationService.createNotification(
                 providerId,
                 userId,
-                user.getFullname(),
+                user != null ? user.getFullname() : "Admin",
                 "SERVICE_DELETED",
                 "Admin deleted your service \"" + serviceTitle + "\"",
                 serviceIdCopy,

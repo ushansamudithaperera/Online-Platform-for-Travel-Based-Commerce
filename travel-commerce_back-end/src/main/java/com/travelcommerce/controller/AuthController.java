@@ -69,6 +69,7 @@ public class AuthController {
         String token = authHeader.substring(7);
         if (!jwtUtil.validateToken(token)) return ResponseEntity.status(401).body(new ApiResponse(false, "Invalid token"));
         String userId = jwtUtil.getUserIdFromToken(token);
+        if (userId == null) return ResponseEntity.status(401).body(new ApiResponse(false, "Invalid token"));
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return ResponseEntity.status(404).body(new ApiResponse(false, "User not found"));
         user.setPassword(null);

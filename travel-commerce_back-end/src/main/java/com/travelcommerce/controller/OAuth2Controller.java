@@ -6,6 +6,7 @@ import com.travelcommerce.model.Status;
 import com.travelcommerce.model.User;
 import com.travelcommerce.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +33,7 @@ public class OAuth2Controller {
             String[] parts = googleToken.split("\\.");
             if (parts.length != 3) return ResponseEntity.badRequest().body("Invalid token");
             String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]));
-            Map<String, Object> payload = new ObjectMapper().readValue(payloadJson, Map.class);
+            Map<String, Object> payload = new ObjectMapper().readValue(payloadJson, new TypeReference<Map<String, Object>>(){});
 
             String email = (String) payload.get("email");
             String name = (String) payload.getOrDefault("name", "Google User");
@@ -43,6 +44,8 @@ public class OAuth2Controller {
                 User u = new User();
                 u.setEmail(email);
                 u.setFullname(name);
+                // Set a placeholder password for OAuth users (they authenticate via Google)
+                u.setPassword("");
                 // Set role from frontend if valid
                 if (roleStr != null && roleStr.equalsIgnoreCase("provider")) {
                     u.setRole(Role.ROLE_PROVIDER);

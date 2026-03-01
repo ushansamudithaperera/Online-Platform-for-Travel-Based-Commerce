@@ -102,6 +102,9 @@ public class NotificationController {
         }
 
         String adminId = auth.getName();
+        if (adminId == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
         User admin = userRepository.findById(adminId).orElse(null);
         if (admin == null || admin.getRole() != Role.ROLE_ADMIN) {
             return ResponseEntity.status(403).body(new ApiResponse(false, "Admin access required", null));
@@ -133,6 +136,9 @@ public class NotificationController {
         }
 
         String adminId = auth.getName();
+        if (adminId == null) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
         User admin = userRepository.findById(adminId).orElse(null);
         if (admin == null || admin.getRole() != Role.ROLE_ADMIN) {
             return ResponseEntity.status(403).body(new ApiResponse(false, "Admin access required", null));

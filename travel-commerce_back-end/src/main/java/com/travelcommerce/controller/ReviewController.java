@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.stream.Collectors;
 import java.util.ArrayList;
 
 @RestController
@@ -46,6 +45,9 @@ public class ReviewController {
         }
 
         String userId = auth.getName();
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
         User user = userRepository.findById(userId).orElse(null);
         
         if (user == null) {
@@ -58,7 +60,8 @@ public class ReviewController {
         Review saved = reviewRepository.save(review);
 
         // Notify the service provider about the new review
-        ServicePost service = serviceRepository.findById(review.getServiceId()).orElse(null);
+        String serviceId = review.getServiceId();
+        ServicePost service = serviceId != null ? serviceRepository.findById(serviceId).orElse(null) : null;
         if (service != null && service.getProviderId() != null) {
             notificationService.createNotification(
                 service.getProviderId(),
@@ -82,6 +85,9 @@ public class ReviewController {
         if (auth == null) return ResponseEntity.status(401).build();
         
         String userId = auth.getName();
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
         User user = userRepository.findById(userId).orElse(null);
         
         if (user == null || user.getRole() != Role.ROLE_ADMIN) {
@@ -135,6 +141,9 @@ public class ReviewController {
         }
 
         String userId = auth.getName();
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
         User user = userRepository.findById(userId).orElse(null);
         
         if (user == null) {
@@ -142,6 +151,9 @@ public class ReviewController {
         }
         
         // Verify parent review exists
+        if (parentReviewId == null || parentReviewId.isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Parent review ID is required", null));
+        }
         Review parentReview = reviewRepository.findById(parentReviewId).orElse(null);
         if (parentReview == null) {
             return ResponseEntity.status(404).body(new ApiResponse(false, "Parent review not found", null));
@@ -157,7 +169,8 @@ public class ReviewController {
 
         // Notify the parent review author about the reply
         if (!parentReview.getTravellerId().equals(userId)) {
-            ServicePost service = serviceRepository.findById(parentReview.getServiceId()).orElse(null);
+            String serviceId = parentReview.getServiceId();
+            ServicePost service = serviceId != null ? serviceRepository.findById(serviceId).orElse(null) : null;
             String serviceTitle = service != null ? service.getTitle() : "a service";
             notificationService.createNotification(
                 parentReview.getTravellerId(),
@@ -179,6 +192,10 @@ public class ReviewController {
     public ResponseEntity<?> updateReview(@PathVariable String id, @RequestBody Review updatedReview, Authentication auth) {
         if (auth == null) {
             return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+
+        if (id == null || id.isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Review ID is required", null));
         }
 
         String userId = auth.getName();
@@ -224,9 +241,16 @@ public class ReviewController {
         }
 
         String userId = auth.getName();
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.status(401).body(new ApiResponse(false, "Unauthorized", null));
+        }
+        
+        if (id == null || id.isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponse(false, "Review ID is required", null));
+        }
         
         // Load User to check Role
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userId != null ? userRepository.findById(userId).orElse(null) : null;
         Review review = reviewRepository.findById(id).orElse(null);
         
         if (review == null) {
@@ -245,15 +269,21 @@ public class ReviewController {
         if (review.getParentReviewId() == null || review.getParentReviewId().isEmpty()) {
             List<Review> replies = reviewRepository.findByParentReviewId(id);
             for (Review reply : replies) {
-                reviewRepository.deleteById(reply.getId());
+                String replyId = reply.getId();
+                if (replyId != null && !replyId.isEmpty()) {
+                    reviewRepository.deleteById(replyId);
+                }
             }
         }
 
-        reviewRepository.deleteById(id);
+        if (id != null && !id.isEmpty()) {
+            reviewRepository.deleteById(id);
+        }
 
         // If admin deleted someone else's review, notify the review author
-        if (isAdmin && !isOwner) {
-            ServicePost service = serviceRepository.findById(review.getServiceId()).orElse(null);
+        if (isAdmin && !isOwner && user != null) {
+            String serviceId = review.getServiceId();
+            ServicePost service = serviceId != null ? serviceRepository.findById(serviceId).orElse(null) : null;
             String serviceTitle = service != null ? service.getTitle() : "a service";
             notificationService.createNotification(
                 review.getTravellerId(),

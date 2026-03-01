@@ -1,7 +1,5 @@
 package com.travelcommerce.model;
 
-import org.springframework.data.mongodb.core.mapping.Field;
-
 public class ProviderData {
     private String providerType;
     private String district;
