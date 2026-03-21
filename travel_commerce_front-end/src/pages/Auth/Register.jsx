@@ -33,8 +33,15 @@ export default function Register() {
           }))
           .filter((c) => c.code);
         setCountryCodes(codes);
+        // 🔴 ADDED: Auto-select Sri Lanka (+94) as default
+        const sriLanka = codes.find(c => c.code === "+94");
+        if (sriLanka) {
+          setTelephone({ ...telephone, code: "+94" });
+        }
       } catch {
-        setCountryCodes([{ code: "+94", name: "Sri Lanka" }]);
+        const defaultCode = { code: "+94", name: "Sri Lanka" };
+        setCountryCodes([defaultCode]);
+        setTelephone({ ...telephone, code: "+94" });
       }
     }
     loadCodes();
@@ -114,7 +121,9 @@ export default function Register() {
                 <select
                   value={telephone.code}
                   onChange={(e) => setTelephone({ ...telephone, code: e.target.value })}
+                  required
                 >
+                  <option value="">Select Country Code</option>
                   {countryCodes.map((c) => (
                     <option key={c.code} value={c.code}>
                       {c.code} ({c.name})
@@ -132,6 +141,7 @@ export default function Register() {
                   }
                   placeholder="Enter contact number"
                   maxLength="12"
+                  required
                 />
               </div>
             </div>
