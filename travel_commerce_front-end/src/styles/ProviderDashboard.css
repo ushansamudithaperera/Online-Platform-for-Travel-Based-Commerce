@@ -10,7 +10,7 @@
   gap: 25px;
   padding: 30px;
   background: #f5f5fa;
-  min-height: calc(100vh - 80px);
+  min-height: auto;
 }
 
 /* LEFT SIDE */

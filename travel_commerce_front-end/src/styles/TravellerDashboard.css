@@ -1,6 +1,6 @@
 /* Traveller Dashboard Styles */
 
-/* 🔴 Container must be flex to support sticky footer */
+/* 🔴 Container: Let it grow to fill available space */
 .traveller-container {
   display: flex;
   flex-direction: column;
