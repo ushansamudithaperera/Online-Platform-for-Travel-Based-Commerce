@@ -1937,20 +1937,56 @@
 }
 
 .post-card-description-preview {
-  display: none;
-  margin: 8px 0 12px;
   color: #4a5568;
-  line-height: 1.5;
-  overflow: hidden;
-}
-
-/* Show description in list view */
-.posts-section.list-view .post-card-description-preview {
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+  word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 14px;
+  text-overflow: ellipsis;
+  margin: 12px 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Show in list view */
+.posts-section.list-view .post-card-description-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Show in grid view too */
+.posts-section:not(.list-view) .post-card-description-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Clean HTML elements - make them render as normal text */
+.post-card-description-preview p,
+.post-card-description-preview div,
+.post-card-description-preview span {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.post-card-description-preview br {
+  content: " ";
+}
+
+.post-card-description-preview ol,
+.post-card-description-preview ul,
+.post-card-description-preview li {
+  display: inline;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 /* ================================================

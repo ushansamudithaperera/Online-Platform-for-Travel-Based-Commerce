@@ -1228,10 +1228,12 @@ export default function TravellerDashboard() {
                                                         </button>
                                                     </div>
 
-                                                    <div
-                                                        className="post-card-description-preview"
-                                                        dangerouslySetInnerHTML={{ __html: p.description || "" }}
-                                                    />
+                                                    {p.description && (
+                                                        <div
+                                                            className="post-card-description-preview"
+                                                            dangerouslySetInnerHTML={{ __html: p.description || "" }}
+                                                        />
+                                                    )}
                                                     {isListView && isLongDescription && (
                                                         <button
                                                             type="button"
