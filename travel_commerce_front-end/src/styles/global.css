@@ -12,8 +12,6 @@ html {
 body {
   height: 100%;
   margin: 0;
-  padding-top: var(--nav-height) !important;
-  scroll-padding-top: var(--nav-height) !important;
 }
 
 /* 🔴 ROOT: Flex container for sticky footer - DO NOT add display properties to page containers */
@@ -25,17 +23,13 @@ body {
 
 /* Home page - no body padding, hero handles spacing */
 .home-container {
-  margin-top: calc(-1 * var(--nav-height));
+  margin-top: 0;
 }
 
 /* Mobile header adjustment */
 @media (max-width: 768px) {
   :root {
     --nav-height: 60px;
-  }
-  
-  body {
-    padding-top: var(--nav-height) !important;
   }
 }
 
