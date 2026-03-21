@@ -202,12 +202,35 @@ public class ServiceController {
             @SuppressWarnings("unchecked")
             Map<String, Object> serviceData = (Map<String, Object>) objectMapper.readValue(serviceDataJson, Map.class);
 
+            // 🔴 VALIDATION: Check required fields
+            String title = (String) serviceData.get("title");
+            String description = (String) serviceData.get("description");
+            String district = (String) serviceData.get("district");
+            String location = (String) serviceData.get("location");
+            String category = (String) serviceData.get("category");
+
+            if (title == null || title.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Error creating service: Title is required");
+            }
+            if (description == null || description.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Error creating service: Description is required");
+            }
+            if (district == null || district.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Error creating service: District is required");
+            }
+            if (location == null || location.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Error creating service: Location is required");
+            }
+            if (category == null || category.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Error creating service: Category is required");
+            }
+
             ServicePost post = new ServicePost();
-            post.setTitle((String) serviceData.get("title"));
-            post.setDescription((String) serviceData.get("description"));
-            post.setDistrict((String) serviceData.get("district"));
-            post.setLocation((String) serviceData.get("location"));
-            post.setCategory((String) serviceData.get("category"));
+            post.setTitle(title);
+            post.setDescription(description);
+            post.setDistrict(district);
+            post.setLocation(location);
+            post.setCategory(category);
             post.setPlanId((String) serviceData.get("planId"));
             post.setPlanName((String) serviceData.get("planName"));
             
@@ -245,7 +268,12 @@ public class ServiceController {
             post.setExternalBookingUrl((String) serviceData.get("externalBookingUrl"));
 
             // Provider WhatsApp number (optional)
-            post.setWhatsappNumber(validateAndCleanWhatsappNumber((String) serviceData.get("whatsappNumber")));
+            try {
+                post.setWhatsappNumber(validateAndCleanWhatsappNumber((String) serviceData.get("whatsappNumber")));
+            } catch (ResponseStatusException ex) {
+                logger.error("WhatsApp validation failed: {}", ex.getReason());
+                return ResponseEntity.status(ex.getStatusCode()).body("Error creating service: " + ex.getReason());
+            }
 
             // Provider offerings (optional)
             try {
@@ -272,6 +300,8 @@ public class ServiceController {
                 saved = servicePostService.create(post);
             }
 
+            logger.info("Service created successfully: {}", saved.getId());
+
             // Notify all admins about the new service posting
             notificationService.notifyAllAdmins(
                 userId,
@@ -284,8 +314,12 @@ public class ServiceController {
             );
 
             return ResponseEntity.ok(saved);
+        } catch (ResponseStatusException ex) {
+            // Re-throw ResponseStatusException from WhatsApp validation
+            logger.error("Service creation failed: {}", ex.getReason());
+            return ResponseEntity.status(ex.getStatusCode()).body("Error creating service: " + ex.getReason());
         } catch (Exception e) {
-            logger.error("Error creating service", e);
+            logger.error("Error creating service: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error creating service: " + e.getMessage());
         }
     }

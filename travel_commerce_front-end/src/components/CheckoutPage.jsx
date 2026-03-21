@@ -158,9 +158,19 @@ export default function CheckoutPage() {
       });
     } catch (err) {
       console.error("Service creation failed after payment:", err);
-      toast.error("Payment processed but service creation failed. Please try again.");
+      
+      // Extract detailed error message
+      let errorMessage = "Payment processed but service creation failed. Please try again.";
+      if (err.response?.data) {
+        errorMessage = err.response.data;
+        console.error("Server error response:", errorMessage);
+      } else if (err.message) {
+        console.error("Error details:", err.message);
+      }
+      
+      toast.error(errorMessage);
       setStep(1);
-      setErrors({ number: "Payment processed but service creation failed. Please try again." });
+      setErrors({ number: errorMessage });
     }
   };
 
@@ -220,9 +230,29 @@ export default function CheckoutPage() {
               <form className="pf-card-form" onSubmit={handlePayment}>
                 <h3>Payment Details</h3>
 
+                {/* 🔴 ADDED: Display service creation error prominently */}
+                {errors.number && errors.number.includes("Error creating service") && (
+                  <div style={{
+                    backgroundColor: "#fff3cd",
+                    border: "1px solid #ffc107",
+                    color: "#856404",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}>
+                    <strong>⚠️ Service Creation Failed:</strong>
+                    <p style={{ margin: "8px 0 0 0" }}>{errors.number}</p>
+                    <p style={{ margin: "8px 0 0 0", fontSize: "12px", opacity: 0.8 }}>
+                      Please check your service details and try again.
+                    </p>
+                  </div>
+                )}
+
                 <div className="pf-form-group">
                   <label>Card Number</label>
-                  <div className={`pf-input-wrapper ${errors.number ? "error" : ""}`}>
+                  <div className={`pf-input-wrapper ${errors.number && !errors.number.includes("Error creating service") ? "error" : ""}`}>
                     <span className="pf-input-icon">💳</span>
                     <input
                       type="text"
@@ -234,7 +264,7 @@ export default function CheckoutPage() {
                     />
                     {brand && <span className="pf-card-brand">{BRAND_LABELS[brand]}</span>}
                   </div>
-                  {errors.number && <span className="pf-field-error">{errors.number}</span>}
+                  {errors.number && !errors.number.includes("Error creating service") && <span className="pf-field-error">{errors.number}</span>}
                 </div>
 
                 <div className="pf-form-group">

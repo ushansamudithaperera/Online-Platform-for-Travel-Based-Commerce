@@ -470,8 +470,21 @@ export default function ServiceFormModal({
     // helper to strip HTML tags, defined above handleSubmit
     const descPlain = stripHtml(serviceData.description);
 
-    if (!serviceData.title.trim() || !descPlain) {
-      throw new Error("Title and description are required");
+    // 🔴 ADDED: Validate all required fields
+    if (!serviceData.title.trim()) {
+      throw new Error("Service title is required");
+    }
+    if (!descPlain) {
+      throw new Error("Description is required");
+    }
+    if (!serviceData.district.trim()) {
+      throw new Error("District is required");
+    }
+    if (!serviceData.location.trim()) {
+      throw new Error("Location is required");
+    }
+    if (!serviceData.category.trim()) {
+      throw new Error("Category is required");
     }
 
     // Validate pricing
